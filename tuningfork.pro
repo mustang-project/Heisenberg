@@ -781,31 +781,10 @@ if calc_fit then begin
     fluxratio_peak_sort=reform(gasflux(peak_res,inclpeaks(fluxratio_ipeak_sort))/starflux(peak_res,inclpeaks(fluxratio_ipeak_sort))) ;sorted g/s flux ratios of peaks -!!TAKE ABSOLUTES?
     fluxratio_peak_sort=fluxratio_peak_sort(where(fluxratio_peak_sort ge 0.)) ;remove negative gas emission from flux ratios
     nfluxratio=n_elements(fluxratio_peak_sort) ;number of remaining peaks
-;    gaspeaksurf=total(gaspeaks(*,2))/total(gaspeaks(*,3)) ;gas peak flux per pixel
-;    starpeaksurf=total(starpeaks(*,2))/total(starpeaks(*,3)) ;stellar peak flux per pixel
     ;guess beta_star and beta_gas based on three equal-length phases
     redchi2=9.d99
-;    f_gasiso=1./3.
-;    f_over=1./3.
-;    f_stariso=1./3.
-;    i_gasiso=round(nincludepeak*f_gasiso) ;last index of isolated gas peaks
-;    i_over=round(nincludepeak*(f_gasiso+f_over)) ;last index of overlapping peaks
-;    i_stariso=nincludepeak ;last index of isolated stellar peaks
-;    isogas=fluxratio_ipeak_sort(0:i_gasiso-1) ;peaks corresponding to isolated gas peaks
-;    over=fluxratio_ipeak_sort(i_gasiso:i_over-1) ;peaks corresponding to overlapping peaks
-;    isostar=fluxratio_ipeak_sort(i_over:i_stariso-1) ;peaks corresponding to isolated stellar peaks
-;    beta_star_new=1.;mean(starflux(peak_res,inclpeaks(over)))/mean(starflux(peak_res,inclpeaks(isostar)))
-;    beta_gas_new=1.;mean(gasflux(peak_res,inclpeaks(over)))/mean(gasflux(peak_res,inclpeaks(isogas)))
-    
-;    isostar=where(gasflux(peak_res,inclstar)/starflux(peak_res,inclstar) lt fluxratio_galaxy/beta_contrast) ;isolated stellar peaks - negative values must be included so use lt
-;    isogas=where(starflux(peak_res,inclgas)/gasflux(peak_res,inclgas) lt 1./fluxratio_galaxy/beta_contrast) ;isolated gas peaks - negative values must be included so use lt & inverse
-;    overstar=where(gasflux(peak_res,inclstar)/starflux(peak_res,inclstar) gt fluxratio_galaxy/beta_contrast) ;overlapping stellar peaks
-;    overgas=where(starflux(peak_res,inclgas)/gasflux(peak_res,inclgas) gt 1./fluxratio_galaxy/beta_contrast) ;overlapping gas peaks
-;    beta_star_new=mean(starflux(peak_res,inclstar(overstar)))/mean(starflux(peak_res,inclstar(isostar)))
-;    beta_gas_new=mean(gasflux(peak_res,inclgas(overgas)))/mean(gasflux(peak_res,inclgas(isogas)))
+
     while istop ne 1 do begin ;start fitting loop, adjusting beta_star and beta_gas on the fly based on the sorting of the g/s flux ratio
-;        beta_star=beta_star_new ;set beta_star to latest estimate
-;        beta_gas=beta_gas_new ;set beta_gas to latest estimate
         ;calculate lambda
         maxap_area=!pi*(.5*maxap)^2.
         nneigh=dblarr(nincludepeak)
@@ -1299,31 +1278,6 @@ if calc_fit then begin
         for i=0,nder-1 do print,'         '+derstrings(i)+strtrim(der(3*i))+strtrim(der(3*i+1))+strtrim(der(3*i+2))
         for i=0,naux-1 do print,'         '+auxstrings(i)+strtrim(aux(2*i))+strtrim(aux(2*i+1))
         print,''
-
-;        print,'         np_star   =  '+strtrim(nincludepeak_star)
-;        print,'         np_gas    =  '+strtrim(nincludepeak_gas)
-;        print,'         beta_star =  '+strtrim(double(beta_star))
-;        print,'         beta_gas  =  '+strtrim(double(beta_gas))
-;        print,'         lambda  =  '+strtrim(lambda)+' pc'
-;        print,'                     +'+strtrim(lambda_errmax)+' pc'
-;        print,'                     -'+strtrim(lambda_errmin)+' pc'
-;        print,'         tstar     =  '+strtrim(double(tstar))+' Myr'
-;        print,'                     +'+strtrim(tstar_errmax)+' Myr'
-;        print,'                     -'+strtrim(tstar_errmin)+' Myr'
-;        print,'         tgas      =  '+strtrim(tgas)+' Myr'
-;        print,'                     +'+strtrim(tgas_errmax)+' Myr'
-;        print,'                     -'+strtrim(tgas_errmin)+' Myr'
-;        print,'         tover     =  '+strtrim(tover)+' Myr'
-;        print,'                     +'+strtrim(tover_errmax)+' Myr'
-;        print,'                     -'+strtrim(tover_errmin)+' Myr'
-;        print,'         rchi2     =  '+strtrim(redchi2)
-;        print,'          ',f_string(float(nincludepeak_star),0),'     ',f_string(float(nincludepeak_gas),0), $
-;              '     ',res(peak_res),'     ',f_string(float(lambda),0),'     ',f_string(float(lambda_errmax),0),'     ',f_string(float(lambda_errmin),0), $
-;              '     ',f_string(float(tgas),2),'     ',f_string(float(tgas_errmax),2),'     ',f_string(float(tgas_errmin),2), $
-;              '     ',f_string(float(tover),2),'     ',f_string(float(tover_errmax),2),'     ',f_string(float(tover_errmin),2), $
-;              '     ',f_string(float(tstar),2),'     ',f_string(float(beta_star),2),'     ',f_string(float(beta_gas),2),'     ',f_string(float(redchi2),2), $
-;              '     ',f_string(float(logrange_s),2),'     ',f_string(float(logspacing_s),2),'     ',f_string(float(logrange_g),2),'     ',f_string(float(logspacing_g),2), $
-;              '     ',f_string(float(tstariso),2),'     ',f_string(float(peakmeanradius),2),'     ',f_string(float(minradius),0),'     ',f_string(float(maxradius),0),'     '+galaxy
               
         it+=1
         if it ge nit then begin
