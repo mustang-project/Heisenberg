@@ -1,0 +1,21 @@
+;-----------------------------------------------------------------------------
+; CLFIND2d.CB
+;-----------------------------------------------------------------------------
+common clfind_block1,     infile,levs,nlevels,ncl,clump_peak
+common clfind_block2,     data,assign,nx,ny,bx,by
+
+; --- block1 ---
+; file          : filename of dataset
+; nlevels       : number of contour levels
+; ncl           : total number of clumps
+; clump_peak    : peak positions of each clump
+
+; --- block2 ---
+; data          : data cube of temperatures
+; assign        : clump assignment cube
+; nx            : # pixels in x-direction
+; ny            : # pixels in y-direction
+; bx            : beam radius in pixels in x-direction
+; by            : beam radius in pixels in y-direction
+
+;-----------------------------------------------------------------------------
