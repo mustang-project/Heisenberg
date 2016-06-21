@@ -92,8 +92,8 @@ free_lun,lun ;make the logical unit available again
 
 expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','cut_sample','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
-expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','calc_app_area'] ;variable names of expected flags (3)
-expected_flags4=['tophat','loglevels','flux_weight','cut_style','tstar_incl','peak_prof','map_units'] ;variable names of expected flags (4)
+expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks'] ;variable names of expected flags (3)
+expected_flags4=['tophat','loglevels','flux_weight','calc_ap_area','cut_style','tstar_incl','peak_prof','map_units'] ;variable names of expected flags (4)
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
@@ -631,7 +631,7 @@ if calc_ap_flux then begin
             starflux(i,j)=smoothstar(i,kx,ky) ;flux of SF tracer at given peak position and aperture size
             if use_star3 then starflux3(i,j)=smoothstar3(i,kx,ky) ;flux of second SF tracer at given peak position and aperture size
             gasflux(i,j)=smoothgas(i,kx,ky) ;flux of gas tracer at given peak position and aperture size
-            if calc_app_area then begin
+            if calc_ap_area then begin
                 aperturearea_frac[i,j]=smoothmask[i,kx,ky] ;area of aperture at given peak position and aperture size
             endif
         endfor
@@ -950,7 +950,7 @@ if calc_fit then begin
                 progress,'     ==> Monte-Carlo sampling peak maps to get uncorrelated peak samples',j+i*nmc,nmc*naperture-1
             endfor
             ;APERTURE AREAS
-            if calc_app_area then begin ;calculate aperture area
+            if calc_ap_area then begin ;calculate aperture area
                 apertures_star[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclstar])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
                 apertures_gas[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclgas])) ;mean aperture size centred on gas peaks for ith target aperture size (order of sqrt(mean) is intentional)
             endif else begin ;use the area of user-defined aperture areas
