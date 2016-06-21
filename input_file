@@ -1,0 +1,129 @@
+################################################################################
+#                                                                              #
+#                  FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                  #
+#  start environment with >> idl kl14 -arg [full/absolute path of input file]  #
+#                                                                              #
+#                             BEGIN PARAMETER FILE                             #
+#                                                                              #
+################################################################################
+
+
+# FILE NAMES
+datadir         /full/path/of/directory/where/fits/files/are/stored/                    # Full path of data directory
+galaxy          string_identifying_galaxy_in_ouput_filenames                            # Name of data set
+starfile        this_is_a_SF_map.fits                                                   # Name of primary stellar map
+starfile2       -                                                                       # Name of secondary stellar map (specifically for peak identification - only used if use_star2=1)
+gasfile         this_is_a_gas_map.fits                                                  # Name of primary gas map
+gasfile2        -                                                                       # Name of secondary gas map (specifically for peak identification - only used if use_gas2=1)
+starfile3       -                                                                       # Name of additional stellar map (only used if use_star3=1)
+# MASK FILE NAMES
+maskdir             /full/path/of/directory/where/region/files/are/stored/              # Full path of mask directory
+star_ext_mask       masks_external_pixels_for_SF.reg  # Region file for masking areas in starfile exterior to closed shapes (only used if mask_star=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+star_int_mask       masks_internal_pixels_for_SF.reg  # Region file for masking areas in starfile interior to closed shapes (only used if mask_star=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+gas_ext_mask        masks_external_pixels_for_gas.reg # Region file for masking areas in gasfile exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+gas_int_mask        masks_internal_pixels_for_gas.reg # Region file for masking areas in gasfile interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+star_ext_mask2      -                                 # Region file for masking areas in starfile2 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+star_int_mask2      -                                 # Region file for masking areas in starfile2 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+gas_ext_mask2       -                                 # Region file for masking areas in gasfile2 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+gas_int_mask2       -                                 # Region file for masking areas in gasfile2 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+star_ext_mask3      -                                 # Region file for masking areas in starfile3 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+star_int_mask3      -                                 # Region file for masking areas in starfile3 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+
+
+# FLAGS 1 (module switches)
+mask_images     1         # Mask images (on/off)
+regrid          1         # Read and regrid original files and synchronise masks across all used images, i.e. pixels masked in one image will be masked in all images (on/off)
+smoothen        1         # Create smoothened maps for each aperture size (on/off)
+sensitivity     1         # Fit Gaussians to pixel intensity PDFs to determine sensitivity limits (on/off)
+id_peaks        1         # Identify peaks and save their locations (on/off)
+calc_ap_flux    1         # Calculate the enclosed flux for each peak and aperture size (on/off)
+cut_sample      1         # Cut peak sample to predefined conditions (on/off; e.g. avoid peaks near edges, or only allow certain flux ratios)
+generate_plot   1         # Generate output plots and save to PostScript files (on/off)
+get_distances   1         # Calculate distances between all peak pairs (on/off)
+calc_fit        1         # Iteratively: Monte-Carlo sample peaks, get observed tuning fork, fit KL14 principle model (on/off)
+cleanup         2         # [0] Keep auxiliary files to allow any of the above flags to be set to 0 for future runs; [1, DEFAULT] Delete auxiliary files after confirmation prompt; [2] WARNING: Automatically delete auxiliary files
+autoexit        0         # Exit IDL automatically upon successful run completion (on/off)
+# FLAGS 2 (use ancillary files)
+use_star2       0         # Use different map for identifying stellar peaks and use the original for performing the flux calculation (on/off)
+use_gas2        0         # Use different map for identifying gas peaks and use the original for performing the flux calculation (on/off)
+use_star3       0         # Use an additional stellar tracer map to mask pixels based on their flux ratios (on/off; e.g. Hα/FUV)
+# FLAGS 3 (masking-related options)
+mstar_ext       1         # Mask areas in starfile exterior to regions described in star_ext_mask (on/off)
+mstar_int       1         # Mask areas in starfile interior to regions described in star_int_mask (on/off)
+mgas_ext        1         # Mask areas in gasfile exterior to regions described in gas_ext_mask (on/off)
+mgas_int        1         # Mask areas in gasfile interior to regions described in gas_int_mask (on/off)
+mstar_ext2      0         # Mask areas in starfile2 exterior to regions described in star_ext_mask2 (on/off)
+mstar_int2      0         # Mask areas in starfile2 interior to regions described in star_int_mask2 (on/off)
+mgas_ext2       0         # Mask areas in gasfile2 exterior to regions described in gas_ext_mask2 (on/off)
+mgas_int2       0         # Mask areas in gasfile2 interior to regions described in gas_int_mask2 (on/off)
+mstar_ext3      0         # Mask areas in starfile3 exterior to regions described in star_ext_mask3 (on/off)
+mstar_int3      0         # Mask areas in starfile3 interior to regions described in star_int_mask3 (on/off)
+convert_masks   0         # Convert masks from other ds9 region co-ordinate systems to image co-ordinates (requires command line version of ds9) (on/off)
+# FLAGS 4 (choose analysis options)
+tophat          1         # [0] Use Gaussian kernel to smoothen maps to larger aperture sizes; [1, DEFAULT] Use tophat kernel to smoothen maps to larger aperture sizes
+loglevels       1         # [0] Linear equal-spacing of peak identification contour levels; [1, DEFAULT] Logarithmic equal-spacing of peak identification contour levels
+flux_weight     0         # [0, DEFAULT] Peak positions correspond to brightest pixel in peak area; [1] Peak positions correspond to flux-weighted mean position of peak area
+calc_ap_area    1         # Calculate the area of apertures used based on number of unmasked pixels within the target aperture defined under INPUT PARAMETERS 2 (apertures) (on/off)
+cut_style       0         # [0] Cut peak sample without keeping some distance to the map edge; [1, DEFAULT] Cut peak sample to avoid peaks within a distance max(lap/2) of the map edge
+tstar_incl      0         # [0, DEFAULT] Reference time-scale tstariso does not include the overlap phase (tstar=tstariso+tover); [1] tstariso includes the overlap phase (tstar=tstariso)
+peak_prof       2         # [0] Model independent regions as points; [1] Model independent regions as constant-surface density discs; [2, DEFAULT] Model independent regions as two-dimensional Gaussians
+map_units       1         # [0] Unknown, do not calculate derived quantities; [1, DEFAULT] star=SFR and gas=gas; [2] star=gas1 and gas=gas2; [3] star=SFR1 and gas=SFR2
+
+
+# INPUT PARAMETERS 1 (basic map analysis)
+distance        840000.   # Distance to galaxy in pc
+inclination     0.        # Inclination angle in degrees
+posangle        0.        # Position angle in degrees
+minradius       0.        # Minimum radius for analysis in pc
+maxradius       10000.    # Minimum radius for analysis in pc
+Fs1_Fs2_min     15.       # Minimum primary-to-secondary star formation tracer flux ratio for including pixels (only if use_star3=1)
+nbins           20        # Number of bins used during sensitivity limit calculation to sample the intensity PDFs and fit Gaussians
+# INPUT PARAMETERS 2 (apertures)
+lapmin          25.       # Minimum aperture size (i.e. diameter) in pc to create smoothened maps for
+lapmax          6400.     # Maximum aperture size (i.e. diameter) in pc to create smoothened maps for
+naperture       9         # Number of aperture sizes
+peak_res        2         # Minimum aperture size used in fitting the KL14 principle model, also index of aperture size at which peaks are identified (start counting at 0) - is set to map resolution if originally chosen to be smaller
+max_res         8         # Maximum aperture size used in fitting the KL14 principle model, also index of aperture size at which fluxes best reflect galactic averages (start counting at 0)
+# INPUT PARAMETERS 3 (peak identification)
+npixmin         20        # Minimum number of pixels for a valid peak (use npixmin=1 to allow points)
+nsigma          5         # Multiple of the sensitivity limit needed for a valid peak
+logrange_s      2.5       # Logarithmic range covered by flux contour levels for stellar peak identification, counting down from stellar flux maximum
+logspacing_s    0.25      # Logarithmic interval between flux contour levels for stellar peak identification
+logrange_g      0.7       # Logarithmic range covered by flux contour levels for gas peak identification, counting down from gas flux maximum
+logspacing_g    0.1       # Logarithmic interval between flux contour levels for gas peak identification
+nlinlevel_s     11        # Number of flux contour levels for stellar peak identification between zero and stellar flux maximum (only if loglevels=0)
+nlinlevel_g     11        # Number of flux contour levels for gas peak identification between zero and gas flux maximum (only if loglevels=0)
+# INPUT PARAMETERS 4 (timeline)
+tstariso        1.        # Reference time-scale spanned by star formation tracer in Myr
+tstariso_errmin 0.        # Downward standard error of the reference time-scale in Myr
+tstariso_errmax 0.        # Upward standard error of the reference time-scale in Myr
+tgasmini        0.1       # Minimum value of tgas considered during fitting process in Myr
+tgasmaxi        5000.     # Maximum value of tgas considered during fitting process in Myr
+tovermini       0.01      # Minimum value of tover considered during fitting process in Myr
+fstarover       0.1       # Fraction of stellar phase initially assumed to be associated with gas emission
+fgasover        0.1       # Fraction of gas phase initially assumed to be associated with stellar emission
+# INPUT PARAMETERS 5 (fitting)
+nit             10        # Maximum number of iterations carried out by fitting process
+nmc             100       # Number of Monte-Carlo peak drawing experiments to be executed and averaged over during fitting process
+ndepth          4         # Maximum number of free parameter array refinement loops for obtaining best-fitting value
+ntry            81        # Size of each free parameter array to obtain the best-fitting value
+nphysmc         10000     # Number of Monte-Carlo experiments for error propagation of derived physical quantities
+# INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities)
+convstar       -3.69206   # Log of multiplication factor to convert the pixel value in starfile to a SFR in Msun/yr (if maptypes=1 or maptypes=3) or to a gas mass in Msun (if maptypes=2)
+convstar_rerr   0.        # Relative error (sigma_x/x) of convstar
+convgas         2.30794   # Log of multiplication factor to convert the pixel value in gasfile to a gas mass in Msun (if maptypes=1 or maptypes=2) or to a SFR in Msun/yr (if maptypes=3)
+convgas_rerr    0.        # Relative error (sigma_x/x) of convgas
+convstar3       0.        # Log of multiplication factor to convert the pixel value in starfile3 to a SFR in Msun/yr
+convstar3_rerr  0.        # Relative error (sigma_x/x) of convstar3
+lighttomass     0.3       # Bolometric light-to-mass ratio of a young stellar population in m^2 s^-3 (standard is 0.3, corresponding to 3000 cm^2 s^-3 in cgs and 1500 Lsun/Msun)
+photontrap      0.2       # Photon trapping fraction of radiative feedback
+kappa0         -4.61979   # Log of the Rosseland-mean opacity proportionality constant
+
+
+################################################
+#                                              #
+#              END PARAMETER FILE              #
+#                                              #
+################################################
+
+
