@@ -40,7 +40,14 @@ runname=file_basename(inputfile)+'_run' ;main run directory name
 rundir=inputdir+runname+path_sep() ;main run directory full path
 dummy=file_search(rundir,count=ct) ;check if rundir exists
 if ct eq 0 then spawn,'mkdir '+rundir ;if not, create it
-if ct ne 0 then print,' WARNING: run directory already exists, some or all files may be overwritten'
+
+if ct ne 0 then begin
+  read,' WARNING: run directory already exists, some files may be overwritten: type 1 to proceed: ',proceed
+  if proceed ne '1' then begin
+    print,'EXIT'
+    stop
+  endif
+endif
 
 griddir=rundir+'regrid'+path_sep() ;directory for saving regridded maps
 dummy=file_search(griddir,count=ct) ;check if griddir exists
