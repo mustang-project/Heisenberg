@@ -46,7 +46,7 @@
 .com smoothfits
 .com peaks2d
 .com cutarea
-.com fitKL14
+.com fitkl14
 .com derivephys
 .com plotfits
 .com plotfits_files
