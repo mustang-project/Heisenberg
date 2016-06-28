@@ -64,7 +64,7 @@ tophat          1         # [0] Use Gaussian kernel to smoothen maps to larger a
 loglevels       1         # [0] Linear equal-spacing of peak identification contour levels; [1, DEFAULT] Logarithmic equal-spacing of peak identification contour levels
 flux_weight     0         # [0, DEFAULT] Peak positions correspond to brightest pixel in peak area; [1] Peak positions correspond to flux-weighted mean position of peak area
 calc_ap_area    1         # Calculate the area of apertures used based on number of unmasked pixels within the target aperture defined under INPUT PARAMETERS 2 (apertures) (on/off)
-cut_style       0         # [0] Cut peak sample without keeping some distance to the map edge; [1, DEFAULT] Cut peak sample to avoid peaks within a distance max(lap/2) of the map edge
+cut_style       0         # [0, DEFAULT] Cut peak sample without keeping some distance to the map edge; [1] Cut peak sample to avoid peaks within a distance max(lap/2) of the map edge
 tstar_incl      0         # [0, DEFAULT] Reference time-scale tstariso does not include the overlap phase (tstar=tstariso+tover); [1] tstariso includes the overlap phase (tstar=tstariso)
 peak_prof       2         # [0] Model independent regions as points; [1] Model independent regions as constant-surface density discs; [2, DEFAULT] Model independent regions as two-dimensional Gaussians
 map_units       1         # [0] Unknown, do not calculate derived quantities; [1, DEFAULT] star=SFR and gas=gas; [2] star=gas1 and gas=gas2; [3] star=SFR1 and gas=SFR2
@@ -118,7 +118,8 @@ convstar3_rerr  0.        # Relative error (sigma_x/x) of convstar3
 lighttomass     0.3       # Bolometric light-to-mass ratio of a young stellar population in m^2 s^-3 (standard is 0.3, corresponding to 3000 cm^2 s^-3 in cgs and 1500 Lsun/Msun)
 photontrap      0.2       # Photon trapping fraction of radiative feedback
 kappa0         -4.61979   # Log of the Rosseland-mean opacity proportionality constant
-
+# MISC
+X11             0        # 1 allowed to create windows, 0 not allowed to create windows
 
 ################################################
 #                                              #

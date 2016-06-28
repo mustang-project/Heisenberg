@@ -103,7 +103,8 @@ expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','l
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini','fstarover','fgasover'] ;variable names of expected input parameters (4)
 expected_params5=['nit','nmc','ndepth','ntry','nphysmc'] ;variable names of expected input parameters (5)
 expected_params6=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','photontrap','kappa0'] ;variable names of expected input parameters (6)
-expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6] ;variable names of expected input parameters (all)
+expected_misc=['X11'] ;variable names of expected input parameters misc
+expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6, expected_misc] ;variable names of expected input parameters (all)
 expected_vars=[expected_flags,expected_filenames,expected_masknames,expected_params] ;names of all expected variables
 nvars=n_elements(expected_vars) ;number of expected variables
 for i=0,nvars-1 do begin ;verify input reading
@@ -113,6 +114,17 @@ for i=0,nvars-1 do begin ;verify input reading
         stop
     endif
 endfor
+
+window_plot='z' ; prevents window creation
+if X11 then begin
+    window_plot='x'
+    device,retain=2
+    ; set color                                
+    device,true_color=24
+    device,decomposed=0
+    window,xsize=600,ysize=840,title='IDL graphics',colors=100
+    loadct,12
+endif
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -547,7 +559,9 @@ if sensitivity then begin
     use=where(abs(sensstarlist) le (1.+(min(sensstarlist) gt 0.))*abs(min(sensstarlist))) ;!!THIS IS A BUG WHEN THE SMALLEST VALUE IS ZERO (AND MAYBE POSITIVE DOESN'T WORK VERY WELL TOO) -- ALSO CHECK BELOW
     disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
     binwidth=disp/nbins
+    set_plot,window_plot
     histoplot,sensstarlist(use),histdata=hist,locations=bins,binsize=binwidth
+    set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offstar=vars(1)
@@ -560,7 +574,9 @@ if sensitivity then begin
         use=where(abs(sensstarlist3) le (1.+(min(sensstarlist3) gt 0.))*abs(min(sensstarlist3)))
         disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
         binwidth=disp/nbins
+        set_plot,window_plot
         histoplot,sensstarlist3(use),histdata=hist,locations=bins,binsize=binwidth
+        set_plot,'x'
         binmid=bins+0.5*binwidth
         fit=gaussfit(binmid,hist,vars,nterms=3)
         offstar3=vars(1)
@@ -573,7 +589,9 @@ if sensitivity then begin
     use=where(abs(sensgaslist) le (1.+(min(sensgaslist) gt 0.))*abs(min(sensgaslist)))
     disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
     binwidth=disp/nbins
+    set_plot,window_plot
     histoplot,sensgaslist(use),histdata=hist,locations=bins,binsize=binwidth
+    set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offgas=vars(1)
@@ -1067,7 +1085,7 @@ if calc_fit then begin
 
         fit=fitKL14(fluxratio_star[fitap]/fluxratio_galaxy,fluxratio_gas[fitap]/fluxratio_galaxy, $
                     err_star_log[fitap],err_gas_log[fitap],tstariso,beta_star,beta_gas,apertures_star[fitap],apertures_gas[fitap], $
-                    surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar[fitap],nfitgas[fitap],ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir)
+                    surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar[fitap],nfitgas[fitap],ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir, window_plot)
         tgas=fit(1)
         tgas_errmin=sqrt(fit(2)^2.+(tgas*tstariso_rerrmin)^2.)
         tgas_errmax=sqrt(fit(3)^2.+(tgas*tstariso_rerrmax)^2.)
