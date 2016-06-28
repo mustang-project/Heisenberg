@@ -167,7 +167,11 @@ if mask_images then begin
             , image_masked = starmap $ ;overwrite original image array with masked one
             , header_output = starmaphdr $
             , convert = convert_masks
-    endif
+    endif else begin
+        starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
+        starmaphdr=hdr ;header of Halpha map
+        writefits, maskeddir + starfile, starmap, starmaphdr
+    endelse
 endif else begin ;else just read in file.
     starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
     starmaphdr=hdr ;header of Halpha map
@@ -183,14 +187,14 @@ if use_star2 then begin
                 , ds9_positive_path = maskdir + path_sep() + star_ext_mask2, ds9_negative_path = maskdir + path_sep() + star_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
                 , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
                 , image_masked = starmap2 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr2 $ 
+                , header_output = starmaphdr2 $
                 , convert = convert_masks
         endif else if mstar_ext2 then begin
             mask_tool, starfiletot2 $ ;image variables
                 , ds9_positive_path = maskdir + path_sep() + star_ext_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
                 , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
                 , image_masked = starmap $ ;overwrite original image array with masked one
-                , header_output = starmaphdr $ 
+                , header_output = starmaphdr $
                 , convert = convert_masks
         endif else if mstar_int2 then begin
             mask_tool, starfiletot2 $ ;image variables
@@ -199,7 +203,11 @@ if use_star2 then begin
                 , image_masked = starmap2 $ ;overwrite original image array with masked one
                 , header_output = starmaphdr2 $
                 , convert = convert_masks
-        endif
+        endif else begin
+            starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
+            starmaphdr2=hdr ;header of Halpha peak map
+            writefits, maskeddir + starfile2, starmap2, starmaphdr2
+        endelse
     endif else begin ;else just read in file.
         starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
         starmaphdr2=hdr ;header of Halpha peak map
@@ -219,14 +227,14 @@ if use_star3 then begin
                 , ds9_positive_path = maskdir + path_sep() + star_ext_mask3, ds9_negative_path = maskdir + path_sep() + star_int_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
                 , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
                 , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $ 
+                , header_output = starmaphdr3 $
                 , convert = convert_masks
         endif else if mstar_ext3 then begin
             mask_tool, starfiletot3 $ ;image variables
                 , ds9_positive_path = maskdir + path_sep() + star_ext_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
                 , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
                 , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $ 
+                , header_output = starmaphdr3 $
                 , convert = convert_masks
         endif else if mstar_int3 then begin
             mask_tool, starfiletot3 $ ;image variables
@@ -235,7 +243,11 @@ if use_star3 then begin
                 , image_masked = starmap3 $ ;overwrite original image array with masked one
                 , header_output = starmaphdr3 $
                 , convert = convert_masks
-        endif
+        endif else begin
+            starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
+            starmaphdr3=hdr ;header of FUV map
+            writefits, maskeddir + starfile3, starmap3, starmaphdr3
+        endelse
     endif else begin ;else just read in file.
         starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
         starmaphdr3=hdr ;header of FUV map
@@ -250,14 +262,14 @@ if mask_images then begin
             , ds9_positive_path = maskdir + path_sep() + gas_ext_mask, ds9_negative_path = maskdir + path_sep() + gas_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
             , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
             , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $ 
+            , header_output = gasmaphdr $
             , convert = convert_masks
     endif else if mgas_ext then begin
         mask_tool, gasfiletot $ ;image variables
             , ds9_positive_path = maskdir + path_sep() + gas_ext_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
             , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
             , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $ 
+            , header_output = gasmaphdr $
             , convert = convert_masks
     endif else if mgas_int then begin
         mask_tool, gasfiletot $ ;image variables
@@ -266,7 +278,11 @@ if mask_images then begin
             , image_masked = gasmap $ ;overwrite original image array with masked one
             , header_output = gasmaphdr $
             , convert = convert_masks
-    endif
+    endif else begin
+        gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
+        gasmaphdr=hdr ;moment zero CO header
+        writefits, maskeddir + gasfile, gasmap, gasmaphdr
+    endelse
 endif else begin ;else just read in file.
     gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
     gasmaphdr=hdr ;moment zero CO header
@@ -282,23 +298,27 @@ if use_gas2 then begin
                 , ds9_positive_path = maskdir + path_sep() + gas_ext_mask, ds9_negative_path = maskdir + path_sep() + gas_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
                 , masked_image_path = maskeddir + gasfile2 $ ;path to write masked image to
                 , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $ 
+                , header_output = gasmaphdr2 $
                 , convert = convert_masks
         endif else if mgas_ext then begin
             mask_tool, gasfiletot2 $ ;image variables
                 , ds9_positive_path = maskdir + path_sep() + gas_ext_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
+                , masked_image_path = maskeddir + gasfile2 $ ;path to write masked image to
                 , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $ 
+                , header_output = gasmaphdr2 $
                 , convert = convert_masks
         endif else if mgas_int then begin
             mask_tool, gasfiletot2 $ ;image variables
                 , ds9_negative_path = maskdir + path_sep() + gas_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
+                , masked_image_path = maskeddir + gasfile2 $ ;path to write masked image to
                 , image_masked = gasmap2 $ ;overwrite original image array with masked one
                 , header_output = gasmaphdr2 $
                 , convert = convert_masks
-        endif
+        endif else begin
+            gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
+            gasmaphdr2=hdr ;moment zero CO peak header
+            writefits, maskeddir + gasfile2, gasmap2, gasmaphdr2
+        endelse
     endif else begin ;else just read in file.
         gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
         gasmaphdr2=hdr ;moment zero CO peak header
@@ -409,14 +429,14 @@ if regrid then begin
     masksimple = 1 ; propogate masks using simple pixel by pixel comparison
     if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
         if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
-        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0    
+        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
         if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
     endif else masksimple = 0
-  
+
     if masksimple then begin ;create array of total mask
         mask_arr = starmap ;create array to hold masked pixels
         mask_arr[*] = 1.0 ;1.0 = not masked (i.e. allowed through)
-    
+
         nan_list = where(finite(starmap, /nan), nancount) ;find masked pixels in starmap
         if nancount gt 0 then mask_arr[nan_list] = 0.0
         nan_list = where(finite(gasmap, /nan), nancount)  ;find masked pixels in gasmap
@@ -452,7 +472,7 @@ if regrid then begin
             if nancount gt 0 then starmap3[nan_list] = !values.f_nan
             writefits, starfiletot3, starmap3, starmaphdr3 ;write out masked starmap
         endif
-    
+
         ;write out mask file
         maskfile = 'totalmask.fits' ;filename for the mask
         maskfiletot = maskeddir + maskfile
@@ -497,7 +517,7 @@ endif else begin
     peakidgas=readfits(peakdir+gasfile2,hdr,/silent)
     smoothstar=dblarr([naperture,size(peakidstar,/dimensions)]) ;create Ha map array for different resolutions
     if use_star3 then smoothstar3=dblarr([naperture,size(peakidstar,/dimensions)]) ;create FUV map array for different resolutions
-    smoothgas=dblarr([naperture,size(peakidstar,/dimensions)]) ;create gas map array for different resolutions    
+    smoothgas=dblarr([naperture,size(peakidstar,/dimensions)]) ;create gas map array for different resolutions
     for i=0,naperture-1 do begin ;read smoothened maps
         ;check if target directory exists
         dir=rundir+'res_'+res(i)+'pc'+path_sep()
@@ -604,7 +624,7 @@ if id_peaks then begin
     gaspeaks(*,3)=gaspeaks(sortpeaks,3)
     igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas)) ;last peak with intensity larger than the sensitivity limit
     gaspeaks=gaspeaks(0:igasmax,*) ;reject gas peaks with gas flux lower than sensitivity limit
-    
+
     peaks=[starpeaks,gaspeaks]
 endif
 
@@ -732,7 +752,7 @@ if generate_plot then begin
     oplot,ring2x,ring2y
     contour,incl1,/overplot,levels=[.5,2.],color=fsc_color('green')
     device,/close
-    
+
     if use_star3 then begin
         device,filename=figdir+'map_star3.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8
         rtar=1.25
@@ -798,7 +818,7 @@ if calc_fit then begin
         endfor
         area=nincludepeak*maxap_area;total(incl1)*pixtopc^2. ;total area covered by map overlap in pc^2 !!IS THIS CORRECTED FOR INCLINATION?
 ;        lambda_map=2.*sqrt(area/(0.5*total(nneigh))/!pi)*pixtopc ;0.5*nneigh to correct for counting them twice
-        
+
         totgas_star=dblarr(naperture,nmc) ;total gas flux in apertures centered on SF peaks
         totstar_star=dblarr(naperture,nmc) ;total SF flux in apertures centered on SF peaks
         totgas_gas=dblarr(naperture,nmc) ;total gas flux in apertures centered on gas peaks
@@ -863,7 +883,7 @@ if calc_fit then begin
                 for k=1,nincludepeak_star-1 do begin ;start looping over other stellar peaks
                     candidate=floor(rnd_star(k)*(nincludepeak_star-k)) ;randomly-drawn, new candidate stellar peak
                     usedstar=reform(usestar(j,0:nusestar(i,j)-1)) ;other stellar peaks used so far
-                    distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))] 
+                    distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))]
                                                 ;distances between candidate and used peaks
                     distances_candidate_usestar=distances_candidate_usestar(where(distances_candidate_usestar gt 0.)) ;remove zeroes
                     mindist=min(distances_candidate_usestar) ;smallest distance between candidate and any of the used peaks
@@ -1061,7 +1081,7 @@ if calc_fit then begin
         ttotal=tgas+tstar-tover
         redchi2_old=redchi2
         redchi2=fit(0)
-        
+
         if peak_prof le 1 then begin
             rpeaks=0.5*lambda*sqrt(ttotal/(surfcontrasts*tstar)) ; ~lambda*((tgas/tstariso+1)/(tover/tstariso+1))^.5 (if tstar_incl=0) or ~lambda*((tgas/tstariso-tover/tstariso+1)^.5 (if tstar_incl=1)
             rpeakg=0.5*lambda*sqrt(ttotal/(surfcontrastg*tgas)) ; ~lambda*(1+tstariso/tgas)^.5 (if tstar_incl=0) or ~lambda*((tstariso/tgas-tover/tgas+1)^.5 (if tstar_incl=1)
@@ -1069,7 +1089,7 @@ if calc_fit then begin
         if peak_prof eq 2 then begin
             rpeaks=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrasts*tstar))
             rpeakg=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrastg*tgas))
-        endif        
+        endif
         if tstar_incl eq 0 then terrs=0. else terrs=0.
         if tstar_incl eq 0 then terrg=0. else terrg=0.
 
@@ -1104,7 +1124,7 @@ if calc_fit then begin
         der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
                            tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir)
         aux=[nincludepeak_star,nincludepeak_gas,beta_star,beta_gas]
-        
+
         ;write table output row and output file
         fitqty=['redchi2', $
                 'tgas','tgas_errmin','tgas_errmax', $
@@ -1230,7 +1250,7 @@ if calc_fit then begin
         printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5))',alog10([fit,ext,der,aux]+tiny)
         close,lun
         free_lun,lun
-        
+
         varlen=20
         unitlen=40
         openw,lun,outputdir+galaxy+'output.dat',/get_lun
@@ -1268,7 +1288,7 @@ if calc_fit then begin
         printf,lun,'########################################################################################################################'
         close,lun ;close the logical unit
         free_lun,lun ;make the logical unit available again
-                
+
         print,''
         print,'         Galaxy: '+galaxy
         print,'         iteration: '+strtrim(it+1)
@@ -1278,7 +1298,7 @@ if calc_fit then begin
         for i=0,nder-1 do print,'         '+derstrings(i)+strtrim(der(3*i))+strtrim(der(3*i+1))+strtrim(der(3*i+2))
         for i=0,naux-1 do print,'         '+auxstrings(i)+strtrim(aux(2*i))+strtrim(aux(2*i+1))
         print,''
-              
+
         it+=1
         if it ge nit then begin
             print,''
@@ -1372,5 +1392,3 @@ end
 ;             END MAIN ROUTINE tuningfork.pro            ;
 ;                                                        ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
