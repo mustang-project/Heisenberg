@@ -93,7 +93,7 @@ free_lun,lun ;make the logical unit available again
 expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','cut_sample','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
 expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks'] ;variable names of expected flags (3)
-expected_flags4=['tophat','loglevels','flux_weight','calc_ap_area','cut_style','tstar_incl','peak_prof','map_units'] ;variable names of expected flags (4)
+expected_flags4=['tophat','loglevels','flux_weight','calc_ap_area','cut_style','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
@@ -113,6 +113,17 @@ for i=0,nvars-1 do begin ;verify input reading
         stop
     endif
 endfor
+
+window_plot='z' ; prevents window creation
+if X11 then begin
+    window_plot='x'
+    device,retain=2
+    ; set color                                
+    device,true_color=24
+    device,decomposed=0
+    window,xsize=600,ysize=840,title='IDL graphics',colors=100
+    loadct,12
+endif
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -547,7 +558,9 @@ if sensitivity then begin
     use=where(abs(sensstarlist) le (1.+(min(sensstarlist) gt 0.))*abs(min(sensstarlist))) ;!!THIS IS A BUG WHEN THE SMALLEST VALUE IS ZERO (AND MAYBE POSITIVE DOESN'T WORK VERY WELL TOO) -- ALSO CHECK BELOW
     disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
     binwidth=disp/nbins
+    set_plot,window_plot
     histoplot,sensstarlist(use),histdata=hist,locations=bins,binsize=binwidth
+    set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offstar=vars(1)
@@ -560,7 +573,9 @@ if sensitivity then begin
         use=where(abs(sensstarlist3) le (1.+(min(sensstarlist3) gt 0.))*abs(min(sensstarlist3)))
         disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
         binwidth=disp/nbins
+        set_plot,window_plot
         histoplot,sensstarlist3(use),histdata=hist,locations=bins,binsize=binwidth
+        set_plot,'x'
         binmid=bins+0.5*binwidth
         fit=gaussfit(binmid,hist,vars,nterms=3)
         offstar3=vars(1)
@@ -573,7 +588,9 @@ if sensitivity then begin
     use=where(abs(sensgaslist) le (1.+(min(sensgaslist) gt 0.))*abs(min(sensgaslist)))
     disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
     binwidth=disp/nbins
+    set_plot,window_plot
     histoplot,sensgaslist(use),histdata=hist,locations=bins,binsize=binwidth
+    set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offgas=vars(1)
@@ -1067,7 +1084,7 @@ if calc_fit then begin
 
         fit=fitKL14(fluxratio_star[fitap]/fluxratio_galaxy,fluxratio_gas[fitap]/fluxratio_galaxy, $
                     err_star_log[fitap],err_gas_log[fitap],tstariso,beta_star,beta_gas,apertures_star[fitap],apertures_gas[fitap], $
-                    surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar[fitap],nfitgas[fitap],ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir)
+                    surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar[fitap],nfitgas[fitap],ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir, window_plot)
         tgas=fit(1)
         tgas_errmin=sqrt(fit(2)^2.+(tgas*tstariso_rerrmin)^2.)
         tgas_errmax=sqrt(fit(3)^2.+(tgas*tstariso_rerrmax)^2.)

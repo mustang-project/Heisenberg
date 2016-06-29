@@ -171,7 +171,7 @@ function f_plotdistr,array,darray,pdf,value,galaxy,figdir,varstring,symstring,un
 end
 
 function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,beta_star,beta_gas,apertures_star,apertures_gas, $
-                 surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar,nfitgas,ndepth,ntry,galaxy,figdir,genplot,outputdir,arrdir
+                 surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar,nfitgas,ndepth,ntry,galaxy,figdir,genplot,outputdir,arrdir,window_plot
     
     COMMON numbers
     
@@ -486,6 +486,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         xmax=max([apertures_star(napertures-1),apertures_gas(napertures-1)])^2./max([apertures_star(napertures-2),apertures_gas(napertures-2)])
         ymin=min([fluxratio_star(use),1./fluxratio_gas(use)])
         ymax=max([fluxratio_gas(use),1./fluxratio_star(use)])
+        set_plot,window_plot
         plot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1
         oplot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),thick=5
         oplot,apertures_gas,f_fluxratiogas(30.,10.,4.,apertures_gas,226.,1.,surfcontrasts,surfcontrastg,peak_prof),linestyle=1
@@ -499,6 +500,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)-err_star_log)-fluxratio_star,psym=3,/lobar
         oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)+err_gas_log)-fluxratio_gas,psym=3,/hibar
         oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)-err_gas_log)-fluxratio_gas,psym=3,/lobar
+        set_plot,'x'
         if timeloop lt 1. then wait,1.
         
         if genplot eq 1 then begin
