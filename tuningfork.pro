@@ -114,8 +114,7 @@ for i=0,nvars-1 do begin ;verify input reading
     endif
 endfor
 
-window_plot='z' ; prevents window creation
-if X11 then begin
+if use_X11 then begin ;set window properties
     window_plot='x'
     device,retain=2
     ; set color                                
@@ -123,7 +122,7 @@ if X11 then begin
     device,decomposed=0
     window,xsize=600,ysize=840,title='IDL graphics',colors=100
     loadct,12
-endif
+endif else window_plot='z' ;prevents window creation
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -834,7 +833,7 @@ if calc_fit then begin
             nneigh(i)=ninap
         endfor
         area=nincludepeak*maxap_area;total(incl1)*pixtopc^2. ;total area covered by map overlap in pc^2 !!IS THIS CORRECTED FOR INCLINATION?
-;        lambda_map=2.*sqrt(area/(0.5*total(nneigh))/!pi)*pixtopc ;0.5*nneigh to correct for counting them twice
+        lambda_map2=2.*sqrt(area/(0.5*total(nneigh))/!pi)*pixtopc ;0.5*nneigh to correct for counting them twice
 
         totgas_star=dblarr(naperture,nmc) ;total gas flux in apertures centered on SF peaks
         totstar_star=dblarr(naperture,nmc) ;total SF flux in apertures centered on SF peaks
@@ -900,8 +899,7 @@ if calc_fit then begin
                 for k=1,nincludepeak_star-1 do begin ;start looping over other stellar peaks
                     candidate=floor(rnd_star(k)*(nincludepeak_star-k)) ;randomly-drawn, new candidate stellar peak
                     usedstar=reform(usestar(j,0:nusestar(i,j)-1)) ;other stellar peaks used so far
-                    distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))]
-                                                ;distances between candidate and used peaks
+                    distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))] ;distances between candidate and used peaks
                     distances_candidate_usestar=distances_candidate_usestar(where(distances_candidate_usestar gt 0.)) ;remove zeroes
                     mindist=min(distances_candidate_usestar) ;smallest distance between candidate and any of the used peaks
                     if mindist gt apertures(i) then begin ;if at least one aperture size away from all used peaks, then:
@@ -952,8 +950,6 @@ if calc_fit then begin
                     ngasratio=n_elements(gasratio)
                     gas_critcon=gasratio(sortgasratio(fgasover*ngasratio)) ;initial critical difference in contrast with respect to background between gas and stellar emission to call peak isolated gas
                     i_gasiso=where(gas_starcon le gas_critcon*gas_gascon)
-;                    i_stariso=where(gasflux(i,inclstar(usedstar))*!pi*(0.5*apertures(i)*pctopix)^2. le 0.01*(0.25*!pi*apertures(i)^2./totalarea*gasfluxtotal))
-;                    i_gasiso=where(starflux(i,inclgas(usedgas))*!pi*(0.5*apertures(i)*pctopix)^2. le 0.01*(0.25*!pi*apertures(i)^2./totalarea*starfluxtotal))
                     nstariso=n_elements(i_stariso)
                     nusedstar=n_elements(usedstar)
                     ngasiso=n_elements(i_gasiso)
