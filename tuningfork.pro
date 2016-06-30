@@ -834,7 +834,6 @@ if calc_fit then begin
         endfor
         area=nincludepeak*maxap_area;total(incl1)*pixtopc^2. ;total area covered by map overlap in pc^2 !!IS THIS CORRECTED FOR INCLINATION?
         lambda_map2=2.*sqrt(area/(0.5*total(nneigh))/!pi)*pixtopc ;0.5*nneigh to correct for counting them twice
-        stop
 
         totgas_star=dblarr(naperture,nmc) ;total gas flux in apertures centered on SF peaks
         totstar_star=dblarr(naperture,nmc) ;total SF flux in apertures centered on SF peaks
