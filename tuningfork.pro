@@ -229,7 +229,7 @@ beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=
 beamtest=max([beamtest,beamfits])
 
 if use_gas2 then begin
-    gasfiletot2=resdir+gasfile2 ;Halpha peak map
+    gasfiletot2=resdir+gasfile2 ;moment zero CO map (sigma mask for better peak ID)
     if mask_images then begin
         if mgas_ext2 then mgas_ext_path2 = maskdir + path_sep() + gas_ext_mask2
         if mgas_int2 then mgas_int_path2 = maskdir + path_sep() + gas_int_mask2
@@ -1189,19 +1189,19 @@ if calc_fit then begin
         printf,lun,''
         printf,lun,''
         printf,lun,'# FUNDAMENTAL QUANTITIES (obtained directly from the fitting process)'
-        for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
+        for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log10['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
         printf,lun,''
         printf,lun,''
         printf,lun,'# EXTERNAL QUANTITIES (obtained through secondary analysis of the maps)'
-        for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log['+extqty(i)+'/('+extunit(i/3)+')]'
+        for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log10['+extqty(i)+'/('+extunit(i/3)+')]'
         printf,lun,''
         printf,lun,''
         printf,lun,'# DERIVED QUANTITIES (from fundamental and external quantities)'
-        for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log['+derqty(i)+'/('+derunit(i/3)+')]'
+        for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log10['+derqty(i)+'/('+derunit(i/3)+')]'
         printf,lun,''
         printf,lun,''
         printf,lun,'# AUXILIARY QUANTITIES (byproduct of the fitting process)'
-        for i=0,naux*2-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log['+auxqty(i)+'/('+auxunit(i/2)+')]'
+        for i=0,naux*2-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]'
         printf,lun,''
         printf,lun,''
         printf,lun,'########################################################################################################################'
