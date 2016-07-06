@@ -117,7 +117,7 @@ endfor
 if use_X11 then begin ;set window properties
     window_plot='x'
     device,retain=2
-    ; set color                                
+    ; set color
     device,true_color=24
     device,decomposed=0
     window,xsize=600,ysize=840,title='IDL graphics',colors=100
@@ -156,74 +156,37 @@ if regrid then resdir=datadir else resdir=griddir
 print,' ==> reading maps from '+resdir
 starfiletot=resdir+starfile ;Halpha map (total)
 if mask_images then begin
-    if mstar_ext && mstar_int then begin
-        mask_tool, starfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + star_ext_mask, ds9_negative_path = maskdir + path_sep() + star_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + starfile $ ;path to write masked image to
-            , image_masked = starmap $ ;overwrite original image array with masked one
-            , header_output = starmaphdr $
-            , convert = convert_masks
-    endif else if mstar_ext then begin
-        mask_tool, starfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + star_ext_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + starfile $ ;path to write masked image to
-            , image_masked = starmap $ ;overwrite original image array with masked one
-            , header_output = starmaphdr $
-            , convert = convert_masks
-    endif else if mstar_int then begin
-        mask_tool, starfiletot $ ;image variables
-            , ds9_negative_path = maskdir + path_sep() + star_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + starfile $ ;path to write masked image to
-            , image_masked = starmap $ ;overwrite original image array with masked one
-            , header_output = starmaphdr $
-            , convert = convert_masks
-    endif else begin
-        starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
-        starmaphdr=hdr ;header of Halpha map
-        writefits, maskeddir + starfile, starmap, starmaphdr
-    endelse
-endif else begin ;else just read in file.
-    starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
-    starmaphdr=hdr ;header of Halpha map
-endelse
+    if mstar_ext then mstar_ext_path = maskdir + path_sep() + star_ext_mask
+    if mstar_int then mstar_int_path = maskdir + path_sep() + star_int_mask
+    masked_path_star = maskeddir + starfile
+endif
+mask_tool, starfiletot $ ;image variables
+    , ds9_positive_path = mstar_ext_path, ds9_negative_path = mstar_int_path $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+    , masked_image_path = masked_path_star $ ;path to write masked image to
+    , image_masked = starmap $ ;overwrite original image array with masked one
+    , header_output = starmaphdr $
+    , convert = convert_masks, /run_without_masks
+
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
 if use_star2 then begin
     starfiletot2=resdir+starfile2 ;Halpha peak map
     if mask_images then begin
-        if mstar_ext2 && mstar_int2 then begin
-            mask_tool, starfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask2, ds9_negative_path = maskdir + path_sep() + star_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
-                , image_masked = starmap2 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr2 $
-                , convert = convert_masks
-        endif else if mstar_ext2 then begin
-            mask_tool, starfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
-                , image_masked = starmap $ ;overwrite original image array with masked one
-                , header_output = starmaphdr $
-                , convert = convert_masks
-        endif else if mstar_int2 then begin
-            mask_tool, starfiletot2 $ ;image variables
-                , ds9_negative_path = maskdir + path_sep() + star_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
-                , image_masked = starmap2 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr2 $
-                , convert = convert_masks
-        endif else begin
-            starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
-            starmaphdr2=hdr ;header of Halpha peak map
-            writefits, maskeddir + starfile2, starmap2, starmaphdr2
-        endelse
-    endif else begin ;else just read in file.
-        starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
-        starmaphdr2=hdr ;header of Halpha peak map
-    endelse
-    beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
-    beamtest=max([beamtest,beamfits])
+        if mstar_ext2 then mstar_ext_path2 = maskdir + path_sep() + star_ext_mask2
+        if mstar_int2 then mstar_int_path2 = maskdir + path_sep() + star_int_mask2
+        masked_path_star2 = maskeddir + starfile2
+    endif
+
+    mask_tool, starfiletot2 $ ;image variables
+        , ds9_positive_path = mstar_ext_path2, ds9_negative_path = mstar_int_path2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+        , masked_image_path = masked_path_star2 $ ;path to write masked image to
+        , image_masked = starmap2 $ ;overwrite original image array with masked one
+        , header_output = starmaphdr2 $
+        , convert = convert_masks, /run_without_masks
+
+        beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
+        beamtest=max([beamtest,beamfits])
 endif else begin
     starfile2=starfile
     starmap2=starmap
@@ -232,109 +195,56 @@ endelse
 if use_star3 then begin
     starfiletot3=resdir+starfile3 ;FUV map
     if mask_images then begin
-        if mstar_ext3 && mstar_int3 then begin
-            mask_tool, starfiletot3 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask3, ds9_negative_path = maskdir + path_sep() + star_int_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
-                , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $
-                , convert = convert_masks
-        endif else if mstar_ext3 then begin
-            mask_tool, starfiletot3 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
-                , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $
-                , convert = convert_masks
-        endif else if mstar_int3 then begin
-            mask_tool, starfiletot3 $ ;image variables
-                , ds9_negative_path = maskdir + path_sep() + star_int_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
-                , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $
-                , convert = convert_masks
-        endif else begin
-            starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
-            starmaphdr3=hdr ;header of FUV map
-            writefits, maskeddir + starfile3, starmap3, starmaphdr3
-        endelse
-    endif else begin ;else just read in file.
-        starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
-        starmaphdr3=hdr ;header of FUV map
-    endelse
-    beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
-    beamtest=max([beamtest,beamfits])
+        if mstar_ext3 then mstar_ext_path3 = maskdir + path_sep() + star_ext_mask3
+        if mstar_int3 then mstar_int_path3 = maskdir + path_sep() + star_int_mask3
+        masked_path_star3 = maskeddir + starfile3
+    endif
+
+    mask_tool, starfiletot3 $ ;image variables
+        , ds9_positive_path = mstar_ext_path3, ds9_negative_path = mstar_int_path3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+        , masked_image_path = masked_path_star3 $ ;path to write masked image to
+        , image_masked = starmap3 $ ;overwrite original image array with masked one
+        , header_output = starmaphdr3 $
+        , convert = convert_masks, /run_without_masks
+
+        beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
+        beamtest=max([beamtest,beamfits])
 endif
+
 gasfiletot=resdir+gasfile ;moment zero CO map (velocity mask for better flux estimate)
 if mask_images then begin
-    if mgas_ext && mgas_int then begin
-        mask_tool, gasfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + gas_ext_mask, ds9_negative_path = maskdir + path_sep() + gas_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-            , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $
-            , convert = convert_masks
-    endif else if mgas_ext then begin
-        mask_tool, gasfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + gas_ext_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-            , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $
-            , convert = convert_masks
-    endif else if mgas_int then begin
-        mask_tool, gasfiletot $ ;image variables
-            , ds9_negative_path = maskdir + path_sep() + gas_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-            , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $
-            , convert = convert_masks
-    endif else begin
-        gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
-        gasmaphdr=hdr ;moment zero CO header
-        writefits, maskeddir + gasfile, gasmap, gasmaphdr
-    endelse
-endif else begin ;else just read in file.
-    gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
-    gasmaphdr=hdr ;moment zero CO header
-endelse
+    if mgas_ext then mgas_ext_path = maskdir + path_sep() + gas_ext_mask
+    if mgas_int then mgas_int_path = maskdir + path_sep() + gas_int_mask
+    masked_path_gas = maskeddir + gasfile
+endif
+
+mask_tool, gasfiletot $ ;image variables
+    , ds9_positive_path = mgas_ext_path, ds9_negative_path = mgas_int_path $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+    , masked_image_path = masked_path_gas $ ;path to write masked image to
+    , image_masked = gasmap $ ;overwrite original image array with masked one
+    , header_output = gasmaphdr $
+    , convert = convert_masks, /run_without_masks
+
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
 if use_gas2 then begin
-    gasfiletot2=resdir+gasfile2 ;moment zero CO map (sigma mask for better peak ID)
+    gasfiletot2=resdir+gasfile2 ;Halpha peak map
     if mask_images then begin
-        if mgas_ext2 && mgas_int2 then begin
-            mask_tool, gasfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + gas_ext_mask, ds9_negative_path = maskdir + path_sep() + gas_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile2 $ ;path to write masked image to
-                , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $
-                , convert = convert_masks
-        endif else if mgas_ext then begin
-            mask_tool, gasfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + gas_ext_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile2 $ ;path to write masked image to
-                , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $
-                , convert = convert_masks
-        endif else if mgas_int then begin
-            mask_tool, gasfiletot2 $ ;image variables
-                , ds9_negative_path = maskdir + path_sep() + gas_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile2 $ ;path to write masked image to
-                , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $
-                , convert = convert_masks
-        endif else begin
-            gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
-            gasmaphdr2=hdr ;moment zero CO peak header
-            writefits, maskeddir + gasfile2, gasmap2, gasmaphdr2
-        endelse
-    endif else begin ;else just read in file.
-        gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
-        gasmaphdr2=hdr ;moment zero CO peak header
-    endelse
-    beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
-    beamtest=max([beamtest,beamfits])
+        if mgas_ext2 then mgas_ext_path2 = maskdir + path_sep() + gas_ext_mask2
+        if mgas_int2 then mgas_int_path2 = maskdir + path_sep() + gas_int_mask2
+        masked_path_gas2 = maskeddir + gasfile2
+    endif
+
+    mask_tool, gasfiletot2 $ ;image variables
+        , ds9_positive_path = mgas_ext_path2, ds9_negative_path = mgas_int_path2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+        , masked_image_path = masked_path_gas2 $ ;path to write masked image to
+        , image_masked = gasmap2 $ ;overwrite original image array with masked one
+        , header_output = gasmaphdr2 $
+        , convert = convert_masks, /run_without_masks
+
+        beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
+        beamtest=max([beamtest,beamfits])
 endif else begin
     gasfile2=gasfile
     gasmap2=gasmap
