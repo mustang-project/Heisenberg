@@ -4,7 +4,7 @@ pro mask_tool, image_input, image_hdr $ ; image variables
             , masked_image_path = masked_image_path, mask_path = mask_path $ ; path for the image with masked regions set to nans to be output to
             , image_masked = image_masked, mask_array=mask_array $ ;
             , header_output = header_output $ ; output the image header (useful for single parameter calling and with keyword image_masked)
-            , convert = convert $ ; routine behaviour control keywords
+            , convert = convert, run_without_masks = run_without_masks $ ; routine behaviour control keywords
             , conv_filepath = conv_filepath ;
 ;--(dependencies)------------------------------------------------------------------------
 ; *** To run, the mask_tool  requires:
@@ -40,6 +40,8 @@ pro mask_tool, image_input, image_hdr $ ; image variables
 ; ***                     exactly the same as the original. This also requires a single
 ; ***                     paramter call, as the filepath to the file is required to allow
 ; ***                     ds9 to
+; *** run_without_masks = (1/0) if keyword is set run anyway if no masks are supplied.
+; ***                     otherwise stop and display error message.
 ; *** conv_path         = filepath to an image used to convert the ds9 filepath. Used for
 ; ***                     two parameter calls where the filepath is not specified. Should
 ; ***                     be an image with the same astrometry as the image that is being
@@ -91,10 +93,15 @@ pro mask_tool, image_input, image_hdr $ ; image variables
   endif else if (n_elements(ds9_negative_path) ne 0) then begin ; only negative mask supplied
     mask_ds9_file_mask, image, image_head, ds9_negative_path, mask, /negative ; not allowed regions ; create mask straight from subroutine
 
+  endif else if keyword_set(run_without_masks) then begin
+    mask = image
+    mask[*] = 1.0 ; no masks so create mask of which every element is 1.0 (i.e unmasked)
+
   endif else begin
-    print, ' error: neither a positive or negative ds9 mask filepath has been supplied -- you must supply one or both'
-    print, ' quitting...'
-    stop
+      print, ' error: neither a positive or negative ds9 mask filepath has been supplied -- you must supply one or both or set the keyword run_without_masks=1 to allow code to run without masks'
+      print, ' quitting...'
+      stop
+
   endelse
 
   ; ***********************************
@@ -105,7 +112,7 @@ pro mask_tool, image_input, image_hdr $ ; image variables
   header_output = image_head
   if mask_count gt 0 then image_masked[mask_list] = !values.f_nan ; apply mask
 
-  if n_elements(masked_path) ne 0 then writefits, mask_path, mask, image_head ; write a out the mask to .fits file
+  if n_elements(mask_path) ne 0 then writefits, mask_path, mask, image_head ; write a out the mask to .fits file
   if n_elements(masked_image_path) ne 0 then writefits, masked_image_path, image_masked, image_head ; write a masked (masked regions set to nans) image to .fits file
 
   mask_array = mask
