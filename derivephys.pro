@@ -133,7 +133,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     rpeakgas=f_rpeak(zetagas,lambda)
     esf=f_esf(tgas,tdepl,fcl,fgmc)
     mdotsf=f_mdotsf(tgas,lambda,surfgas,fgmc,esf)
-    mdotfb=f_mdotfb(tover,lambda,surfgas,fgmc,esf) ;!!CONSIDER ALLOWING RPEAK INSTEAD OF LAMBDA/2 FOR ALL FB-RELATED QUANTITIES
+    mdotfb=f_mdotfb(tover,lambda,surfgas,fgmc,esf)
     vfb=f_vfb(tover,lambda)
     etainst=f_etainst(tgas,tover,esf)
     etaavg=f_etaavg(esf)
