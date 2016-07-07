@@ -247,9 +247,9 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         timeloop=timeafter-timebefore
         minchi2=min(redchi2)
         index=min(where(redchi2 eq minchi2))
-        kbest=long(fix(index/ntry/ntry))
-        jbest=long(fix((index-ntry*ntry*kbest)/ntry))
-        ibest=long(fix(index-ntry*jbest-ntry*ntry*kbest))
+        kbest=long(index/ntry/ntry)
+        jbest=long((index-ntry*ntry*kbest)/ntry)
+        ibest=long(index-ntry*jbest-ntry*ntry*kbest)
         prob=exp(-chi2/2.)
         probcst=1./total(prob*dtgasarr*dtoverarr*dlambdaarr)
         probnorm=prob*probcst
