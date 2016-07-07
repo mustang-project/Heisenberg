@@ -259,29 +259,6 @@ beammaxpc=distance*beamtest*!dtor/sqrt(cos(inclination)) ;largest beam size in p
 beamaperture=min(where(abs(alog10(apertures/beammaxpc)) eq min(abs(alog10(apertures/beammaxpc)))))
 peak_res=max([peak_res,beamaperture]) ;ensure that the smallest aperture size is the aperture closest to the beam size
 fitap=fix(peak_res)+indgen(max_res-peak_res+1) ;aperture sizes used in fitting the KL14 principle model
-tstariso_rerrmin=tstariso_errmin/tstariso ;Relative downward standard error on tstariso
-tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tstariso
-convstar=10.^convstar ;pixel conversion factor to physical units
-convgas=10.^convgas ;pixel conversion factor to physical units
-if use_star3 then convstar3=10.^convstar3 ;pixel conversion factor to physical units
-if map_units eq 1 then begin
-    sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map -- !!CHECK IF CORRECT, MIGHT BE SURFACE DENSITY INSTEAD OF MASS
-    sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
-    mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
-endif
-if map_units eq 2 then begin
-    mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
-    mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
-    mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
-endif
-if map_units eq 3 then begin
-    sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
-    sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
-    sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
-    sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
-endif
 
 
 ;;;;;;;;;;;;;
@@ -327,16 +304,36 @@ if regrid then begin
 endif
 cdelt=abs(sxpar(starmaphdr,'CDELT1'))
 pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
-convstar=convstar*(cdelt/cdeltstar)^2. ;change pixel conversion factor to physical units to account for regridding
+pctopix=1./pixtopc ;pc in number of pixels
+convstar=10.^convstar*(cdelt/cdeltstar)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
 convstar_err=convstar*convstar_rerr
-convgas=convgas*(cdelt/cdeltgas)^2. ;change pixel conversion factor to physical units to account for regridding
+convgas=10.^convgas*(cdelt/cdeltgas)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
 convgas_err=convgas*convgas_rerr
 if use_star3 then begin
-    convstar3=convstar3*(cdelt/cdeltstar3)^2. ;change pixel conversion factor to physical units to account for regridding
+    convstar3=10.^convstar3*(cdelt/cdeltstar3)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
     convstar3_err=convstar3*convstar3_rerr
 endif
+if map_units eq 1 then begin
+    sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
+    sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
+    mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
+    mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
+endif
+if map_units eq 2 then begin
+    mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
+    mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
+    mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
+    mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
+endif
+if map_units eq 3 then begin
+    sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
+    sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
+    sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
+    sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
+endif
 
-pctopix=1./pixtopc ;pc in number of pixels
+tstariso_rerrmin=tstariso_errmin/tstariso ;Relative downward standard error on tstariso
+tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tstariso
 mapdim=size(gasmap)
 nx=mapdim(1) ;number of x pixels
 ny=mapdim(2) ; number of y pixels
@@ -1188,7 +1185,8 @@ if calc_fit then begin
             for i=0,nder-1 do printf,lun,'# '+colstrings(i+nfit+next)+derstrings(i)
         endif
         for i=0,naux-1 do printf,lun,'# '+colstrings(i+nfit+next+nder)+auxstrings(i)
-        printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5))',alog10([fit,ext,der,aux]+tiny)
+        if map_units gt 0 then printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5))',alog10([fit,ext,der,aux]+tiny) $
+                          else printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(1x,f12.5))',alog10([fit,aux]+tiny)
         close,lun
         free_lun,lun
 
