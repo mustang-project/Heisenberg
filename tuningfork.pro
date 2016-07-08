@@ -304,6 +304,10 @@ if regrid then begin
 endif
 cdelt=abs(sxpar(starmaphdr,'CDELT1'))
 pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
+if pixtopc gt apertures(peak_res) then begin
+    print, ' error: aperture size is smaller than pixel size'
+    print, ' quitting...'
+endif
 pctopix=1./pixtopc ;pc in number of pixels
 convstar=10.^convstar*(cdelt/cdeltstar)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
 convstar_err=convstar*convstar_rerr
@@ -464,7 +468,11 @@ if sensitivity then begin
     sensstarlist=reform(smoothstar(peak_res,*,*),n_elements(smoothstar(peak_res,*,*)))
     nans=where(finite(sensstarlist,/nan),ct)
     if ct ne 0 then remove,nans,sensstarlist
-    use=where(abs(sensstarlist) le (1.+(min(sensstarlist) gt 0.))*abs(min(sensstarlist))) ;!!THIS IS A BUG WHEN THE SMALLEST VALUE IS ZERO (AND MAYBE POSITIVE DOESN'T WORK VERY WELL TOO) -- ALSO CHECK BELOW
+    sensstarmin=min(sensstarlist)
+    sensstarmed=median(sensstarlist)
+    if sensstarmin lt 0. then use=where(abs(sensstarlist) le abs(sensstarmin))
+    if sensstarmin ge 0. then use=where(abs(sensstarlist) le sensstarmed)
+    if sensstarmin ge 0. && sensstarmed eq 0. then use=where(abs(sensstarlist) le min(sensstarlist(where(sensstarlist gt 0.)))) ;in practice should only happen with near-perfect S/N
     disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
     binwidth=disp/nbins
     set_plot,window_plot
@@ -473,13 +481,17 @@ if sensitivity then begin
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offstar=vars(1)
-    if offstar lt 0 then sensstar=vars(2)*vars(2)/(vars(2)-offstar) else sensstar=vars(2)
+    sensstar=vars(2)
 
     if use_star3 then begin
         sensstarlist3=reform(smoothstar3(peak_res,*,*),n_elements(smoothstar3(peak_res,*,*)))
         nans=where(finite(sensstarlist3,/nan),ct)
         if ct ne 0 then remove,nans,sensstarlist3
-        use=where(abs(sensstarlist3) le (1.+(min(sensstarlist3) gt 0.))*abs(min(sensstarlist3)))
+        sensstarmin3=min(sensstarlist3)
+        sensstarmed3=median(sensstarlist3)
+        if sensstarmin3 lt 0. then use=where(abs(sensstarlist3) le abs(sensstarmin3))
+        if sensstarmin3 ge 0. then use=where(abs(sensstarlist3) le sensstarmed3)
+        if sensstarmin3 ge 0. && sensstarmed3 eq 0. then use=where(abs(sensstarlist3) le min(sensstarlist3(where(sensstarlist3 gt 0.)))) ;in practice should only happen with near-perfect S/N
         disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
         binwidth=disp/nbins
         set_plot,window_plot
@@ -488,13 +500,16 @@ if sensitivity then begin
         binmid=bins+0.5*binwidth
         fit=gaussfit(binmid,hist,vars,nterms=3)
         offstar3=vars(1)
-        if offstar lt 0 then sensstar3=vars(2)*vars(2)/(vars(2)-offstar) else sensstar3=vars(2)
+        sensstar3=vars(2)
     endif
 
     sensgaslist=reform(smoothgas(peak_res,*,*),n_elements(smoothgas(peak_res,*,*)))
     nans=where(finite(sensgaslist,/nan),ct)
     if ct ne 0 then remove,nans,sensgaslist
-    use=where(abs(sensgaslist) le (1.+(min(sensgaslist) gt 0.))*abs(min(sensgaslist)))
+    sensgasmin=min(sensgaslist)
+    if sensgasmin lt 0. then use=where(abs(sensgaslist) le abs(sensgasmin))
+    if sensgasmin ge 0. then use=where(abs(sensgaslist) le sensgasmed)
+    if sensgasmin ge 0. && sensgasmed eq 0. then use=where(abs(sensgaslist) le min(sensgaslist(where(sensgaslist gt 0.)))) ;in practice should only happen with near-perfect S/N
     disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
     binwidth=disp/nbins
     set_plot,window_plot
@@ -503,7 +518,7 @@ if sensitivity then begin
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offgas=vars(1)
-    if offgas lt 0 then sensgas=vars(2)*vars(2)/(vars(2)-offgas) else sensgas=vars(2)
+    sensgas=vars(2)
 endif
 
 
@@ -529,13 +544,13 @@ if id_peaks then begin
     starpeaks(*,1)=starpeaks(sortpeaks,1)
     starpeaks(*,2)=starpeaks(sortpeaks,2)
     starpeaks(*,3)=starpeaks(sortpeaks,3)
-    istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar)) ;last peak with intensity larger than the sensitivity limit
+    if use_star2 then istarmax=n_elements(starpeaks(*,0))-1 else istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar+offstar)) ;last peak with intensity larger than the sensitivity limit
     starpeaks=starpeaks(0:istarmax,*) ;reject stellar peaks with stellar flux lower than sensitivity limit
 
     ;IDENTIFY PEAKS IN GAS MAP
     if loglevels then begin
-	     maxval=max(alog10(peakidgas),/nan) ;maximum value
-	     maxlevel=(fix(maxval/logspacing_g)-1)*logspacing_g ;level below maximum value
+	    maxval=max(alog10(peakidgas),/nan) ;maximum value
+	    maxlevel=(fix(maxval/logspacing_g)-1)*logspacing_g ;level below maximum value
         levels=10.^(maxlevel-logrange_g+dindgen(nlevels_g)/(nlevels_g-1)*logrange_g) ;array with levels
     endif else begin
         maxval=max(peakidgas,/nan)
@@ -548,7 +563,7 @@ if id_peaks then begin
     gaspeaks(*,1)=gaspeaks(sortpeaks,1)
     gaspeaks(*,2)=gaspeaks(sortpeaks,2)
     gaspeaks(*,3)=gaspeaks(sortpeaks,3)
-    igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas)) ;last peak with intensity larger than the sensitivity limit
+    if use_gas2 then igasmax=n_elements(gaspeaks(*,0))-1 else igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas+offgas)) ;last peak with intensity larger than the sensitivity limit
     gaspeaks=gaspeaks(0:igasmax,*) ;reject gas peaks with gas flux lower than sensitivity limit
 
     peaks=[starpeaks,gaspeaks]
@@ -613,7 +628,7 @@ if cut_sample then begin
     for j=0,npeaks-1 do begin
         kx=peaks(j,0) ;get x index of peak
         ky=peaks(j,1) ;get y index of peak
-        if peakradius(j) ge minradius && peakradius(j) le maxradius && finite(gasflux(peak_res,j)) && finite(starflux(peak_res,j)) then includepeak(j)=incltot(kx,ky) ;include peak? only if within specified radius interval and if there is coverage in the other tracer too !!NOTE: THIS IS A QUICK HACK FOR THE PIPELINE TO WORK ON M31(SIGMASK)
+        if peakradius(j) ge minradius && peakradius(j) le maxradius then includepeak(j)=incltot(kx,ky) ;include peak? only if within specified radius interval and if there is coverage in the other tracer too
     endfor
     inclpeaks=where(includepeak ne 0,nincludepeak) ;included peaks
     inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
@@ -913,7 +928,7 @@ if calc_fit then begin
             err_totstar_star=stdev(totstar_star(i,*)) ;standard deviation of the total stellar flux for apertures centered on SF peaks, across all MC realisations -- ancillary quantity
             ;obtain relative error terms and covariance of numerator and denominator
             nexpstar(i)=nstarmc(i) ;the number of experiments that we are averaging over
-            err_sens_star2(i)=sqrt((err_sensgas_star/meantotgas_star(i))^2.+(err_sensstar_star/meantotstar_star(i))^2.) ;relative error due to sensitivity
+            err_sens_star2(i)=((err_sensgas_star/meantotgas_star(i))^2.+(err_sensstar_star/meantotstar_star(i))^2.) ;relative error due to sensitivity
             err_apgas_star2(i)=(err_apgas_star/meanapgas_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (gas)
             err_apstar_star2(i)=(err_apstar_star/meanapstar_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (stars)
             err_apcov_star2(i)=-2.*correlate(gasflux(i,inclstar),starflux(i,inclstar),/covariance)/meanapgas_star(i)/meanapstar_star(i)/nexpstar(i) ;covariance
@@ -939,7 +954,7 @@ if calc_fit then begin
             err_totstar_gas=stdev(totstar_gas(i,*)) ;standard deviation of the total stellar flux for apertures centered on gas peaks, across all MC realisations -- ancillary quantity
             ;obtain relative error terms and covariance of numerator and denominator
             nexpgas(i)=ngasmc(i) ;the number of experiments that we are averaging over
-            err_sens_gas2(i)=sqrt((err_sensgas_gas/meantotgas_gas(i))^2.+(err_sensstar_gas/meantotstar_gas(i))^2.) ;relative error due to sensitivity
+            err_sens_gas2(i)=((err_sensgas_gas/meantotgas_gas(i))^2.+(err_sensstar_gas/meantotstar_gas(i))^2.) ;relative error due to sensitivity
             err_apgas_gas2(i)=(err_apgas_gas/meanapgas_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (gas)
             err_apstar_gas2(i)=(err_apstar_gas/meanapstar_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (stars)
             err_apcov_gas2(i)=-2.*correlate(gasflux(i,inclgas),starflux(i,inclgas),/covariance)/meanapgas_gas(i)/meanapstar_gas(i)/nexpgas(i) ;covariance
