@@ -307,6 +307,7 @@ pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes
 if pixtopc gt apertures(peak_res) then begin
     print, ' error: aperture size is smaller than pixel size'
     print, ' quitting...'
+    stop
 endif
 pctopix=1./pixtopc ;pc in number of pixels
 convstar=10.^convstar*(cdelt/cdeltstar)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
