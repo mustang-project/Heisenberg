@@ -148,11 +148,12 @@ function f_plotdistr,array,darray,pdf,value,galaxy,figdir,varstring,symstring,un
     origdevice=!D.name
     set_plot,'ps'
     device,filename=figdir+galaxy+'_distr_'+varstring+'.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
+    ymax=max(pdf)
     plot,array,pdf,/nodata,/xlog,xtitle=xlab,ytitle=ylab,xr=arrange,xstyle=1
     oplot,array,pdf
-    oplot,[1,1]*value,[0,1],linestyle=2
-    oplot,[1,1]*value-errmin,[0,1],linestyle=1
-    oplot,[1,1]*value+errmax,[0,1],linestyle=1
+    oplot,[1,1]*value,[0,10.*ymax],linestyle=2
+    oplot,[1,1]*value-errmin,[0,10.*ymax],linestyle=1
+    oplot,[1,1]*value+errmax,[0,10.*ymax],linestyle=1
     xyouts,.6,.8,symstring+'!6 = '+textoidl(f_string(value,2)+'^{+'+f_string(errmax,2)+'}_{-'+f_string(errmin,2)+'}')+'!N '+unitstring,/normal
     device,/close
     cumpdf=total(pdf*darray,/cumulative)

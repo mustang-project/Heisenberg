@@ -98,16 +98,20 @@ function f_createpdf,array,darray,cumpdf,nnew
         endelse
         newdarray=right-left
         for i=0,nnew-1 do begin
-            if left(i) gt min(array) then cumpdfleft=interpol(cumpdf,array,left(i)) else begin ;left cumpdf value
+            if left(i) le min(array) then begin
                 interpolmin=max([0,min(where(array gt min(array)))]) ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once 
                 interpolarr=[0,findgen(n_elements(cumpdf)-interpolmin)+interpolmin] ;index array for interpolation
                 cumpdfleft=max([0.,interpol(cumpdf(interpolarr),array(interpolarr),left(i))]) ;left cumpdf value
-            endelse
-            if right(i) lt max(array) then cumpdfright=interpol(cumpdf,array,right(i)) else begin ;right cumpdf value
+            endif
+            if left(i) gt max(array) then cumpdfleft=1. ;by definition
+            if left(i) gt min(array) && left(i) le max(array) then cumpdfleft=interpol(cumpdf,array,left(i)) ;left cumpdf value
+            if right(i) lt min(array) then cumpdfright=0. ;by definition
+            if right(i) ge max(array) then begin
                 interpolmax=min([n_elements(cumpdf)-1,max(where(array lt max(array)))]) ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once 
                 if interpolmax lt n_elements(cumpdf)-1 then interpolarr=[findgen(interpolmax+1),n_elements(cumpdf)-1] else interpolarr=findgen(interpolmax+1) ;index array for interpolation
                 cumpdfright=min([interpol(cumpdf(interpolarr),array(interpolarr),right(i)),1.]) ;right cumpdf value
-            endelse
+            endif            
+            if right(i) lt max(array) && right(i) ge min(array) then cumpdfright=interpol(cumpdf,array,right(i)) ;right cumpdf value
             pdf(i)=(cumpdfright-cumpdfleft)/newdarray(i) ;pdf value in bin
         endfor
     endif else begin
