@@ -323,6 +323,8 @@ if map_units eq 1 then begin
     sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
     mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
     mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
+    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.)) ;gas depletion time + 1sigma
+    if tgasmaxi gt tdeplmax then tgasmaxi=tdeplmax ;tgas cannot exceed the gas depletion time
 endif
 if map_units eq 2 then begin
     mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
@@ -983,19 +985,14 @@ if calc_fit then begin
             nfitgas(i)=.5/total(corrgas_gas(i,*))+.5/total(corrstar_gas(i,*)) ;take the mean of the number of independent datapoints for the numerator and the denominator (for N=>inf 1/2+1/2N is right, but 2/(1+N) is wrong)
             nfitstar(i)=.5/total(corrgas_star(i,*))+.5/total(corrstar_star(i,*))
         endfor
-        geocontrasts=1.+0.*meantotgas_stariso/meantotgas_stariso(max_res)*nstarisomc(max_res)/nstarisomc
-        geocontrastg=1.+0.*meantotstar_gasiso/meantotstar_gasiso(max_res)*ngasisomc(max_res)/ngasisomc
-        geos=fitap(min(where(geocontrasts(fitap) eq max(geocontrasts(fitap)))))
-        geog=fitap(min(where(geocontrastg(fitap) eq max(geocontrastg(fitap)))))
-        surfcontrasts=meantotstar_star(geos)/meantotstar_star(max_res)*nstarmc(max_res)/nstarmc(geos)/geocontrasts(geos)-1. ;surface density contrast of SF peak - the -1 subtracts background & isolates the peak contribution
-        surfcontrastg=meantotgas_gas(geog)/meantotgas_gas(max_res)*ngasmc(max_res)/ngasmc(geog)/geocontrastg(geog)-1. ;surface density contrast of gas peak - the -1 subtracts background & isolates the peak contribution
+        surfcontrasts=meantotstar_star(peak_res)/meantotstar_star(max_res)*nstarmc(max_res)/nstarmc(peak_res)-1. ;surface density contrast of SF peak - the -1 subtracts background & isolates the peak contribution
+        surfcontrastg=meantotgas_gas(peak_res)/meantotgas_gas(max_res)*ngasmc(max_res)/ngasmc(peak_res)-1. ;surface density contrast of gas peak - the -1 subtracts background & isolates the peak contribution
         bias_star=fluxratio_star/fluxratio_galaxy
         bias_gas=fluxratio_gas/fluxratio_galaxy
         err_star=err_star/fluxratio_galaxy ;scale linear error -- log error is unchanged
         err_gas=err_gas/fluxratio_galaxy ;scale linear error -- log error is unchanged
         beta_star=mean(betastarmc)
         beta_gas=mean(betagasmc)
-        print,geocontrasts,geocontrastg,surfcontrasts,surfcontrastg,beta_star,beta_gas
 
         fit=fitKL14(fluxratio_star[fitap]/fluxratio_galaxy,fluxratio_gas[fitap]/fluxratio_galaxy, $
                     err_star_log[fitap],err_gas_log[fitap],tstariso,beta_star,beta_gas,apertures_star[fitap],apertures_gas[fitap], $
