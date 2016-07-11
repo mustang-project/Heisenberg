@@ -89,25 +89,28 @@ function f_fluxratiogas,tgas,tstar,tover,lapg,lambda,beta_star,surfcontrasts,sur
     return,tdeplgas
 end
 
-function f_pdftovalues,variable,dvariable,cumpdf ;convert PDF to value^+errmax_-errmin, where the errors are set by the 1sigma percentiles
+function f_pdftovalues,variable,dvariable,cumpdf,refvalue ;convert PDF to refvalue^+errmax_-errmin, where the errors are set by the 1sigma percentiles relative to refvalue
     COMMON numbers
-    errminfrac=1.-.5*(1.+erf(1./sqrt(2.)))
-    errmaxfrac=1.-errminfrac
+    errminfrac_gaussian=1.-.5*(1.+erf(1./sqrt(2.)))
+    errmaxfrac_gaussian=1.-errminfrac_gaussian
+    refprob=interpol(cumpdf,variable,refvalue)
+    errminfrac=2.*errminfrac_gaussian*refprob ;(.5-errmin)/.5=(1-errmin2/p) => errmin2 = 2*errmin*p (32nd percentile below best-fitting value)
+    errmaxfrac=2.*(1.-errmaxfrac_gaussian)*refprob+2.*(errmaxfrac_gaussian-.5) ;(errmax-.5)/.5=(errmax2-p)/(1-p) => errmax2 = (2*errmax-1)*(1-p)+p = 2*(1-errmax)*p+2*(errmax-.5) (68th percentile above best-fitting value)
     nvar=n_elements(variable)
     pdf=dblarr(nvar)
     pdf(0)=cumpdf(0)/dvariable(0)
     for i=1,nvar-1 do pdf(i)=(cumpdf(i)-cumpdf(i-1))/dvariable(i)
-    value=total(variable*pdf*dvariable)
+    evalue=total(variable*pdf*dvariable)
     minperc=interpol(variable,cumpdf,errminfrac)
     maxperc=interpol(variable,cumpdf,errmaxfrac)
     if minperc ne maxperc then begin
-        errmin=value-minperc
-        errmax=maxperc-value
+        errmin=refvalue-minperc
+        errmax=maxperc-refvalue
     endif else begin
         errmin=tiny
         errmax=tiny
     endelse
-    return,[value,errmin,errmax]
+    return,[evalue,errmin,errmax]
 end
 
 function f_writepdf,array,darray,probarray,galaxy,outputdir,varstring,commentstring ;write table with PDF to file
@@ -133,7 +136,7 @@ function f_plotdistr,array,darray,pdf,value,galaxy,figdir,varstring,symstring,un
     arraymin=min(array)
     arraymax=max(array)
     cumpdf=total(pdf*darray,/cumulative)
-    dummy=f_pdftovalues(array,darray,cumpdf)
+    dummy=f_pdftovalues(array,darray,cumpdf,value)
     errmin=dummy(1)
     errmax=dummy(2)
     logdiffarray=0.5*(2.-alog10(arraymax/arraymin)) ;is the range at least two orders of magnitude?
@@ -192,8 +195,8 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
     
 
     if tstar_incl eq 0 then tovermaxi=tgasmaxi else tovermaxi=min([tstariso,tgasmaxi])
-    lambdamini=.1*min([apertures_star[use],apertures_gas[use]]) 
-    lambdamaxi=10.*max([apertures_star[use],apertures_gas[use]])
+    lambdamini=.3*min([apertures_star[use],apertures_gas[use]]) 
+    lambdamaxi=3.*max([apertures_star[use],apertures_gas[use]])
     
     tgasmin=tgasmini
     tgasmax=tgasmaxi
@@ -286,195 +289,90 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         corrtgaslambda=(meantgaslambda-meantgas*meanlambda)/stdevtgas/stdevlambda
         corrtoverlambda=(meantoverlambda-meantover*meanlambda)/stdevtover/stdevlambda
                 
-        iminuse=1
-        imin1=max(where(redchi2(0:ibest,jbest,kbest) ge minchi2+1.))
-        if imin1(0) eq -1 then begin
-            imin1=0
-            iminuse=0
-            print,'         WARNING: fitting value at low edge of tgas range'
-        endif
-        imin2=imin1+1
-        if imin2 gt ntry-1 then begin
-            imin2=imin1
-            imin1=imin2-1
-            iminuse=0
-            print,'         WARNING: fitting value at high edge of tgas range'
-        endif
-
-        imaxuse=1
-        imax1=max(where(redchi2(*,jbest,kbest) le minchi2+1.))
-        if imax1(0) eq -1 then begin
-            imax1=0
-            imaxuse=0
-            print,'         WARNING: fitting value at low edge of tgas range'
-        endif
-        imax2=imax1+1
-        if imax2 gt ntry-1 then begin
-            imax2=imax1
-            imax1=imax2-1
-            imaxuse=0
-            print,'         WARNING: fitting value at high edge of tgas range'
-        endif
-
-        jminuse=1
-        jmin1=max(where(redchi2(ibest,0:jbest,kbest) ge minchi2+1.))
-        if jmin1(0) eq -1 then begin
-            jmin1=0
-            jminuse=0
-            print,'         WARNING: fitting value at low edge of tover range'
-        endif
-        jmin2=jmin1+1
-        if jmin2 gt ntry-1 then begin
-            jmin2=jmin1
-            jmin1=jmin2-1
-            jminuse=0
-            print,'         WARNING: fitting value at high edge of tover range'
-        endif
-
-        jmaxuse=1
-        jmax1=max(where(redchi2(ibest,*,kbest) le minchi2+1.))
-        if jmax1(0) eq -1 then begin
-            jmax1=0
-            jmaxuse=0
-            print,'         WARNING: fitting value at low edge of tover range'
-        endif
-        jmax2=jmax1+1
-        if jmax2 gt ntry-1 then begin
-            jmax2=jmax1
-            jmax1=jmax2-1
-            jmaxuse=0
-            print,'         WARNING: fitting value at high edge of tover range'
-        endif
-
-        kminuse=1
-        kmin1=max(where(redchi2(ibest,jbest,0:kbest) ge minchi2+1.))
-        if kmin1(0) eq -1 then begin
-            kmin1=0
-            kminuse=0
-            print,'         WARNING: fitting value at low edge of lambda range'
-        endif
-        kmin2=kmin1+1
-        if kmin2 gt ntry-1 then begin
-            kmin2=kmin1
-            kmin1=kmin2-1
-            kminuse=0
-            print,'         WARNING: fitting value at high edge of lambda range'
-        endif
-
-        kmaxuse=1
-        kmax1=max(where(redchi2(ibest,jbest,*) le minchi2+1.))
-        if kmax1(0) eq -1 then begin
-            kmax1=0
-            kmaxuse=0
-            print,'         WARNING: fitting value at low edge of lambda range'
-        endif
-        kmax2=kmax1+1
-        if kmax2 gt ntry-1 then begin
-            kmax2=kmax1
-            kmax1=kmax2-1
-            kmaxuse=0
-            print,'         WARNING: fitting value at high edge of lambda range'
-        endif
-
-        fracimin=iminuse*(minchi2+1.-redchi2(imin1,jbest,kbest))/(redchi2(imin2,jbest,kbest)-redchi2(imin1,jbest,kbest))
-        fracimax=imaxuse*(minchi2+1.-redchi2(imax1,jbest,kbest))/(redchi2(imax2,jbest,kbest)-redchi2(imax1,jbest,kbest))
-        fracjmin=jminuse*(minchi2+1.-redchi2(ibest,jmin1,kbest))/(redchi2(ibest,jmin2,kbest)-redchi2(ibest,jmin1,kbest))
-        fracjmax=jmaxuse*(minchi2+1.-redchi2(ibest,jmax1,kbest))/(redchi2(ibest,jmax2,kbest)-redchi2(ibest,jmax1,kbest))
-        frackmin=kminuse*(minchi2+1.-redchi2(ibest,jbest,kmin1))/(redchi2(ibest,jbest,kmin2)-redchi2(ibest,jbest,kmin1))
-        frackmax=kmaxuse*(minchi2+1.-redchi2(ibest,jbest,kmax1))/(redchi2(ibest,jbest,kmax2)-redchi2(ibest,jbest,kmax1))
         tgas=tgasarr(ibest)
         tover=toverarr(jbest)
-        if tstar_incl eq 0 then tstar=tstariso+tover else tstar=tstariso
         lambda=lambdaarr(kbest)
+        if tstar_incl eq 0 then tstar=tstariso+tover else tstar=tstariso
         probtgascum=total(probtgas*dtgas,/cumulative)
         probtovercum=total(probtover*dtover,/cumulative)
         problambdacum=total(problambda*dlambda,/cumulative)
+        dummy=f_pdftovalues(tgasarr,dtgas,probtgascum,tgas)
+        tgas_errmin=dummy(1)
+        tgas_errmax=dummy(2)
+        if abs(tgas-dummy(0)) gt max([tgas_errmin,tgas_errmax]) then print,' WARNING: tgas PDF is highly asymmetric, recommend using PDF rather than calculated value and error bars'
+        dummy=f_pdftovalues(toverarr,dtover,probtovercum,tover)
+        tover_errmin=dummy(1)
+        tover_errmax=dummy(2)
+        if abs(tover-dummy(0)) gt max([tover_errmin,tover_errmax]) then print,' WARNING: tover PDF is highly asymmetric, recommend using PDF rather than calculated value and error bars'
+        dummy=f_pdftovalues(lambdaarr,dlambda,problambdacum,lambda)
+        lambda_errmin=dummy(1)
+        lambda_errmax=dummy(2)
+        if abs(lambda-dummy(0)) gt max([lambda_errmin,lambda_errmax]) then print,' WARNING: lambda PDF is highly asymmetric, recommend using PDF rather than calculated value and error bars'
+        
+        ;if best fit gets too close to the edge of the fitted range, stop iteratively shrinking the fitting range
         errminfrac=1.-.5*(1.+erf(1./sqrt(2.)))
         errmaxfrac=1.-errminfrac
-        
-        errminfractgas=2.*errminfrac*probtgascum(ibest) ;(.5-errmin)/.5=(1-errmin2/p) => errmin2 = 2*errmin*p
-        errmaxfractgas=2.*(1.-errmaxfrac)*probtgascum(ibest)+2.*(errmaxfrac-.5) ;(errmax-.5)/.5=(errmax2-p)/(1-p) => errmax2 = (2*errmax-1)*(1-p)+p = 2*errmax*(1-p)-1+2*p = 2*(1-errmax)*p+2*(errmax-.5)
-        imin1=max(where(probtgascum le errminfractgas))
-        if imin1(0) eq -1 then imin1=0
-        imin2=imin1+1
-        fracimin=(errminfractgas-probtgascum(imin1))/(probtgascum(imin2)-probtgascum(imin1))
-        imax2=min(where(probtgascum ge errmaxfractgas))
-        if imax2(0) eq -1 then imax2=ntry-1
-        if imax2(0) eq imin1 then imax2=imin2+2
-        imax1=imax2-1
-        fracimax=(errmaxfractgas-probtgascum(imax1))/(probtgascum(imax2)-probtgascum(imax1))
-        
+        errminfractgas=2.*errminfrac*probtgascum(ibest) ;(.5-errmin)/.5=(1-errmin2/p) => errmin2 = 2*errmin*p (32nd percentile below best-fitting value)
+        errmaxfractgas=2.*(1.-errmaxfrac)*probtgascum(ibest)+2.*(errmaxfrac-.5) ;(errmax-.5)/.5=(errmax2-p)/(1-p) => errmax2 = (2*errmax-1)*(1-p)+p = 2*(1-errmax)*p+2*(errmax-.5) (68th percentile above best-fitting value)
+        imin=max(where(probtgascum le errminfractgas))
+        if imin(0) eq -1 then imin=0
+        imax=min(where(probtgascum ge errmaxfractgas))
+        if imax(0) eq -1 then imax=ntry-1
+        if imax(0) eq imin then imax=imin+3
         errminfractover=2.*errminfrac*probtovercum(jbest)
         errmaxfractover=2.*(1.-errmaxfrac)*probtovercum(jbest)+2.*(errmaxfrac-.5)
-        jmin1=max(where(probtovercum le errminfractover))
-        if jmin1(0) eq -1 then jmin1=0
-        jmin2=jmin1+1
-        fracjmin=(errminfractover-probtovercum(jmin1))/(probtovercum(jmin2)-probtovercum(jmin1))
-        jmax2=min(where(probtovercum ge errmaxfractover))
-        if jmax2(0) eq -1 then jmax2=ntry-1
-        if jmax2(0) eq jmin1 then jmax2=jmin2+2
-        jmax1=jmax2-1
-        fracjmax=(errmaxfractover-probtovercum(jmax1))/(probtovercum(jmax2)-probtovercum(jmax1))
-        
+        jmin=max(where(probtovercum le errminfractover))
+        if jmin(0) eq -1 then jmin=0
+        jmax=min(where(probtovercum ge errmaxfractover))
+        if jmax(0) eq -1 then jmax=ntry-1
+        if jmax(0) eq jmin then jmax=jmin+3
         errminfraclambda=2.*errminfrac*problambdacum(kbest)
         errmaxfraclambda=2.*(1.-errmaxfrac)*problambdacum(kbest)+2.*(errmaxfrac-.5)
-        kmin1=max(where(problambdacum le errminfraclambda))
-        if kmin1(0) eq -1 then kmin1=0
-        kmin2=kmin1+1
-        frackmin=(errminfraclambda-problambdacum(kmin1))/(problambdacum(kmin2)-problambdacum(kmin1))
-        kmax2=min(where(problambdacum ge errmaxfraclambda))
-        if kmax2(0) eq -1 then kmax2=ntry-1
-        if kmax2(0) eq kmin1 then kmax2=kmin2+2
-        kmax1=kmax2-1
-        frackmax=(errmaxfraclambda-problambdacum(kmax1))/(problambdacum(kmax2)-problambdacum(kmax1))
-        
-        tgas_low=tgasarr(imin1)+fracimin*(tgasarr(imin2)-tgasarr(imin1))
-        tgas_hi=tgasarr(imax1)+fracimax*(tgasarr(imax2)-tgasarr(imax1))
-        tover_low=toverarr(jmin1)+fracjmin*(toverarr(jmin2)-toverarr(jmin1))
-        tover_hi=toverarr(jmax1)+fracjmax*(toverarr(jmax2)-toverarr(jmax1))
-        lambda_low=lambdaarr(kmin1)+frackmin*(lambdaarr(kmin2)-lambdaarr(kmin1))
-        lambda_hi=lambdaarr(kmax1)+frackmax*(lambdaarr(kmax2)-lambdaarr(kmax1))
-        tgas_errmin=tgas-tgas_low
-        tgas_errmax=tgas_hi-tgas
-        tover_errmin=tover-tover_low
-        tover_errmax=tover_hi-tover
-        lambda_errmin=lambda-lambda_low
-        lambda_errmax=lambda_hi-lambda
-        
-        edge=2
+        kmin=max(where(problambdacum le errminfraclambda))
+        if kmin(0) eq -1 then kmin=0
+        kmax=min(where(problambdacum ge errmaxfraclambda))
+        if kmax(0) eq -1 then kmax=ntry-1
+        if kmax(0) eq kmin then kmax=kmin+3
+                
+        edge=4 ;stop refining if all fitting limits are within 4 elements from the array edge
         tgasminold=tgasmin
         tgasmaxold=tgasmax
         toverminold=tovermin
         tovermaxold=tovermax
         lambdaminold=lambdamin
         lambdamaxold=lambdamax
-        if imin1 lt edge and imax2 gt ntry-edge-1 and jmin1 lt edge and jmax2 gt ntry-edge-1 and kmin1 lt edge and kmax2 gt ntry-edge-1 then go=0. else begin
+        if imin lt edge and imax gt ntry-edge-1 and jmin lt edge and jmax gt ntry-edge-1 and kmin lt edge and kmax gt ntry-edge-1 then go=0. else begin ;set fitting range for next loop
             iredchi=dblarr(ntry)
             jredchi=dblarr(ntry)
             kredchi=dblarr(ntry)
             for i=0,ntry-1 do iredchi(i)=min(redchi2(i,*,*))
             for j=0,ntry-1 do jredchi(j)=min(redchi2(*,j,*))
             for k=0,ntry-1 do kredchi(k)=min(redchi2(*,*,k))
-            imin=max([0,min(where(iredchi le minchi2+2.))-1])
-            imax=min([ntry-1,max(where(iredchi le minchi2+2.))+1])
-            jmin=max([0,min(where(jredchi le minchi2+2.))-1])
-            jmax=min([ntry-1,max(where(jredchi le minchi2+2.))+1])
-            kmin=max([0,min(where(kredchi le minchi2+2.))-1])
-            kmax=min([ntry-1,max(where(kredchi le minchi2+2.))+1])
-            tgasmin=tgasarr(imin)
-            tgasmax=tgasarr(imax)
-            tovermin=min([toverarr(jmin),tgasmin])
-            tovermax=toverarr(jmax)
-            lambdamin=lambdaarr(kmin)
-            lambdamax=lambdaarr(kmax)
+            imin=max([0,min(where(iredchi le minchi2+3.))-1])
+            imax=min([long(ntry-1),max(where(iredchi le minchi2+3.))+1])
+            jmin=max([0,min(where(jredchi le minchi2+3.))-1])
+            jmax=min([long(ntry-1),max(where(jredchi le minchi2+3.))+1])
+            kmin=max([0,min(where(kredchi le minchi2+3.))-1])
+            kmax=min([long(ntry-1),max(where(kredchi le minchi2+3.))+1])
+            tgasmin=tgasarr(imin)-.5*dtgas(imin)
+            tgasmax=tgasarr(imax)+.5*dtgas(imax)
+            tovermin=min([toverarr(jmin)-.5*dtover(jmin),tgasmin])
+            tovermax=toverarr(jmax)+.5*dtover(jmax)
+            lambdamin=lambdaarr(kmin)-.5*dlambda(kmin)
+            lambdamax=lambdaarr(kmax)+.5*dlambda(kmax)
         endelse
+        ;avoid edge traps
         if ibest eq 0 then tgasmin=max([tgasmin^2./tgasmax,tgasmini])
         if ibest eq ntry-1 then tgasmax=min([tgasmax^2./tgasmin,tgasmaxi])
         if jbest eq 0 then tovermin=max([2.*tovermin-tovermax,tovermini])
         if jbest eq ntry-1 then tovermax=min([2.*tovermax-tovermin,tovermaxi])
         if kbest eq 0 then lambdamin=max([lambdamin^2./lambdamax,lambdamini])
         if kbest eq ntry-1 then lambdamax=min([lambdamax^2./lambdamin,lambdamaxi])
-        if tgasminold eq tgasmin and tgasmaxold eq tgasmax and toverminold eq tovermin and tovermaxold eq tovermax and lambdaminold eq lambdamin and lambdamaxold eq lambdamax then go=0.
+        ;if the change in the fitting range becomes smaller than 5% for all variables, then stop iteratively shrinking it
+        tol=0.05
+        if abs(tgasminold/tgasmin-1.) le tol and abs(tgasmaxold/tgasmax-1.) le tol and $
+           abs(toverminold/tovermin-1.) le tol and abs(tovermaxold/tovermax-1.) le tol and $
+           abs(lambdaminold/lambdamin-1.) le tol and abs(lambdamaxold/lambdamax-1.) le tol then go=0.
         
         logdifftgas=0.5*(2.-alog10(tgasmax/tgasmin)) ;is the range at least two orders of magnitude?
         if logdifftgas gt 0 then tgr=[tgasmin/10.^logdifftgas,tgasmax*10.^logdifftgas] else tgr=[tgasmin,tgasmax] ;if not, extend for plotting
@@ -490,8 +388,6 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         set_plot,window_plot
         plot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1
         oplot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),thick=5
-        oplot,apertures_gas,f_fluxratiogas(30.,10.,4.,apertures_gas,226.,1.,surfcontrasts,surfcontrastg,peak_prof),linestyle=1
-        oplot,apertures_star,f_fluxratiostar(30.,10.,4.,apertures_star,226.,1.,surfcontrasts,surfcontrastg,peak_prof),linestyle=1
         for i=0,ntry-1,10 do oplot,apertures_star,fluxratio_star_th(i,jbest,kbest,*)
         for i=0,ntry-1,10 do oplot,apertures_gas,fluxratio_gas_th(i,jbest,kbest,*)
         oplot,apertures_gas,fluxratio_gas_th(ibest,jbest,kbest,*),thick=5
@@ -693,66 +589,10 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             report=f_plotdistr(tgasarr,dtgas,probtgas,tgas,galaxy,figdir,'tgas','!8t!6!Dgas!N','!6Myr')
             report=f_plotdistr(toverarr,dtover,probtover,tover,galaxy,figdir,'tover','!8t!6!Dover!N','!6Myr')
             report=f_plotdistr(lambdaarr,dlambda,problambda,lambda,galaxy,figdir,'lambda','!7k!6','!6pc')
-                
-;            device,filename=figdir+galaxy+'_distr_tgas.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
-;            plot,tgasarr,probtgas,/nodata,/xlog,xtitle='!8t!6!Dgas!N [Myr]',ytitle='d!8p!6/d!8t!6!Dgas!N [Myr!U-1!N]',xr=tgr,xstyle=1,charsize=chsize
-;            oplot,tgasarr,probtgas
-;            oplot,[1,1]*tgas,[0,10^3],linestyle=2
-;            oplot,[1,1]*tgas_low,[0,10^3],linestyle=1
-;            oplot,[1,1]*tgas_hi,[0,10^3],linestyle=1
-;            xyouts,.55,.8,'!8t!6!Dgas!N = '+f_string(tgas,1)+'!U+'+f_string(tgas_errmax,1)+'!D-'+f_string(tgas_errmin,1)+'!N Myr',/normal,charsize=chsize
-;            device,/close
-;    
-;            device,filename=figdir+galaxy+'_cumdistr_tgas.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
-;            plot,tgasarr,probtgascum,/nodata,/xlog,xtitle='!8t!6!Dgas!N [Myr]',ytitle='!8p!6(<!8t!6!Dgas!N)',xr=tgr,yr=[0,1],xstyle=1,ystyle=1,charsize=chsize
-;            oplot,tgasarr,probtgascum
-;            oplot,[1,1]*tgas,[0,10^3],linestyle=2
-;            oplot,[1,1]*tgas_low,[0,10^3],linestyle=1
-;            oplot,[1,1]*tgas_hi,[0,10^3],linestyle=1
-;            xyouts,.55,.4,'!8t!6!Dgas!N = '+f_string(tgas,1)+'!U+'+f_string(tgas_errmax,1)+'!D-'+f_string(tgas_errmin,1)+'!N Myr',/normal,charsize=chsize
-;            device,/close
-;    
-;            device,filename=figdir+galaxy+'_distr_tover.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
-;            plot,toverarr,probtover,/nodata,/xlog,xtitle='!8t!6!Dover!N [Myr]',ytitle='d!8p!6/d!8t!6!Dover!N [Myr!U-1!N]',xr=tor,xstyle=1,charsize=chsize
-;            oplot,toverarr,probtover
-;            oplot,[1,1]*tover,[0,10^3],linestyle=2
-;            oplot,[1,1]*tover_low,[0,10^3],linestyle=1
-;            oplot,[1,1]*tover_hi,[0,10^3],linestyle=1
-;            xyouts,.55,.8,'!8t!6!Dover!N = '+f_string(tover,1)+'!U+'+f_string(tover_errmax,1)+'!D-'+f_string(tover_errmin,1)+'!N Myr',/normal,charsize=chsize
-;            device,/close
-;    
-;            device,filename=figdir+galaxy+'_cumdistr_tover.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
-;            plot,toverarr,probtovercum,/nodata,/xlog,xtitle='!8t!6!Dover!N [Myr]',ytitle='!8p!6(<!8t!6!Dover!N)',xr=tor,yr=[0,1],xstyle=1,ystyle=1,charsize=chsize
-;            oplot,toverarr,probtovercum
-;            oplot,[1,1]*tover,[0,10^3],linestyle=2
-;            oplot,[1,1]*tover_low,[0,10^3],linestyle=1
-;            oplot,[1,1]*tover_hi,[0,10^3],linestyle=1
-;            xyouts,.55,.4,'!8t!6!Dover!N = '+f_string(tover,1)+'!U+'+f_string(tover_errmax,1)+'!D-'+f_string(tover_errmin,1)+'!N Myr',/normal,charsize=chsize
-;            device,/close
-;    
-;            device,filename=figdir+galaxy+'_distr_lambda.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
-;            plot,lambdaarr,problambda,/nodata,/xlog,xtitle='!7k!6 [pc]',ytitle='d!8p!6/d!7k!6 [pc!U-1!N]',xr=lar,xstyle=1,charsize=chsize
-;            oplot,lambdaarr,problambda
-;            oplot,[1,1]*lambda,[0,10^3],linestyle=2
-;            oplot,[1,1]*lambda_low,[0,10^3],linestyle=1
-;            oplot,[1,1]*lambda_hi,[0,10^3],linestyle=1
-;            xyouts,.6,.8,'!7k!6 = '+f_string(lambda,0)+'!U+'+f_string(lambda_errmax,0)+'!D-'+f_string(lambda_errmin,0)+'!N pc',/normal,charsize=chsize
-;            device,/close
-;    
-;            device,filename=figdir+galaxy+'_cumdistr_lambda.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
-;            plot,lambdaarr,probtovercum,/nodata,/xlog,xtitle='!7k!6 [pc]',ytitle='!8p!6(<!7k!6)',xr=lar,yr=[0,1],xstyle=1,ystyle=1,charsize=chsize
-;            oplot,lambdaarr,problambdacum
-;            oplot,[1,1]*lambda,[0,10^3],linestyle=2
-;            oplot,[1,1]*lambda_low,[0,10^3],linestyle=1
-;            oplot,[1,1]*lambda_hi,[0,10^3],linestyle=1
-;            xyouts,.6,.4,'!7k!6 = '+f_string(lambda,0)+'!U+'+f_string(lambda_errmax,0)+'!D-'+f_string(lambda_errmin,0)+'!N pc',/normal,charsize=chsize
-;            device,/close
-        
+                        
             set_plot,'x'
         endif
-                                
-        if go eq 0 then stop
-
+                               
         n=n+1
     endwhile
 
@@ -778,13 +618,8 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
     save,filename=arrdir+'dtlambdaarr.sav',dlambdaarr
     print,'     ==> writing probability distribution functions to output directory'
     report=f_writepdf(alog10(tgasarr),alog10(dtgas),alog10(probtgas),galaxy,outputdir,'tgas','# log10(tgas[Myr]), log10(dtgas[Myr]), log10(PDF[Myr^-1])')
-    print,report
     report=f_writepdf(alog10(toverarr),alog10(dtover),alog10(probtover),galaxy,outputdir,'tover','# log10(tover[Myr]), log10(dtover[Myr]), log10(PDF[Myr^-1])')
-    print,report
     report=f_writepdf(alog10(lambdaarr),alog10(dlambda),alog10(problambda),galaxy,outputdir,'lambda','# log10(lambda[pc]), log10(dlambda[pc]), log10(PDF[pc^-1])')
-    print,report
-    
-;    stop
 
     return,[minchi2,tgas,tgas_errmin,tgas_errmax,tover,tover_errmin,tover_errmax,lambda,lambda_errmin,lambda_errmax]
     
