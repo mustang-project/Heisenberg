@@ -90,14 +90,14 @@ endwhile
 close,lun ;close the logical unit
 free_lun,lun ;make the logical unit available again
 
-expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','cut_sample','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
+expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','cut_radius','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
 expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks'] ;variable names of expected flags (3)
-expected_flags4=['tophat','loglevels','flux_weight','calc_ap_area','cut_style','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
+expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
-expected_params1=['distance','inclination','posangle','minradius','maxradius','Fs1_Fs2_min','nbins'] ;variable names of expected input parameters (1)
+expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','nbins'] ;variable names of expected input parameters (1)
 expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini','fstarover','fgasover'] ;variable names of expected input parameters (4)
@@ -255,6 +255,17 @@ endif else begin
     gasmap2=gasmap
 endelse
 
+mapdim_orig=size(starmap)
+nx_orig=mapdim_orig(1) ;number of x pixels in original stellar map
+ny_orig=mapdim_orig(2) ; number of y pixels in original stellar map
+if set_centre then begin
+    centrefracx=centrex/long(nx_orig-1) ;central pixel x-coordinate measured from map edge
+    centrefracy=centrey/long(ny_orig-1) ;central pixel y-coordinate measured from map edge
+endif else begin
+    centrefracx=0.5
+    centrefracy=0.5
+endelse
+centre_orig=[centrefracx*(nx_orig-1),centrefracy*(ny_orig-1)] ;pixel coordinates of the galaxy centre in the original stellar map
 beammaxpc=distance*beamtest*!dtor/sqrt(cos(inclination)) ;largest beam size in pc -- assumes small angles, i.e. tan(x)~x
 beamaperture=min(where(abs(alog10(apertures/beammaxpc)) eq min(abs(alog10(apertures/beammaxpc)))))
 peak_res=max([peak_res,beamaperture]) ;ensure that the smallest aperture size is the aperture closest to the beam size
@@ -301,7 +312,12 @@ if regrid then begin
     endif else begin
         gasmap2=gasmap
     endelse
-endif
+    mapdim=size(starmap)
+    nx=mapdim(1) ;number of x pixels in regridded stellar map
+    ny=mapdim(2) ; number of y pixels in regridded stellar map
+    centre=[centrefracx*(nx-1),centrefracy*(ny-1)] ;pixel coordinates of the galaxy centre in the regridded stellar map
+endif else centre=centre_orig
+
 cdelt=abs(sxpar(starmaphdr,'CDELT1'))
 pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
 if pixtopc gt apertures(peak_res) then begin
@@ -341,10 +357,6 @@ endif
 
 tstariso_rerrmin=tstariso_errmin/tstariso ;Relative downward standard error on tstariso
 tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tstariso
-mapdim=size(gasmap)
-nx=mapdim(1) ;number of x pixels
-ny=mapdim(2) ; number of y pixels
-centre=[nx/2,ny/2] ;pixel coordinates of the centre
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -603,39 +615,14 @@ if calc_ap_flux then begin
 endif
 
 
-;;;;;;;;;;;;
-;CUT SAMPLE;
-;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;
+;CUT RADIAL RANGE;
+;;;;;;;;;;;;;;;;;;
 
-if cut_sample then begin
-    print,' ==> cutting peak sample'
+if cut_radius then begin
+    print,' ==> cutting peak sample to a radial range'
     maxap=max(apertures(fitap))*pctopix ;max aperture size in pixels
-    if cut_style eq 0 then edgewidth=0.
-    if cut_style eq 1 then edgewidth=0.5*maxap
-    if use_star3 then begin
-        incl1=cutarea(starmap,starmap3,gasmap,edgewidth) ;map set to unity where at least one map reaches
-        incl2=1 ;starflux(peak_res,*)/starflux3(peak_res,*) ge Fs1_Fs2_min ;map set to unity where primary-to-secondary stellar flux ratio are at least Fs1_Fs2_min
-    endif else begin
-        incl1=cutarea(starmap,starmap,gasmap,edgewidth) ;map set to unity where at least one map reaches
-        incl2=1
-    endelse
-    peakdistxpix=peaks(*,0)-centre(0)
-    peakdistypix=peaks(*,1)-centre(1)
-    peakdistxpc=(cos(-posangle)*peakdistxpix-sin(-posangle)*peakdistypix)*distance*!dtor*cdelt
-    peakdistypc=(sin(-posangle)*peakdistxpix+cos(-posangle)*peakdistypix)*distance*!dtor*cdelt/cos(inclination)
-    peakradius=sqrt(peakdistxpc^2.+peakdistypc^2.)
-    peakin=where(peakradius ge minradius and peakradius le maxradius)
-    peakmeanradius=mean(peakradius(peakin))
-    incltot=incl1*incl2 ;multiply as many subsets as needed
-    includepeak=dblarr(npeaks) ;0/1 if peak is included or not
-    for j=0,npeaks-1 do begin
-        kx=peaks(j,0) ;get x index of peak
-        ky=peaks(j,1) ;get y index of peak
-        if peakradius(j) ge minradius && peakradius(j) le maxradius then includepeak(j)=incltot(kx,ky) ;include peak? only if within specified radius interval and if there is coverage in the other tracer too
-    endfor
-    inclpeaks=where(includepeak ne 0,nincludepeak) ;included peaks
-    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
-    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
+
     inclarea=dblarr(nx,ny) ;array for included area
     pixx=dblarr(nx,ny)
     pixy=dblarr(nx,ny)
@@ -646,10 +633,18 @@ if cut_sample then begin
     pixdistxpc=(cos(-posangle)*pixdistxpix-sin(-posangle)*pixdistypix)*distance*!dtor*cdelt
     pixdistypc=(sin(-posangle)*pixdistxpix+cos(-posangle)*pixdistypix)*distance*!dtor*cdelt/cos(inclination)
     pixradius=sqrt(pixdistxpc^2.+pixdistypc^2.)
-    pixin=where(pixradius ge minradius and pixradius le maxradius)
-    pixmeanradius=mean(pixradius(pixin))
-    inclarea(pixin)=1
-    incltot=incltot*inclarea*mask_arr ;account for limits on the radial area covered as well as any masks applied
+    inclpix=where(pixradius ge minradius and pixradius le maxradius)
+    pixmeanradius=mean(pixradius(inclpix))
+    inclarea(inclpix)=1
+
+    includepeak=inclarea(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
+    inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
+    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
+    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
+    peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
+    peakmeanradius=mean(peakradius(inclpeaks))
+    
+    incltot=inclarea*mask_arr ;account for limits on the radial area covered as well as any masks applied
     totalarea=total(incltot)*pixtopc^2.
     lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
     starfluxtotal=total(starmap*incltot,/nan) ;total flux in SF tracer map
@@ -683,18 +678,16 @@ if generate_plot then begin
     oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=1,color=fsc_color('red'),symsize=.6
     oplot,ring1x,ring1y
     oplot,ring2x,ring2y
-    contour,incl1,/overplot,levels=[.5,2.],color=fsc_color('green')
     device,/close
 
     device,filename=figdir+'map_gas.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
-    rtar=0.;logrange_g+.1 -- TEMP FIX FOR SIMULATIONS, REMOVE LATER
+    rtar=0.;logrange_g+.1 -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
     rmin=min(alog10(smoothgas(peak_res,*,*)),/nan)
-    rmax=alog10(5.);max(alog10(smoothgas(peak_res,*,*)),/nan) -- TEMP FIX FOR SIMULATIONS, REMOVE LATER
+    rmax=alog10(5.);max(alog10(smoothgas(peak_res,*,*)),/nan) -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
     plotfits,rundir+'res_'+res(peak_res)+'pc'+path_sep()+gasfileshort,rmax-rmin-rtar,0.,3,log=1
     oplot,gaspeaks(inclgas-nstarpeaks,0),gaspeaks(inclgas-nstarpeaks,1),psym=1,color=fsc_color('blue'),symsize=.6
     oplot,ring1x,ring1y
     oplot,ring2x,ring2y
-    contour,incl1,/overplot,levels=[.5,2.],color=fsc_color('green')
     device,/close
 
     if use_star3 then begin
@@ -707,7 +700,6 @@ if generate_plot then begin
         oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=7,color=fsc_color('white')
         oplot,ring1x,ring1y
         oplot,ring2x,ring2y
-        contour,incl1,/overplot,levels=[.5,2.],color=fsc_color('green')
         device,/close
     endif
     set_plot,'x'

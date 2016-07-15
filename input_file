@@ -37,7 +37,7 @@ smoothen        1         # Create smoothened maps for each aperture size (on/of
 sensitivity     1         # Fit Gaussians to pixel intensity PDFs to determine sensitivity limits (on/off)
 id_peaks        1         # Identify peaks and save their locations (on/off)
 calc_ap_flux    1         # Calculate the enclosed flux for each peak and aperture size (on/off)
-cut_sample      1         # Cut peak sample to predefined conditions (on/off; e.g. avoid peaks near edges, or only allow certain flux ratios)
+cut_radius      1         # Cut peak sample to a radial interval within the galaxy (on/off)
 generate_plot   1         # Generate output plots and save to PostScript files (on/off)
 get_distances   1         # Calculate distances between all peak pairs (on/off)
 calc_fit        1         # Iteratively: Monte-Carlo sample peaks, get observed tuning fork, fit KL14 principle model (on/off)
@@ -60,11 +60,11 @@ mstar_ext3      0         # Mask areas in starfile3 exterior to regions describe
 mstar_int3      0         # Mask areas in starfile3 interior to regions described in star_int_mask3 (on/off)
 convert_masks   0         # Convert masks from other ds9 region co-ordinate systems to image co-ordinates (requires command line version of ds9) (on/off)
 # FLAGS 4 (choose analysis options)
+set_centre      1         # [0] Pixel coordinates of galaxy centre are set to the central pixel of starfile; [1, DEFAULT] Specify pixel coordinates of galaxy centre under INPUT PARAMETERS 1 (basic map analysis)
 tophat          1         # [0] Use Gaussian kernel to smoothen maps to larger aperture sizes; [1, DEFAULT] Use tophat kernel to smoothen maps to larger aperture sizes
 loglevels       1         # [0] Linear equal-spacing of peak identification contour levels; [1, DEFAULT] Logarithmic equal-spacing of peak identification contour levels
 flux_weight     0         # [0, DEFAULT] Peak positions correspond to brightest pixel in peak area; [1] Peak positions correspond to flux-weighted mean position of peak area
 calc_ap_area    1         # Calculate the area of apertures used based on number of unmasked pixels within the target aperture defined under INPUT PARAMETERS 2 (apertures) (on/off)
-cut_style       0         # [0, DEFAULT] Cut peak sample without keeping some distance to the map edge; [1] Cut peak sample to avoid peaks within a distance max(lap/2) of the map edge
 tstar_incl      0         # [0, DEFAULT] Reference time-scale tstariso does not include the overlap phase (tstar=tstariso+tover); [1] tstariso includes the overlap phase (tstar=tstariso)
 peak_prof       2         # [0] Model independent regions as points; [1] Model independent regions as constant-surface density discs; [2, DEFAULT] Model independent regions as two-dimensional Gaussians
 map_units       1         # [0] Unknown, do not calculate derived quantities; [1, DEFAULT] star=SFR and gas=gas; [2] star=gas1 and gas=gas2; [3] star=SFR1 and gas=SFR2
@@ -75,6 +75,8 @@ use_X11         0         # [0] Not allowed to create X11 windows; [1] Allowed t
 distance        840000.   # Distance to galaxy in pc
 inclination     0.        # Inclination angle in degrees
 posangle        0.        # Position angle in degrees
+centrex         701       # Index of pixel x-axis coordinate of galaxy centre in starfile (important: start counting at zero on the left-hand side of the image)
+centrey         701       # Index of pixel y-axis coordinate of galaxy centre in starfile (important: start counting at zero on the bottom side of the image)
 minradius       0.        # Minimum radius for analysis in pc
 maxradius       10000.    # Minimum radius for analysis in pc
 Fs1_Fs2_min     15.       # Minimum primary-to-secondary star formation tracer flux ratio for including pixels (only if use_star3=1)
