@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
-;                 FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                 ;
+;              FIT KL14 PRINCIPLE (v0.2) TO OBSERVED GALAXY MAPS             ;
 ; start environment with >> idl kl14 -arg [full/absolute path of input file] ;
 ;                                                                            ;
 ;                      BEGIN MAIN ROUTINE tuningfork.pro                     ;
