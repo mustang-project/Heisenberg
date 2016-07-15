@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
-;                 FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                 ;
+;              FIT KL14 PRINCIPLE (v0.2) TO OBSERVED GALAXY MAPS             ;
 ; start environment with >> idl kl14 -arg [full/absolute path of input file] ;
 ;                                                                            ;
 ;                      BEGIN MAIN ROUTINE tuningfork.pro                     ;
@@ -90,14 +90,14 @@ endwhile
 close,lun ;close the logical unit
 free_lun,lun ;make the logical unit available again
 
-expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','cut_sample','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
+expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','cut_radius','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
 expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks'] ;variable names of expected flags (3)
-expected_flags4=['tophat','loglevels','flux_weight','calc_ap_area','cut_style','tstar_incl','peak_prof','map_units'] ;variable names of expected flags (4)
+expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
-expected_params1=['distance','inclination','posangle','minradius','maxradius','Fs1_Fs2_min','nbins'] ;variable names of expected input parameters (1)
+expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','nbins'] ;variable names of expected input parameters (1)
 expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini','fstarover','fgasover'] ;variable names of expected input parameters (4)
@@ -113,6 +113,16 @@ for i=0,nvars-1 do begin ;verify input reading
         stop
     endif
 endfor
+
+if use_X11 then begin ;set window properties
+    window_plot='x'
+    device,retain=2
+    ; set color
+    device,true_color=24
+    device,decomposed=0
+    window,xsize=600,ysize=840,title='IDL graphics',colors=100
+    loadct,12
+endif else window_plot='z' ;prevents window creation
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -146,66 +156,39 @@ if regrid then resdir=datadir else resdir=griddir
 print,' ==> reading maps from '+resdir
 starfiletot=resdir+starfile ;Halpha map (total)
 if mask_images then begin
-    if mstar_ext && mstar_int then begin
-        mask_tool, starfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + star_ext_mask, ds9_negative_path = maskdir + path_sep() + star_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + starfile $ ;path to write masked image to
-            , image_masked = starmap $ ;overwrite original image array with masked one
-            , header_output = starmaphdr $
-            , convert = convert_masks
-    endif else if mstar_ext then begin
-        mask_tool, starfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + star_ext_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + starfile $ ;path to write masked image to
-            , image_masked = starmap $ ;overwrite original image array with masked one
-            , header_output = starmaphdr $
-            , convert = convert_masks
-    endif else if mstar_int then begin
-        mask_tool, starfiletot $ ;image variables
-            , ds9_negative_path = maskdir + path_sep() + star_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + starfile $ ;path to write masked image to
-            , image_masked = starmap $ ;overwrite original image array with masked one
-            , header_output = starmaphdr $
-            , convert = convert_masks
-    endif
-endif else begin ;else just read in file.
-    starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
-    starmaphdr=hdr ;header of Halpha map
-endelse
+    if mstar_ext then mstar_ext_path = maskdir + path_sep() + star_ext_mask
+    if mstar_int then mstar_int_path = maskdir + path_sep() + star_int_mask
+    masked_path_star = maskeddir + starfile
+endif
+mask_tool, starfiletot $ ;image variables
+    , ds9_positive_path = mstar_ext_path, ds9_negative_path = mstar_int_path $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+    , masked_image_path = masked_path_star $ ;path to write masked image to
+    , image_masked = starmap $ ;overwrite original image array with masked one
+    , header_output = starmaphdr $
+    , convert = convert_masks, /run_without_masks
+
+cdeltstar=abs(sxpar(starmaphdr,'CDELT1'))
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
 if use_star2 then begin
     starfiletot2=resdir+starfile2 ;Halpha peak map
     if mask_images then begin
-        if mstar_ext2 && mstar_int2 then begin
-            mask_tool, starfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask2, ds9_negative_path = maskdir + path_sep() + star_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
-                , image_masked = starmap2 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr2 $ 
-                , convert = convert_masks
-        endif else if mstar_ext2 then begin
-            mask_tool, starfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
-                , image_masked = starmap $ ;overwrite original image array with masked one
-                , header_output = starmaphdr $ 
-                , convert = convert_masks
-        endif else if mstar_int2 then begin
-            mask_tool, starfiletot2 $ ;image variables
-                , ds9_negative_path = maskdir + path_sep() + star_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile2 $ ;path to write masked image to
-                , image_masked = starmap2 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr2 $
-                , convert = convert_masks
-        endif
-    endif else begin ;else just read in file.
-        starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
-        starmaphdr2=hdr ;header of Halpha peak map
-    endelse
-    beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
-    beamtest=max([beamtest,beamfits])
+        if mstar_ext2 then mstar_ext_path2 = maskdir + path_sep() + star_ext_mask2
+        if mstar_int2 then mstar_int_path2 = maskdir + path_sep() + star_int_mask2
+        masked_path_star2 = maskeddir + starfile2
+    endif
+
+    mask_tool, starfiletot2 $ ;image variables
+        , ds9_positive_path = mstar_ext_path2, ds9_negative_path = mstar_int_path2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+        , masked_image_path = masked_path_star2 $ ;path to write masked image to
+        , image_masked = starmap2 $ ;overwrite original image array with masked one
+        , header_output = starmaphdr2 $
+        , convert = convert_masks, /run_without_masks
+
+        cdeltstar2=abs(sxpar(starmaphdr2,'CDELT1'))
+        beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
+        beamtest=max([beamtest,beamfits])
 endif else begin
     starfile2=starfile
     starmap2=starmap
@@ -214,132 +197,79 @@ endelse
 if use_star3 then begin
     starfiletot3=resdir+starfile3 ;FUV map
     if mask_images then begin
-        if mstar_ext3 && mstar_int3 then begin
-            mask_tool, starfiletot3 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask3, ds9_negative_path = maskdir + path_sep() + star_int_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
-                , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $ 
-                , convert = convert_masks
-        endif else if mstar_ext3 then begin
-            mask_tool, starfiletot3 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + star_ext_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
-                , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $ 
-                , convert = convert_masks
-        endif else if mstar_int3 then begin
-            mask_tool, starfiletot3 $ ;image variables
-                , ds9_negative_path = maskdir + path_sep() + star_int_mask3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + starfile3 $ ;path to write masked image to
-                , image_masked = starmap3 $ ;overwrite original image array with masked one
-                , header_output = starmaphdr3 $
-                , convert = convert_masks
-        endif
-    endif else begin ;else just read in file.
-        starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
-        starmaphdr3=hdr ;header of FUV map
-    endelse
-    beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
-    beamtest=max([beamtest,beamfits])
+        if mstar_ext3 then mstar_ext_path3 = maskdir + path_sep() + star_ext_mask3
+        if mstar_int3 then mstar_int_path3 = maskdir + path_sep() + star_int_mask3
+        masked_path_star3 = maskeddir + starfile3
+    endif
+
+    mask_tool, starfiletot3 $ ;image variables
+        , ds9_positive_path = mstar_ext_path3, ds9_negative_path = mstar_int_path3 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+        , masked_image_path = masked_path_star3 $ ;path to write masked image to
+        , image_masked = starmap3 $ ;overwrite original image array with masked one
+        , header_output = starmaphdr3 $
+        , convert = convert_masks, /run_without_masks
+
+        cdeltstar3=abs(sxpar(starmaphdr3,'CDELT1'))
+        beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
+        beamtest=max([beamtest,beamfits])
 endif
+
 gasfiletot=resdir+gasfile ;moment zero CO map (velocity mask for better flux estimate)
 if mask_images then begin
-    if mgas_ext && mgas_int then begin
-        mask_tool, gasfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + gas_ext_mask, ds9_negative_path = maskdir + path_sep() + gas_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-            , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $ 
-            , convert = convert_masks
-    endif else if mgas_ext then begin
-        mask_tool, gasfiletot $ ;image variables
-            , ds9_positive_path = maskdir + path_sep() + gas_ext_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-            , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $ 
-            , convert = convert_masks
-    endif else if mgas_int then begin
-        mask_tool, gasfiletot $ ;image variables
-            , ds9_negative_path = maskdir + path_sep() + gas_int_mask $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-            , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-            , image_masked = gasmap $ ;overwrite original image array with masked one
-            , header_output = gasmaphdr $
-            , convert = convert_masks
-    endif
-endif else begin ;else just read in file.
-    gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
-    gasmaphdr=hdr ;moment zero CO header
-endelse
+    if mgas_ext then mgas_ext_path = maskdir + path_sep() + gas_ext_mask
+    if mgas_int then mgas_int_path = maskdir + path_sep() + gas_int_mask
+    masked_path_gas = maskeddir + gasfile
+endif
+
+mask_tool, gasfiletot $ ;image variables
+    , ds9_positive_path = mgas_ext_path, ds9_negative_path = mgas_int_path $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+    , masked_image_path = masked_path_gas $ ;path to write masked image to
+    , image_masked = gasmap $ ;overwrite original image array with masked one
+    , header_output = gasmaphdr $
+    , convert = convert_masks, /run_without_masks
+
+cdeltgas=abs(sxpar(gasmaphdr,'CDELT1'))
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
 if use_gas2 then begin
     gasfiletot2=resdir+gasfile2 ;moment zero CO map (sigma mask for better peak ID)
     if mask_images then begin
-        if mgas_ext2 && mgas_int2 then begin
-            mask_tool, gasfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + gas_ext_mask, ds9_negative_path = maskdir + path_sep() + gas_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile2 $ ;path to write masked image to
-                , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $ 
-                , convert = convert_masks
-        endif else if mgas_ext then begin
-            mask_tool, gasfiletot2 $ ;image variables
-                , ds9_positive_path = maskdir + path_sep() + gas_ext_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-                , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $ 
-                , convert = convert_masks
-        endif else if mgas_int then begin
-            mask_tool, gasfiletot2 $ ;image variables
-                , ds9_negative_path = maskdir + path_sep() + gas_int_mask2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
-                , masked_image_path = maskeddir + gasfile $ ;path to write masked image to
-                , image_masked = gasmap2 $ ;overwrite original image array with masked one
-                , header_output = gasmaphdr2 $
-                , convert = convert_masks
-        endif
-    endif else begin ;else just read in file.
-        gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
-        gasmaphdr2=hdr ;moment zero CO peak header
-    endelse
-    beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
-    beamtest=max([beamtest,beamfits])
+        if mgas_ext2 then mgas_ext_path2 = maskdir + path_sep() + gas_ext_mask2
+        if mgas_int2 then mgas_int_path2 = maskdir + path_sep() + gas_int_mask2
+        masked_path_gas2 = maskeddir + gasfile2
+    endif
+
+    mask_tool, gasfiletot2 $ ;image variables
+        , ds9_positive_path = mgas_ext_path2, ds9_negative_path = mgas_int_path2 $ ;ds9 region file keywords ; positive = allowed regions, negative = not allowed regions
+        , masked_image_path = masked_path_gas2 $ ;path to write masked image to
+        , image_masked = gasmap2 $ ;overwrite original image array with masked one
+        , header_output = gasmaphdr2 $
+        , convert = convert_masks, /run_without_masks
+
+        cdeltgas2=abs(sxpar(gasmaphdr2,'CDELT1'))
+        beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
+        beamtest=max([beamtest,beamfits])
 endif else begin
     gasfile2=gasfile
     gasmap2=gasmap
 endelse
 
-cdelt=abs(sxpar(starmaphdr,'CDELT1'))
-pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc
-pctopix=1./pixtopc ;pc in number of pixels
-beammaxpc=beamtest/cdelt*pixtopc/sqrt(cos(inclination))
+mapdim_orig=size(starmap)
+nx_orig=mapdim_orig(1) ;number of x pixels in original stellar map
+ny_orig=mapdim_orig(2) ; number of y pixels in original stellar map
+if set_centre then begin
+    centrefracx=centrex/long(nx_orig-1) ;central pixel x-coordinate measured from map edge
+    centrefracy=centrey/long(ny_orig-1) ;central pixel y-coordinate measured from map edge
+endif else begin
+    centrefracx=0.5
+    centrefracy=0.5
+endelse
+centre_orig=[centrefracx*(nx_orig-1),centrefracy*(ny_orig-1)] ;pixel coordinates of the galaxy centre in the original stellar map
+beammaxpc=distance*beamtest*!dtor/sqrt(cos(inclination)) ;largest beam size in pc -- assumes small angles, i.e. tan(x)~x
 beamaperture=min(where(abs(alog10(apertures/beammaxpc)) eq min(abs(alog10(apertures/beammaxpc)))))
 peak_res=max([peak_res,beamaperture]) ;ensure that the smallest aperture size is the aperture closest to the beam size
 fitap=fix(peak_res)+indgen(max_res-peak_res+1) ;aperture sizes used in fitting the KL14 principle model
-tstariso_rerrmin=tstariso_errmin/tstariso ;Relative downward standard error on tstariso
-tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tstariso
-convstar=10.^convstar ;pixel conversion factor to physical units
-convgas=10.^convgas ;pixel conversion factor to physical units
-convstar3=10.^convstar3 ;pixel conversion factor to physical units
-if map_units eq 1 then begin
-    sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map -- !!CHECK IF CORRECT, MIGHT BE SURFACE DENSITY INSTEAD OF MASS
-    sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
-    mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
-endif
-if map_units eq 2 then begin
-    mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
-    mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
-    mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
-endif
-if map_units eq 3 then begin
-    sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
-    sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
-    sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
-    sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
-endif
 
 
 ;;;;;;;;;;;;;
@@ -382,22 +312,51 @@ if regrid then begin
     endif else begin
         gasmap2=gasmap
     endelse
-endif
-cdelt=abs(sxpar(starmaphdr,'CDELT1'))
-pixtopc_old=pixtopc ;pixel size in pc before regridding
-pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc
-convstar=convstar*(pixtopc/pixtopc_old)^2. ;change pixel conversion factor to physical units to account for regridding
-convstar_err=convstar*convstar_rerr
-convgas=convgas*(pixtopc/pixtopc_old)^2. ;change pixel conversion factor to physical units to account for regridding
-convgas_err=convgas*convgas_rerr
-convstar3=convstar3*(pixtopc/pixtopc_old)^2. ;change pixel conversion factor to physical units to account for regridding
-convstar3_err=convstar3*convstar3_rerr
+    mapdim=size(starmap)
+    nx=mapdim(1) ;number of x pixels in regridded stellar map
+    ny=mapdim(2) ; number of y pixels in regridded stellar map
+    centre=[centrefracx*(nx-1),centrefracy*(ny-1)] ;pixel coordinates of the galaxy centre in the regridded stellar map
+endif else centre=centre_orig
 
+cdelt=abs(sxpar(starmaphdr,'CDELT1'))
+pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
+if pixtopc gt apertures(peak_res) then begin
+    print, ' error: aperture size is smaller than pixel size'
+    print, ' quitting...'
+    stop
+endif
 pctopix=1./pixtopc ;pc in number of pixels
-mapdim=size(gasmap)
-nx=mapdim(1) ;number of x pixels
-ny=mapdim(2) ; number of y pixels
-centre=[nx/2,ny/2] ;pixel coordinates of the centre
+convstar=10.^convstar*(cdelt/cdeltstar)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
+convstar_err=convstar*convstar_rerr
+convgas=10.^convgas*(cdelt/cdeltgas)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
+convgas_err=convgas*convgas_rerr
+if use_star3 then begin
+    convstar3=10.^convstar3*(cdelt/cdeltstar3)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
+    convstar3_err=convstar3*convstar3_rerr
+endif
+if map_units eq 1 then begin
+    sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
+    sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
+    mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
+    mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
+    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.)) ;gas depletion time + 1sigma
+    if tgasmaxi gt tdeplmax then tgasmaxi=tdeplmax ;tgas cannot exceed the gas depletion time
+endif
+if map_units eq 2 then begin
+    mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
+    mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
+    mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
+    mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
+endif
+if map_units eq 3 then begin
+    sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
+    sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
+    sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
+    sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
+endif
+
+tstariso_rerrmin=tstariso_errmin/tstariso ;Relative downward standard error on tstariso
+tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tstariso
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -409,14 +368,14 @@ if regrid then begin
     masksimple = 1 ; propogate masks using simple pixel by pixel comparison
     if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
         if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
-        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0    
+        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
         if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
     endif else masksimple = 0
-  
+
     if masksimple then begin ;create array of total mask
         mask_arr = starmap ;create array to hold masked pixels
         mask_arr[*] = 1.0 ;1.0 = not masked (i.e. allowed through)
-    
+
         nan_list = where(finite(starmap, /nan), nancount) ;find masked pixels in starmap
         if nancount gt 0 then mask_arr[nan_list] = 0.0
         nan_list = where(finite(gasmap, /nan), nancount)  ;find masked pixels in gasmap
@@ -452,7 +411,7 @@ if regrid then begin
             if nancount gt 0 then starmap3[nan_list] = !values.f_nan
             writefits, starfiletot3, starmap3, starmaphdr3 ;write out masked starmap
         endif
-    
+
         ;write out mask file
         maskfile = 'totalmask.fits' ;filename for the mask
         maskfiletot = maskeddir + maskfile
@@ -497,7 +456,7 @@ endif else begin
     peakidgas=readfits(peakdir+gasfile2,hdr,/silent)
     smoothstar=dblarr([naperture,size(peakidstar,/dimensions)]) ;create Ha map array for different resolutions
     if use_star3 then smoothstar3=dblarr([naperture,size(peakidstar,/dimensions)]) ;create FUV map array for different resolutions
-    smoothgas=dblarr([naperture,size(peakidstar,/dimensions)]) ;create gas map array for different resolutions    
+    smoothgas=dblarr([naperture,size(peakidstar,/dimensions)]) ;create gas map array for different resolutions
     for i=0,naperture-1 do begin ;read smoothened maps
         ;check if target directory exists
         dir=rundir+'res_'+res(i)+'pc'+path_sep()
@@ -524,40 +483,57 @@ if sensitivity then begin
     sensstarlist=reform(smoothstar(peak_res,*,*),n_elements(smoothstar(peak_res,*,*)))
     nans=where(finite(sensstarlist,/nan),ct)
     if ct ne 0 then remove,nans,sensstarlist
-    use=where(abs(sensstarlist) le (1.+(min(sensstarlist) gt 0.))*abs(min(sensstarlist))) ;!!THIS IS A BUG WHEN THE SMALLEST VALUE IS ZERO (AND MAYBE POSITIVE DOESN'T WORK VERY WELL TOO) -- ALSO CHECK BELOW
+    sensstarmin=min(sensstarlist)
+    sensstarmed=median(sensstarlist)
+    if sensstarmin lt 0. then use=where(abs(sensstarlist) le abs(sensstarmin))
+    if sensstarmin ge 0. then use=where(abs(sensstarlist) le sensstarmed)
+    if sensstarmin ge 0. && sensstarmed eq 0. then use=where(abs(sensstarlist) le min(sensstarlist(where(sensstarlist gt 0.)))) ;in practice should only happen with near-perfect S/N
     disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
     binwidth=disp/nbins
+    set_plot,window_plot
     histoplot,sensstarlist(use),histdata=hist,locations=bins,binsize=binwidth
+    set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offstar=vars(1)
-    if offstar lt 0 then sensstar=vars(2)*vars(2)/(vars(2)-offstar) else sensstar=vars(2)
+    sensstar=vars(2)
 
     if use_star3 then begin
         sensstarlist3=reform(smoothstar3(peak_res,*,*),n_elements(smoothstar3(peak_res,*,*)))
         nans=where(finite(sensstarlist3,/nan),ct)
         if ct ne 0 then remove,nans,sensstarlist3
-        use=where(abs(sensstarlist3) le (1.+(min(sensstarlist3) gt 0.))*abs(min(sensstarlist3)))
+        sensstarmin3=min(sensstarlist3)
+        sensstarmed3=median(sensstarlist3)
+        if sensstarmin3 lt 0. then use=where(abs(sensstarlist3) le abs(sensstarmin3))
+        if sensstarmin3 ge 0. then use=where(abs(sensstarlist3) le sensstarmed3)
+        if sensstarmin3 ge 0. && sensstarmed3 eq 0. then use=where(abs(sensstarlist3) le min(sensstarlist3(where(sensstarlist3 gt 0.)))) ;in practice should only happen with near-perfect S/N
         disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
         binwidth=disp/nbins
+        set_plot,window_plot
         histoplot,sensstarlist3(use),histdata=hist,locations=bins,binsize=binwidth
+        set_plot,'x'
         binmid=bins+0.5*binwidth
         fit=gaussfit(binmid,hist,vars,nterms=3)
         offstar3=vars(1)
-        if offstar lt 0 then sensstar3=vars(2)*vars(2)/(vars(2)-offstar) else sensstar3=vars(2)
+        sensstar3=vars(2)
     endif
 
     sensgaslist=reform(smoothgas(peak_res,*,*),n_elements(smoothgas(peak_res,*,*)))
     nans=where(finite(sensgaslist,/nan),ct)
     if ct ne 0 then remove,nans,sensgaslist
-    use=where(abs(sensgaslist) le (1.+(min(sensgaslist) gt 0.))*abs(min(sensgaslist)))
+    sensgasmin=min(sensgaslist)
+    if sensgasmin lt 0. then use=where(abs(sensgaslist) le abs(sensgasmin))
+    if sensgasmin ge 0. then use=where(abs(sensgaslist) le sensgasmed)
+    if sensgasmin ge 0. && sensgasmed eq 0. then use=where(abs(sensgaslist) le min(sensgaslist(where(sensgaslist gt 0.)))) ;in practice should only happen with near-perfect S/N
     disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
     binwidth=disp/nbins
+    set_plot,window_plot
     histoplot,sensgaslist(use),histdata=hist,locations=bins,binsize=binwidth
+    set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
     offgas=vars(1)
-    if offgas lt 0 then sensgas=vars(2)*vars(2)/(vars(2)-offgas) else sensgas=vars(2)
+    sensgas=vars(2)
 endif
 
 
@@ -583,13 +559,13 @@ if id_peaks then begin
     starpeaks(*,1)=starpeaks(sortpeaks,1)
     starpeaks(*,2)=starpeaks(sortpeaks,2)
     starpeaks(*,3)=starpeaks(sortpeaks,3)
-    istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar)) ;last peak with intensity larger than the sensitivity limit
+    if use_star2 then istarmax=n_elements(starpeaks(*,0))-1 else istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar+offstar)) ;last peak with intensity larger than the sensitivity limit
     starpeaks=starpeaks(0:istarmax,*) ;reject stellar peaks with stellar flux lower than sensitivity limit
 
     ;IDENTIFY PEAKS IN GAS MAP
     if loglevels then begin
-	     maxval=max(alog10(peakidgas),/nan) ;maximum value
-	     maxlevel=(fix(maxval/logspacing_g)-1)*logspacing_g ;level below maximum value
+	    maxval=max(alog10(peakidgas),/nan) ;maximum value
+	    maxlevel=(fix(maxval/logspacing_g)-1)*logspacing_g ;level below maximum value
         levels=10.^(maxlevel-logrange_g+dindgen(nlevels_g)/(nlevels_g-1)*logrange_g) ;array with levels
     endif else begin
         maxval=max(peakidgas,/nan)
@@ -602,9 +578,9 @@ if id_peaks then begin
     gaspeaks(*,1)=gaspeaks(sortpeaks,1)
     gaspeaks(*,2)=gaspeaks(sortpeaks,2)
     gaspeaks(*,3)=gaspeaks(sortpeaks,3)
-    igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas)) ;last peak with intensity larger than the sensitivity limit
+    if use_gas2 then igasmax=n_elements(gaspeaks(*,0))-1 else igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas+offgas)) ;last peak with intensity larger than the sensitivity limit
     gaspeaks=gaspeaks(0:igasmax,*) ;reject gas peaks with gas flux lower than sensitivity limit
-    
+
     peaks=[starpeaks,gaspeaks]
 endif
 
@@ -639,39 +615,14 @@ if calc_ap_flux then begin
 endif
 
 
-;;;;;;;;;;;;
-;CUT SAMPLE;
-;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;
+;CUT RADIAL RANGE;
+;;;;;;;;;;;;;;;;;;
 
-if cut_sample then begin
-    print,' ==> cutting peak sample'
+if cut_radius then begin
+    print,' ==> cutting peak sample to a radial range'
     maxap=max(apertures(fitap))*pctopix ;max aperture size in pixels
-    if cut_style eq 0 then edgewidth=0.
-    if cut_style eq 1 then edgewidth=0.5*maxap
-    if use_star3 then begin
-        incl1=cutarea(starmap,starmap3,gasmap,edgewidth) ;map set to unity where at least one map reaches
-        incl2=1 ;starflux(peak_res,*)/starflux3(peak_res,*) ge Fs1_Fs2_min ;map set to unity where primary-to-secondary stellar flux ratio are at least Fs1_Fs2_min
-    endif else begin
-        incl1=cutarea(starmap,starmap,gasmap,edgewidth) ;map set to unity where at least one map reaches
-        incl2=1
-    endelse
-    peakdistxpix=peaks(*,0)-centre(0)
-    peakdistypix=peaks(*,1)-centre(1)
-    peakdistxpc=(cos(-posangle)*peakdistxpix-sin(-posangle)*peakdistypix)*distance*!dtor*cdelt
-    peakdistypc=(sin(-posangle)*peakdistxpix+cos(-posangle)*peakdistypix)*distance*!dtor*cdelt/cos(inclination)
-    peakradius=sqrt(peakdistxpc^2.+peakdistypc^2.)
-    peakin=where(peakradius ge minradius and peakradius le maxradius)
-    peakmeanradius=mean(peakradius(peakin))
-    incltot=incl1*incl2 ;multiply as many subsets as needed
-    includepeak=dblarr(npeaks) ;0/1 if peak is included or not
-    for j=0,npeaks-1 do begin
-        kx=peaks(j,0) ;get x index of peak
-        ky=peaks(j,1) ;get y index of peak
-        if peakradius(j) ge minradius && peakradius(j) le maxradius && finite(gasflux(peak_res,j)) && finite(starflux(peak_res,j)) then includepeak(j)=incltot(kx,ky) ;include peak? only if within specified radius interval and if there is coverage in the other tracer too !!NOTE: THIS IS A QUICK HACK FOR THE PIPELINE TO WORK ON M31(SIGMASK)
-    endfor
-    inclpeaks=where(includepeak ne 0,nincludepeak) ;included peaks
-    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
-    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
+
     inclarea=dblarr(nx,ny) ;array for included area
     pixx=dblarr(nx,ny)
     pixy=dblarr(nx,ny)
@@ -682,12 +633,20 @@ if cut_sample then begin
     pixdistxpc=(cos(-posangle)*pixdistxpix-sin(-posangle)*pixdistypix)*distance*!dtor*cdelt
     pixdistypc=(sin(-posangle)*pixdistxpix+cos(-posangle)*pixdistypix)*distance*!dtor*cdelt/cos(inclination)
     pixradius=sqrt(pixdistxpc^2.+pixdistypc^2.)
-    pixin=where(pixradius ge minradius and pixradius le maxradius)
-    pixmeanradius=mean(pixradius(pixin))
-    inclarea(pixin)=1
-    incltot=incltot*inclarea*mask_arr ;account for limits on the radial area covered as well as any masks applied
+    inclpix=where(pixradius ge minradius and pixradius le maxradius)
+    pixmeanradius=mean(pixradius(inclpix))
+    inclarea(inclpix)=1
+
+    includepeak=inclarea(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
+    inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
+    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
+    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
+    peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
+    peakmeanradius=mean(peakradius(inclpeaks))
+    
+    incltot=inclarea*mask_arr ;account for limits on the radial area covered as well as any masks applied
     totalarea=total(incltot)*pixtopc^2.
-    lambda_map=2.*sqrt(totalarea/nincludepeak/!pi)
+    lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
     starfluxtotal=total(starmap*incltot,/nan) ;total flux in SF tracer map
     gasfluxtotal=total(gasmap*incltot,/nan) ;total flux in gas tracer map
 endif
@@ -719,20 +678,18 @@ if generate_plot then begin
     oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=1,color=fsc_color('red'),symsize=.6
     oplot,ring1x,ring1y
     oplot,ring2x,ring2y
-    contour,incl1,/overplot,levels=[.5,2.],color=fsc_color('green')
     device,/close
 
     device,filename=figdir+'map_gas.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
-    rtar=0.;logrange_g+.1 -- TEMP FIX FOR SIMULATIONS, REMOVE LATER
+    rtar=0.;logrange_g+.1 -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
     rmin=min(alog10(smoothgas(peak_res,*,*)),/nan)
-    rmax=alog10(5.);max(alog10(smoothgas(peak_res,*,*)),/nan) -- TEMP FIX FOR SIMULATIONS, REMOVE LATER
+    rmax=alog10(5.);max(alog10(smoothgas(peak_res,*,*)),/nan) -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
     plotfits,rundir+'res_'+res(peak_res)+'pc'+path_sep()+gasfileshort,rmax-rmin-rtar,0.,3,log=1
     oplot,gaspeaks(inclgas-nstarpeaks,0),gaspeaks(inclgas-nstarpeaks,1),psym=1,color=fsc_color('blue'),symsize=.6
     oplot,ring1x,ring1y
     oplot,ring2x,ring2y
-    contour,incl1,/overplot,levels=[.5,2.],color=fsc_color('green')
     device,/close
-    
+
     if use_star3 then begin
         device,filename=figdir+'map_star3.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8
         rtar=1.25
@@ -743,7 +700,6 @@ if generate_plot then begin
         oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=7,color=fsc_color('white')
         oplot,ring1x,ring1y
         oplot,ring2x,ring2y
-        contour,incl1,/overplot,levels=[.5,2.],color=fsc_color('green')
         device,/close
     endif
     set_plot,'x'
@@ -775,30 +731,24 @@ if calc_fit then begin
     print,' ==> fitting KL14 principle'
     it=0 ;iteration index
     istop=0 ;stop indicator
-    ;estimate gas-to-stellar (g/s) flux ratios and make list of peaks sorted by a decreasing g/s flux ratio
-    fluxratio_galaxy=gasfluxtotal/starfluxtotal ;average g/s flux ratio in the included area -!!DO SOMETHING ABOUT THIS
-    fluxratio_ipeak_sort=reverse(sort(gasflux(peak_res,inclpeaks)/starflux(peak_res,inclpeaks))) ;peak indices sorted by decreasing g/s flux ratio
-    fluxratio_peak_sort=reform(gasflux(peak_res,inclpeaks(fluxratio_ipeak_sort))/starflux(peak_res,inclpeaks(fluxratio_ipeak_sort))) ;sorted g/s flux ratios of peaks -!!TAKE ABSOLUTES?
-    fluxratio_peak_sort=fluxratio_peak_sort(where(fluxratio_peak_sort ge 0.)) ;remove negative gas emission from flux ratios
-    nfluxratio=n_elements(fluxratio_peak_sort) ;number of remaining peaks
-    ;guess beta_star and beta_gas based on three equal-length phases
     redchi2=9.d99
+    fluxratio_galaxy=gasfluxtotal/starfluxtotal ;average g/s flux ratio in the included area
 
     while istop ne 1 do begin ;start fitting loop, adjusting beta_star and beta_gas on the fly based on the sorting of the g/s flux ratio
-        ;calculate lambda
+        ;calculate geometric lambda
         maxap_area=!pi*(.5*maxap)^2.
         nneigh=dblarr(nincludepeak)
-        for i=0,nincludepeak-1 do begin ;!!CHECK INCLINATION CORRECTIONS THROUGHOUT
+        for i=0,nincludepeak-1 do begin
             ipeak=inclpeaks(i)
             others=dindgen(npeaks)
             remove,ipeak,others
             distances=sqrt((peaks(ipeak,0)-peaks(others,0))^2.+(peaks(ipeak,1)-peaks(others,1))^2.) ;distances to other peaks on the map in pixels
-            inap=where(distances le .5*maxap,ninap) ;!!CHECK APERTURES ARE DIAMETERS THROUGHOUT
+            inap=where(distances le .5*maxap,ninap)
             nneigh(i)=ninap
         endfor
-        area=nincludepeak*maxap_area;total(incl1)*pixtopc^2. ;total area covered by map overlap in pc^2 !!IS THIS CORRECTED FOR INCLINATION?
-;        lambda_map=2.*sqrt(area/(0.5*total(nneigh))/!pi)*pixtopc ;0.5*nneigh to correct for counting them twice
-        
+        area=nincludepeak*maxap_area ;total area covered by map overlap in pc^2
+        lambda_map2=2.*sqrt(area/(0.5*total(nneigh))/!pi)*pixtopc ;geometric lambda from largest aperture area assuming points are randomly distributed -- 0.5*nneigh to correct for counting neighbours twice
+
         totgas_star=dblarr(naperture,nmc) ;total gas flux in apertures centered on SF peaks
         totstar_star=dblarr(naperture,nmc) ;total SF flux in apertures centered on SF peaks
         totgas_gas=dblarr(naperture,nmc) ;total gas flux in apertures centered on gas peaks
@@ -863,8 +813,7 @@ if calc_fit then begin
                 for k=1,nincludepeak_star-1 do begin ;start looping over other stellar peaks
                     candidate=floor(rnd_star(k)*(nincludepeak_star-k)) ;randomly-drawn, new candidate stellar peak
                     usedstar=reform(usestar(j,0:nusestar(i,j)-1)) ;other stellar peaks used so far
-                    distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))] 
-                                                ;distances between candidate and used peaks
+                    distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))] ;distances between candidate and used peaks
                     distances_candidate_usestar=distances_candidate_usestar(where(distances_candidate_usestar gt 0.)) ;remove zeroes
                     mindist=min(distances_candidate_usestar) ;smallest distance between candidate and any of the used peaks
                     if mindist gt apertures(i) then begin ;if at least one aperture size away from all used peaks, then:
@@ -900,7 +849,7 @@ if calc_fit then begin
                 totstar_star(i,j)=max([0.,total(starflux(i,inclstar(usedstar)),/nan)]) ;total SF flux in apertures centered on SF peaks (must be > 0)
                 totgas_gas(i,j)=max([0.,total(gasflux(i,inclgas(usedgas)),/nan)]) ;total gas flux in apertures centered on gas peaks (must be > 0)
                 totstar_gas(i,j)=max([0.,total(starflux(i,inclgas(usedgas)),/nan)]) ;total SF flux in apertures centered on gas peaks (must be > 0)
-                if i eq peak_res then begin ;!!CHECK THIS AND VERIFY IF IT'S REALLY NECESSARY
+                if i eq peak_res then begin ;determine Monte Carlo betastar and betagas based on fractional timescale coverage of each phase projected onto list of peaks sorted by gas fraction-to-star fraction ratio
                     star_gascon=gasflux(i,inclstar(usedstar))/(gasfluxtotal/totalarea)
                     star_starcon=starflux(i,inclstar(usedstar))/(starfluxtotal/totalarea)
                     starratio=reform(star_gascon/star_starcon)
@@ -915,8 +864,6 @@ if calc_fit then begin
                     ngasratio=n_elements(gasratio)
                     gas_critcon=gasratio(sortgasratio(fgasover*ngasratio)) ;initial critical difference in contrast with respect to background between gas and stellar emission to call peak isolated gas
                     i_gasiso=where(gas_starcon le gas_critcon*gas_gascon)
-;                    i_stariso=where(gasflux(i,inclstar(usedstar))*!pi*(0.5*apertures(i)*pctopix)^2. le 0.01*(0.25*!pi*apertures(i)^2./totalarea*gasfluxtotal))
-;                    i_gasiso=where(starflux(i,inclgas(usedgas))*!pi*(0.5*apertures(i)*pctopix)^2. le 0.01*(0.25*!pi*apertures(i)^2./totalarea*starfluxtotal))
                     nstariso=n_elements(i_stariso)
                     nusedstar=n_elements(usedstar)
                     ngasiso=n_elements(i_gasiso)
@@ -933,7 +880,6 @@ if calc_fit then begin
                     endif else betagasmc(j)=1.
                     usedstariso=usedstar(i_stariso)
                     usedgasiso=usedgas(i_gasiso)
-;                    stop
                 endif
                 i_isostar=intersect(usedstariso,usedstar)
                 i_isogas=intersect(usedgasiso,usedgas)
@@ -977,7 +923,7 @@ if calc_fit then begin
             err_totstar_star=stdev(totstar_star(i,*)) ;standard deviation of the total stellar flux for apertures centered on SF peaks, across all MC realisations -- ancillary quantity
             ;obtain relative error terms and covariance of numerator and denominator
             nexpstar(i)=nstarmc(i) ;the number of experiments that we are averaging over
-            err_sens_star2(i)=sqrt((err_sensgas_star/meantotgas_star(i))^2.+(err_sensstar_star/meantotstar_star(i))^2.) ;relative error due to sensitivity
+            err_sens_star2(i)=((err_sensgas_star/meantotgas_star(i))^2.+(err_sensstar_star/meantotstar_star(i))^2.) ;relative error due to sensitivity
             err_apgas_star2(i)=(err_apgas_star/meanapgas_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (gas)
             err_apstar_star2(i)=(err_apstar_star/meanapstar_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (stars)
             err_apcov_star2(i)=-2.*correlate(gasflux(i,inclstar),starflux(i,inclstar),/covariance)/meanapgas_star(i)/meanapstar_star(i)/nexpstar(i) ;covariance
@@ -1003,7 +949,7 @@ if calc_fit then begin
             err_totstar_gas=stdev(totstar_gas(i,*)) ;standard deviation of the total stellar flux for apertures centered on gas peaks, across all MC realisations -- ancillary quantity
             ;obtain relative error terms and covariance of numerator and denominator
             nexpgas(i)=ngasmc(i) ;the number of experiments that we are averaging over
-            err_sens_gas2(i)=sqrt((err_sensgas_gas/meantotgas_gas(i))^2.+(err_sensstar_gas/meantotstar_gas(i))^2.) ;relative error due to sensitivity
+            err_sens_gas2(i)=((err_sensgas_gas/meantotgas_gas(i))^2.+(err_sensstar_gas/meantotstar_gas(i))^2.) ;relative error due to sensitivity
             err_apgas_gas2(i)=(err_apgas_gas/meanapgas_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (gas)
             err_apstar_gas2(i)=(err_apstar_gas/meanapstar_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (stars)
             err_apcov_gas2(i)=-2.*correlate(gasflux(i,inclgas),starflux(i,inclgas),/covariance)/meanapgas_gas(i)/meanapstar_gas(i)/nexpgas(i) ;covariance
@@ -1031,23 +977,18 @@ if calc_fit then begin
             nfitgas(i)=.5/total(corrgas_gas(i,*))+.5/total(corrstar_gas(i,*)) ;take the mean of the number of independent datapoints for the numerator and the denominator (for N=>inf 1/2+1/2N is right, but 2/(1+N) is wrong)
             nfitstar(i)=.5/total(corrgas_star(i,*))+.5/total(corrstar_star(i,*))
         endfor
-        geocontrasts=1.+0.*meantotgas_stariso/meantotgas_stariso(max_res)*nstarisomc(max_res)/nstarisomc
-        geocontrastg=1.+0.*meantotstar_gasiso/meantotstar_gasiso(max_res)*ngasisomc(max_res)/ngasisomc
-        geos=fitap(min(where(geocontrasts(fitap) eq max(geocontrasts(fitap)))))
-        geog=fitap(min(where(geocontrastg(fitap) eq max(geocontrastg(fitap)))))
-        surfcontrasts=meantotstar_star(geos)/meantotstar_star(max_res)*nstarmc(max_res)/nstarmc(geos)/geocontrasts(geos)-1. ;surface density contrast of SF peak - the -1 subtracts background & isolates the peak contribution
-        surfcontrastg=meantotgas_gas(geog)/meantotgas_gas(max_res)*ngasmc(max_res)/ngasmc(geog)/geocontrastg(geog)-1. ;surface density contrast of gas peak - the -1 subtracts background & isolates the peak contribution
+        surfcontrasts=meantotstar_star(peak_res)/meantotstar_star(max_res)*nstarmc(max_res)/nstarmc(peak_res)-1. ;surface density contrast of SF peak - the -1 subtracts background & isolates the peak contribution
+        surfcontrastg=meantotgas_gas(peak_res)/meantotgas_gas(max_res)*ngasmc(max_res)/ngasmc(peak_res)-1. ;surface density contrast of gas peak - the -1 subtracts background & isolates the peak contribution
         bias_star=fluxratio_star/fluxratio_galaxy
         bias_gas=fluxratio_gas/fluxratio_galaxy
         err_star=err_star/fluxratio_galaxy ;scale linear error -- log error is unchanged
         err_gas=err_gas/fluxratio_galaxy ;scale linear error -- log error is unchanged
         beta_star=mean(betastarmc)
         beta_gas=mean(betagasmc)
-        print,geocontrasts,geocontrastg,surfcontrasts,surfcontrastg,beta_star,beta_gas
 
         fit=fitKL14(fluxratio_star[fitap]/fluxratio_galaxy,fluxratio_gas[fitap]/fluxratio_galaxy, $
                     err_star_log[fitap],err_gas_log[fitap],tstariso,beta_star,beta_gas,apertures_star[fitap],apertures_gas[fitap], $
-                    surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar[fitap],nfitgas[fitap],ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir)
+                    surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar[fitap],nfitgas[fitap],ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir, window_plot)
         tgas=fit(1)
         tgas_errmin=sqrt(fit(2)^2.+(tgas*tstariso_rerrmin)^2.)
         tgas_errmax=sqrt(fit(3)^2.+(tgas*tstariso_rerrmax)^2.)
@@ -1061,7 +1002,7 @@ if calc_fit then begin
         ttotal=tgas+tstar-tover
         redchi2_old=redchi2
         redchi2=fit(0)
-        
+
         if peak_prof le 1 then begin
             rpeaks=0.5*lambda*sqrt(ttotal/(surfcontrasts*tstar)) ; ~lambda*((tgas/tstariso+1)/(tover/tstariso+1))^.5 (if tstar_incl=0) or ~lambda*((tgas/tstariso-tover/tstariso+1)^.5 (if tstar_incl=1)
             rpeakg=0.5*lambda*sqrt(ttotal/(surfcontrastg*tgas)) ; ~lambda*(1+tstariso/tgas)^.5 (if tstar_incl=0) or ~lambda*((tstariso/tgas-tover/tgas+1)^.5 (if tstar_incl=1)
@@ -1069,7 +1010,7 @@ if calc_fit then begin
         if peak_prof eq 2 then begin
             rpeaks=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrasts*tstar))
             rpeakg=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrastg*tgas))
-        endif        
+        endif
         if tstar_incl eq 0 then terrs=0. else terrs=0.
         if tstar_incl eq 0 then terrg=0. else terrg=0.
 
@@ -1078,33 +1019,39 @@ if calc_fit then begin
             print,' WARNING: derived lambda is smaller than peak dispersion, suggests inadequate map resolution'
         endif
 
-        fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- !!WHY NOT 1??
-        fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- !!WHY NOT 1??
         fieldarea=total(incltot)*pixtopc^2.
         if map_units eq 1 then begin
             surfsfr=sfr_galaxy/area
             surfsfr_err=sfr_galaxy_err/area
             surfgas=mgas_galaxy/area
             surfgas_err=mgas_galaxy_err/area
+            fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+            fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
         endif
         if map_units eq 2 then begin
             surfsfr=mgas_galaxy1/area
             surfsfr_err=mgas_galaxy1_err/area
             surfgas=mgas_galaxy2/area
             surfgas_err=mgas_galaxy2_err/area
+            fcl=total(starmap,/nan)*convstar/mgas_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+            fgmc=total(gasmap,/nan)*convgas/mgas_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
         endif
         if map_units eq 3 then begin
             surfsfr=sfr_galaxy1/area
             surfsfr_err=sfr_galaxy1_err/area
             surfgas=sfr_galaxy2/area
             surfgas_err=sfr_galaxy2_err/area
+            fcl=total(starmap,/nan)*convstar/sfr_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+            fgmc=total(gasmap,/nan)*convgas/sfr_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
         endif
-        ext=[surfsfr*area,surfsfr_err*area,surfsfr_err*area,surfgas*area,surfgas_err*area,surfgas_err*area,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
-             fcl,fcl*convstar_err/convstar,fcl*convstar_err/convstar,fgmc,fgmc*convgas_err/convgas,fgmc*convgas_err/convgas]+tiny
-        der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
-                           tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir)
+        if map_units gt 0 then begin
+            ext=[surfsfr*area,surfsfr_err*area,surfsfr_err*area,surfgas*area,surfgas_err*area,surfgas_err*area,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
+                 fcl,fcl*convstar_err/convstar,fcl*convstar_err/convstar,fgmc,fgmc*convgas_err/convgas,fgmc*convgas_err/convgas]+tiny
+            der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
+                                                  tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir)
+        endif
         aux=[nincludepeak_star,nincludepeak_gas,beta_star,beta_gas]
-        
+
         ;write table output row and output file
         fitqty=['redchi2', $
                 'tgas','tgas_errmin','tgas_errmax', $
@@ -1117,69 +1064,78 @@ if calc_fit then begin
                     fitad+' '+fitqty(4)+', '+fitqty(5)+', '+fitqty(6)+' ['+fitunit(2)+']', $
                     fitad+' '+fitqty(7)+', '+fitqty(8)+', '+fitqty(9)+' ['+fitunit(3)+']']
 
-        extqty=['sfr_galaxy','sfr_galaxy_errmin','sfr_galaxy_errmax', $
-                'mgas_galaxy','mgas_galaxy_errmin','mgas_galaxy_errmax', $
-                'surfsfr','surfsfr_errmin','surfsfr_errmax', $
-                'surfgas','surfgas_errmin','surfgas_errmax', $
-                'fcl','fcl_errmin','fcl_errmax', $
-                'fgmc','fgmc_errmin','fgmc_errmax']
         extunit=['Msun yr^-1','Msun','Msun yr^-1 pc^-2','Msun pc^-2','','']
         extad='Derived'
+        if map_units eq 1 then begin
+            extqty=['sfr_galaxy','sfr_galaxy_errmin','sfr_galaxy_errmax', $
+                    'mgas_galaxy','mgas_galaxy_errmin','mgas_galaxy_errmax', $
+                    'surfsfr','surfsfr_errmin','surfsfr_errmax', $
+                    'surfgas','surfgas_errmin','surfgas_errmax', $
+                    'fcl','fcl_errmin','fcl_errmax', $
+                    'fgmc','fgmc_errmin','fgmc_errmax']
+        endif
         if map_units eq 2 then begin
             extunit(0)='Msun'
             extunit(2)='Msun pc^-2'
-            extqty(0:11)=['mgas_galaxy1','mgas_galaxy1_errmin','mgas_galaxy1_errmax', $
-                          'mgas_galaxy2','mgas_galaxy2_errmin','mgas_galaxy2_errmax', $
-                          'surfgas1','surfgas1_errmin','surfgas1_errmax', $
-                          'surfgas2','surfgas2_errmin','surfgas2_errmax']
+            extqty=['mgas_galaxy1','mgas_galaxy1_errmin','mgas_galaxy1_errmax', $
+                    'mgas_galaxy2','mgas_galaxy2_errmin','mgas_galaxy2_errmax', $
+                    'surfgas1','surfgas1_errmin','surfgas1_errmax', $
+                    'surfgas2','surfgas2_errmin','surfgas2_errmax', $
+                    'fcl','fcl_errmin','fcl_errmax', $
+                    'fgmc','fgmc_errmin','fgmc_errmax']
         endif
         if map_units eq 3 then begin
             extunit(1)='Msun yr^-1'
             extunit(3)='Msun yr^-1 pc^-2'
-            extqty(0:11)=['sfr_galaxy1','sfr_galaxy1_errmin','sfr_galaxy1_errmax', $
-                          'sfr_galaxy2','sfr_galaxy2_errmin','sfr_galaxy2_errmax', $
-                          'surfsfr1','surfsfr1_errmin','surfsfr1_errmax', $
-                          'surfsfr2','surfsfr2_errmin','surfsfr2_errmax']
+            extqty=['sfr_galaxy1','sfr_galaxy1_errmin','sfr_galaxy1_errmax', $
+                    'sfr_galaxy2','sfr_galaxy2_errmin','sfr_galaxy2_errmax', $
+                    'surfsfr1','surfsfr1_errmin','surfsfr1_errmax', $
+                    'surfsfr2','surfsfr2_errmin','surfsfr2_errmax', $
+                    'fcl','fcl_errmin','fcl_errmax', $
+                    'fgmc','fgmc_errmin','fgmc_errmax']
         endif
-        extstrings=[extad+' '+extqty(0)+', '+extqty(1)+', '+extqty(2)+' ['+extunit(0)+']', $
-                    extad+' '+extqty(3)+', '+extqty(4)+', '+extqty(5)+' ['+extunit(1)+']', $
-                    extad+' '+extqty(6)+', '+extqty(7)+', '+extqty(8)+' ['+extunit(2)+']', $
-                    extad+' '+extqty(9)+', '+extqty(10)+', '+extqty(11)+' ['+extunit(3)+']', $
-                    extad+' '+extqty(12)+', '+extqty(13)+', '+extqty(14)+' ['+extunit(4)+']', $
-                    extad+' '+extqty(15)+', '+extqty(16)+', '+extqty(17)+' ['+extunit(5)+']']
+        if map_units gt 0 then extstrings=[extad+' '+extqty(0)+', '+extqty(1)+', '+extqty(2)+' ['+extunit(0)+']', $
+                               extad+' '+extqty(3)+', '+extqty(4)+', '+extqty(5)+' ['+extunit(1)+']', $
+                               extad+' '+extqty(6)+', '+extqty(7)+', '+extqty(8)+' ['+extunit(2)+']', $
+                               extad+' '+extqty(9)+', '+extqty(10)+', '+extqty(11)+' ['+extunit(3)+']', $
+                               extad+' '+extqty(12)+', '+extqty(13)+', '+extqty(14)+' ['+extunit(4)+']', $
+                               extad+' '+extqty(15)+', '+extqty(16)+', '+extqty(17)+' ['+extunit(5)+']']
 
-        derqty=['tdepl','tdepl_errmin','tdepl_errmax', $
-                'tstar','tstar_errmin','tstar_errmax', $
-                'ttotal','ttotal_errmin','ttotal_errmax', $
-                'zetastar','zetastar_errmin','zetastar_errmax', $
-                'zetagas','zetagas_errmin','zetagas_errmax', $
-                'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
-                'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
-                'esf','esf_errmin','esf_errmax', $
-                'mdotsf','mdotsf_errmin','mdotsf_errmax', $
-                'mdotfb','mdotfb_errmin','mdotfb_errmax', $
-                'vfb','vfb_errmin','vfb_errmax', $
-                'etainst','etainst_errmin','etainst_errmax', $
-                'etaavg','etaavg_errmin','etaavg_errmax', $
-                'chie','chie_errmin','chie_errmax', $
-                'chip','chip_errmin','chip_errmax']
-        derunit=['yr','Myr','Myr','','','pc','pc','','Msun yr^-1','Msun yr^-1','km s^-1','','','','']
-        derad='Derived'
-        derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
-                    derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
-                    derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
-                    derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
-                    derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
-                    derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
-                    derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
-                    derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
-                    derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
-                    derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
-                    derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
-                    derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
-                    derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
-                    derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
-                    derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']']
+        if map_units gt 0 then begin
+            derqty=['tdepl','tdepl_errmin','tdepl_errmax', $
+                    'tstar','tstar_errmin','tstar_errmax', $
+                    'ttotal','ttotal_errmin','ttotal_errmax', $
+                    'zetastar','zetastar_errmin','zetastar_errmax', $
+                    'zetagas','zetagas_errmin','zetagas_errmax', $
+                    'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
+                    'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
+                    'esf','esf_errmin','esf_errmax', $
+                    'mdotsf','mdotsf_errmin','mdotsf_errmax', $
+                    'mdotfb','mdotfb_errmin','mdotfb_errmax', $
+                    'vfb','vfb_errmin','vfb_errmax', $
+                    'etainst','etainst_errmin','etainst_errmax', $
+                    'etaavg','etaavg_errmin','etaavg_errmax', $
+                    'chie','chie_errmin','chie_errmax', $
+                    'chip','chip_errmin','chip_errmax']
+            derunit=['yr','Myr','Myr','','','pc','pc','','Msun yr^-1','Msun yr^-1','km s^-1','','','','']
+            derad='Derived'
+            derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
+                        derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
+                        derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
+                        derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
+                        derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
+                        derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
+                        derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
+                        derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
+                        derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
+                        derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
+                        derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
+                        derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
+                        derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
+                        derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
+                        derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']']
+        endif
+        
         auxqty=['npeak_star','npeak_gas', $
                 'beta_star','beta_gas']
         auxunit=['','','','']
@@ -1187,8 +1143,13 @@ if calc_fit then begin
         auxstrings=[auxad+' '+auxqty(0)+', '+auxqty(1)+' ['+auxunit(0)+']', $
                     auxad+' '+auxqty(2)+', '+auxqty(3)+' ['+auxunit(1)+']']
         nfit=n_elements(fitstrings)
-        next=n_elements(extstrings)
-        nder=n_elements(derstrings)
+        if map_units gt 0 then begin
+            next=n_elements(extstrings)
+            nder=n_elements(derstrings)
+        endif else begin
+            next=0
+            nder=0
+        endelse
         naux=n_elements(auxstrings)
         ntot=nfit+next+nder+naux
         nentries=1+(nfit-1)*3+next*3+nder*3+naux*2
@@ -1204,11 +1165,11 @@ if calc_fit then begin
                 nvar=3
                 nstart=1+nvar*(i-1)
             endif
-            if i ge nfit && i lt nfit+next then begin
+            if i ge nfit && i lt nfit+next && map_units gt 0 then begin
                 nvar=3
                 nstart=nfit+nvar*i
             endif
-            if i ge nfit+next && i lt nfit+next+nder then begin
+            if i ge nfit+next && i lt nfit+next+nder && map_units gt 0 then begin
                 nvar=3
                 nstart=nfit+next+nvar*i
             endif
@@ -1224,13 +1185,16 @@ if calc_fit then begin
         printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2016) for details on how these numbers were calculated'
         printf,lun,'# IMPORTANT: all values represent log10(listed quantity)'
         for i=0,nfit-1 do printf,lun,'# '+colstrings(i)+fitstrings(i)
-        for i=0,next-1 do printf,lun,'# '+colstrings(i+nfit)+extstrings(i)
-        for i=0,nder-1 do printf,lun,'# '+colstrings(i+nfit+next)+derstrings(i)
+        if map_units gt 0 then begin
+            for i=0,next-1 do printf,lun,'# '+colstrings(i+nfit)+extstrings(i)
+            for i=0,nder-1 do printf,lun,'# '+colstrings(i+nfit+next)+derstrings(i)
+        endif
         for i=0,naux-1 do printf,lun,'# '+colstrings(i+nfit+next+nder)+auxstrings(i)
-        printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5))',alog10([fit,ext,der,aux]+tiny)
+        if map_units gt 0 then printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5))',alog10([fit,ext,der,aux]+tiny) $
+                          else printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(1x,f12.5))',alog10([fit,aux]+tiny)
         close,lun
         free_lun,lun
-        
+
         varlen=20
         unitlen=40
         openw,lun,outputdir+galaxy+'output.dat',/get_lun
@@ -1246,19 +1210,21 @@ if calc_fit then begin
         printf,lun,''
         printf,lun,''
         printf,lun,'# FUNDAMENTAL QUANTITIES (obtained directly from the fitting process)'
-        for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
+        for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log10['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
         printf,lun,''
         printf,lun,''
-        printf,lun,'# EXTERNAL QUANTITIES (obtained through secondary analysis of the maps)'
-        for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log['+extqty(i)+'/('+extunit(i/3)+')]'
-        printf,lun,''
-        printf,lun,''
-        printf,lun,'# DERIVED QUANTITIES (from fundamental and external quantities)'
-        for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log['+derqty(i)+'/('+derunit(i/3)+')]'
-        printf,lun,''
-        printf,lun,''
+        if map_units gt 0 then begin
+            printf,lun,'# EXTERNAL QUANTITIES (obtained through secondary analysis of the maps)'
+            for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log10['+extqty(i)+'/('+extunit(i/3)+')]'
+            printf,lun,''
+            printf,lun,''
+            printf,lun,'# DERIVED QUANTITIES (from fundamental and external quantities)'
+            for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log10['+derqty(i)+'/('+derunit(i/3)+')]'
+            printf,lun,''
+            printf,lun,''
+        endif
         printf,lun,'# AUXILIARY QUANTITIES (byproduct of the fitting process)'
-        for i=0,naux*2-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log['+auxqty(i)+'/('+auxunit(i/2)+')]'
+        for i=0,naux*2-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]'
         printf,lun,''
         printf,lun,''
         printf,lun,'########################################################################################################################'
@@ -1268,24 +1234,26 @@ if calc_fit then begin
         printf,lun,'########################################################################################################################'
         close,lun ;close the logical unit
         free_lun,lun ;make the logical unit available again
-                
+
         print,''
         print,'         Galaxy: '+galaxy
         print,'         iteration: '+strtrim(it+1)
         for i=0,0 do print,'         '+fitstrings(i)+strtrim(fit(0))
         for i=1,nfit-1 do print,'         '+fitstrings(i)+strtrim(fit(3*i-2))+strtrim(fit(3*i-1))+strtrim(fit(3*i))
-        for i=0,next-1 do print,'         '+extstrings(i)+strtrim(ext(3*i))+strtrim(ext(3*i+1))+strtrim(ext(3*i+2))
-        for i=0,nder-1 do print,'         '+derstrings(i)+strtrim(der(3*i))+strtrim(der(3*i+1))+strtrim(der(3*i+2))
+        if map_units gt 0 then begin
+            for i=0,next-1 do print,'         '+extstrings(i)+strtrim(ext(3*i))+strtrim(ext(3*i+1))+strtrim(ext(3*i+2))
+            for i=0,nder-1 do print,'         '+derstrings(i)+strtrim(der(3*i))+strtrim(der(3*i+1))+strtrim(der(3*i+2))
+        endif
         for i=0,naux-1 do print,'         '+auxstrings(i)+strtrim(aux(2*i))+strtrim(aux(2*i+1))
         print,''
-              
+
         it+=1
         if it ge nit then begin
             print,''
             print,' no convergence reached for beta_star and beta_gas, quitting iteration ...'
             istop=1 ;if maximum number of iterations is reached, end iteration
         endif
-;        stop
+
         fstarover_old=fstarover
         fgasover_old=fgasover
         fstarover=tover/tstar
@@ -1372,5 +1340,3 @@ end
 ;             END MAIN ROUTINE tuningfork.pro            ;
 ;                                                        ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-

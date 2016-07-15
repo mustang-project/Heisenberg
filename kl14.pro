@@ -1,6 +1,5 @@
 ;	start-up file for KL14 analysis
 
- device,retain=2
  !PROMPT = 'KL14> '
 
  PRINT,' '
@@ -32,13 +31,6 @@
  yr = 86400.*365.25           ; sidereal year		[s]
  myr = 1.d6*yr
  kms = 1.d3
-
-                                ; set color                                
- device,true_color=24
- device,decomposed=0
- window,xsize=600,ysize=840,title='IDL graphics',colors=100
- loadct,12
-
                                 ; compile programs
 .com clfind2d
 .com clplot2d
@@ -46,7 +38,7 @@
 .com smoothfits
 .com peaks2d
 .com cutarea
-.com fitkl14
+.com fitKL14
 .com derivephys
 .com plotfits
 .com plotfits_files

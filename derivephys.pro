@@ -98,16 +98,20 @@ function f_createpdf,array,darray,cumpdf,nnew
         endelse
         newdarray=right-left
         for i=0,nnew-1 do begin
-            if left(i) gt min(array) then cumpdfleft=interpol(cumpdf,array,left(i)) else begin ;left cumpdf value
+            if left(i) le min(array) then begin
                 interpolmin=max([0,min(where(array gt min(array)))]) ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once 
                 interpolarr=[0,findgen(n_elements(cumpdf)-interpolmin)+interpolmin] ;index array for interpolation
                 cumpdfleft=max([0.,interpol(cumpdf(interpolarr),array(interpolarr),left(i))]) ;left cumpdf value
-            endelse
-            if right(i) lt max(array) then cumpdfright=interpol(cumpdf,array,right(i)) else begin ;right cumpdf value
+            endif
+            if left(i) gt max(array) then cumpdfleft=1. ;by definition
+            if left(i) gt min(array) && left(i) le max(array) then cumpdfleft=interpol(cumpdf,array,left(i)) ;left cumpdf value
+            if right(i) lt min(array) then cumpdfright=0. ;by definition
+            if right(i) ge max(array) then begin
                 interpolmax=min([n_elements(cumpdf)-1,max(where(array lt max(array)))]) ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once 
                 if interpolmax lt n_elements(cumpdf)-1 then interpolarr=[findgen(interpolmax+1),n_elements(cumpdf)-1] else interpolarr=findgen(interpolmax+1) ;index array for interpolation
                 cumpdfright=min([interpol(cumpdf(interpolarr),array(interpolarr),right(i)),1.]) ;right cumpdf value
-            endelse
+            endif            
+            if right(i) lt max(array) && right(i) ge min(array) then cumpdfright=interpol(cumpdf,array,right(i)) ;right cumpdf value
             pdf(i)=(cumpdfright-cumpdfleft)/newdarray(i) ;pdf value in bin
         endfor
     endif else begin
@@ -133,7 +137,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     rpeakgas=f_rpeak(zetagas,lambda)
     esf=f_esf(tgas,tdepl,fcl,fgmc)
     mdotsf=f_mdotsf(tgas,lambda,surfgas,fgmc,esf)
-    mdotfb=f_mdotfb(tover,lambda,surfgas,fgmc,esf) ;!!CONSIDER ALLOWING RPEAK INSTEAD OF LAMBDA/2 FOR ALL FB-RELATED QUANTITIES
+    mdotfb=f_mdotfb(tover,lambda,surfgas,fgmc,esf)
     vfb=f_vfb(tover,lambda)
     etainst=f_etainst(tgas,tover,esf)
     etaavg=f_etaavg(esf)
@@ -275,49 +279,49 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     
     ;get error bars on best-fitting values
     cumdistr=findgen(nphysmc)/(nphysmc-1.)
-    dummy=f_pdftovalues(tdeplmc,dtdeplmc,cumdistr)
+    dummy=f_pdftovalues(tdeplmc,dtdeplmc,cumdistr,tdepl)
     tdepl_errmin=dummy(1)
     tdepl_errmax=dummy(2)
-    dummy=f_pdftovalues(tstarmc,dtstarmc,cumdistr)
+    dummy=f_pdftovalues(tstarmc,dtstarmc,cumdistr,tstar)
     tstar_errmin=dummy(1)
     tstar_errmax=dummy(2)
-    dummy=f_pdftovalues(ttotalmc,dttotalmc,cumdistr)
+    dummy=f_pdftovalues(ttotalmc,dttotalmc,cumdistr,ttotal)
     ttotal_errmin=dummy(1)
     ttotal_errmax=dummy(2)
-    dummy=f_pdftovalues(zetastarmc,dzetastarmc,cumdistr)
+    dummy=f_pdftovalues(zetastarmc,dzetastarmc,cumdistr,zetastar)
     zetastar_errmin=dummy(1)
     zetastar_errmax=dummy(2)
-    dummy=f_pdftovalues(zetagasmc,dzetagasmc,cumdistr)
+    dummy=f_pdftovalues(zetagasmc,dzetagasmc,cumdistr,zetagas)
     zetagas_errmin=dummy(1)
     zetagas_errmax=dummy(2)
-    dummy=f_pdftovalues(rpeakstarmc,drpeakstarmc,cumdistr)
+    dummy=f_pdftovalues(rpeakstarmc,drpeakstarmc,cumdistr,rpeakstar)
     rpeakstar_errmin=dummy(1)
     rpeakstar_errmax=dummy(2)
-    dummy=f_pdftovalues(rpeakgasmc,drpeakgasmc,cumdistr)
+    dummy=f_pdftovalues(rpeakgasmc,drpeakgasmc,cumdistr,rpeakgas)
     rpeakgas_errmin=dummy(1)
     rpeakgas_errmax=dummy(2)
-    dummy=f_pdftovalues(esfmc,desfmc,cumdistr)
+    dummy=f_pdftovalues(esfmc,desfmc,cumdistr,esf)
     esf_errmin=dummy(1)
     esf_errmax=dummy(2)
-    dummy=f_pdftovalues(mdotsfmc,dmdotsfmc,cumdistr)
+    dummy=f_pdftovalues(mdotsfmc,dmdotsfmc,cumdistr,mdotsf)
     mdotsf_errmin=dummy(1)
     mdotsf_errmax=dummy(2)
-    dummy=f_pdftovalues(mdotfbmc,dmdotfbmc,cumdistr)
+    dummy=f_pdftovalues(mdotfbmc,dmdotfbmc,cumdistr,mdotfb)
     mdotfb_errmin=dummy(1)
     mdotfb_errmax=dummy(2)
-    dummy=f_pdftovalues(vfbmc,dvfbmc,cumdistr)
+    dummy=f_pdftovalues(vfbmc,dvfbmc,cumdistr,vfb)
     vfb_errmin=dummy(1)
     vfb_errmax=dummy(2)
-    dummy=f_pdftovalues(etainstmc,detainstmc,cumdistr)
+    dummy=f_pdftovalues(etainstmc,detainstmc,cumdistr,etainst)
     etainst_errmin=dummy(1)
     etainst_errmax=dummy(2)
-    dummy=f_pdftovalues(etaavgmc,detaavgmc,cumdistr)
+    dummy=f_pdftovalues(etaavgmc,detaavgmc,cumdistr,etaavg)
     etaavg_errmin=dummy(1)
     etaavg_errmax=dummy(2)
-    dummy=f_pdftovalues(chiemc,dchiemc,cumdistr)
+    dummy=f_pdftovalues(chiemc,dchiemc,cumdistr,chie)
     chie_errmin=dummy(1)
     chie_errmax=dummy(2)
-    dummy=f_pdftovalues(chipmc,dchipmc,cumdistr)
+    dummy=f_pdftovalues(chipmc,dchipmc,cumdistr,chip)
     chip_errmin=dummy(1)
     chip_errmax=dummy(2)
             
