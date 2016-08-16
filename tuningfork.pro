@@ -670,7 +670,7 @@ if generate_plot then begin
     ring2x=maxradius/distance/!dtor/cdelt*(cos(phi)*cos(-posangle)+sin(-posangle)*sin(phi)*cos(inclination))+centre(0)
     ring2y=maxradius/distance/!dtor/cdelt*(-cos(phi)*sin(-posangle)+cos(-posangle)*sin(phi)*cos(inclination))+centre(1)
 
-    device,filename=figdir+'map_star.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+'map_star.eps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
     rtar=logrange_s+1.
     rmin=min(alog10(smoothstar(peak_res,*,*)),/nan)
     rmax=max(alog10(smoothstar(peak_res,*,*)),/nan)
@@ -680,7 +680,7 @@ if generate_plot then begin
     oplot,ring2x,ring2y
     device,/close
 
-    device,filename=figdir+'map_gas.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+'map_gas.eps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
     rtar=0.;logrange_g+.1 -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
     rmin=min(alog10(smoothgas(peak_res,*,*)),/nan)
     rmax=alog10(5.);max(alog10(smoothgas(peak_res,*,*)),/nan) -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
