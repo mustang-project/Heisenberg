@@ -386,11 +386,27 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         ymin=min([fluxratio_star(use),1./fluxratio_gas(use)])
         ymax=max([fluxratio_gas(use),1./fluxratio_star(use)])
         set_plot,window_plot
+        nr=1001
+        r=min([apertures_star,apertures_gas])*10.^(dindgen(nr)/(nr-1)*alog10(max([apertures_star,apertures_gas])/min([apertures_star,apertures_gas])))
+        fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_star,surfcontrasts,surfcontrastg,peak_prof)
+        fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_gas,surfcontrasts,surfcontrastg,peak_prof)
         plot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1
-        oplot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),thick=5
-        for i=0,ntry-1,10 do oplot,apertures_star,fluxratio_star_th(i,jbest,kbest,*)
-        for i=0,ntry-1,10 do oplot,apertures_gas,fluxratio_gas_th(i,jbest,kbest,*)
-        oplot,apertures_gas,fluxratio_gas_th(ibest,jbest,kbest,*),thick=5
+        oplot,r,fg,thick=5
+        oplot,r,fs,thick=5
+        for i=0,ntry-1,fix(ntry/2.) do begin
+            fg=f_fluxratiogas(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_star,surfcontrasts,surfcontrastg,peak_prof)
+            fs=f_fluxratiostar(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_gas,surfcontrasts,surfcontrastg,peak_prof)
+            oplot,r,fg,linestyle=2
+            oplot,r,fs,linestyle=2
+            fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(i),r,lambdaarr(kbest),beta_star,surfcontrasts,surfcontrastg,peak_prof)
+            fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(i),r,lambdaarr(kbest),beta_gas,surfcontrasts,surfcontrastg,peak_prof)
+            oplot,r,fg,linestyle=1
+            oplot,r,fs,linestyle=1
+            fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(i),beta_star,surfcontrasts,surfcontrastg,peak_prof)
+            fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(i),beta_gas,surfcontrasts,surfcontrastg,peak_prof)
+            oplot,r,fg,linestyle=3
+            oplot,r,fs,linestyle=3
+        endfor
         oplot,apertures_star,fluxratio_star,psym=4
         oplot,apertures_gas,fluxratio_gas,psym=4
         oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)+err_star_log)-fluxratio_star,psym=3,/hibar
@@ -435,8 +451,6 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[1,1]*lambda,ymin*[10.^(arrowoff),10.^(arrowoff+arrowlen)],thick=3
             oplot,[1,10.^(0.7*arrowoff*xdyn/ydyn)]*lambda,ymin*[10.^(arrowoff),10.^(2.*arrowoff)],thick=3
             oplot,[1,10.^(-0.7*arrowoff*xdyn/ydyn)]*lambda,ymin*[10.^(arrowoff),10.^(2.*arrowoff)],thick=3
-            oplot,r,fsiso,thick=5,color=fsc_color('cyan')
-            oplot,r,fgiso,thick=5,color=fsc_color('cyan')
             oplot,r,fs,thick=5,color=fsc_color('green')
             oplot,r,fg,thick=5,color=fsc_color('green')
             oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)+err_star_log)-fluxratio_star,psym=3,/hibar,errcolor=fsc_color('blue'),errthick=3
