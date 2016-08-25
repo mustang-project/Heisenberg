@@ -270,6 +270,7 @@ beammaxpc=distance*beamtest*!dtor/sqrt(cos(inclination)) ;largest beam size in p
 beamaperture=min(where(abs(alog10(apertures/beammaxpc)) eq min(abs(alog10(apertures/beammaxpc)))))
 peak_res=max([peak_res,beamaperture]) ;ensure that the smallest aperture size is the aperture closest to the beam size
 fitap=fix(peak_res)+indgen(max_res-peak_res+1) ;aperture sizes used in fitting the KL14 principle model
+lap_min=apertures(peak_res) ;size of smallest aperture
 
 
 ;;;;;;;;;;;;;
@@ -675,17 +676,17 @@ if generate_plot then begin
     rmin=min(alog10(smoothstar(peak_res,*,*)),/nan)
     rmax=max(alog10(smoothstar(peak_res,*,*)),/nan)
     plotfits,rundir+'res_'+res(peak_res)+'pc'+path_sep()+starfileshort,rmax-rmin-rtar,0.,1,log=1
-    oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=1,color=fsc_color('red'),symsize=.6
+    oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=7,color=fsc_color('red'),symsize=.8
     oplot,ring1x,ring1y
     oplot,ring2x,ring2y
     device,/close
 
     device,filename=figdir+'map_gas.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
-    rtar=0.;logrange_g+.1 -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
+    rtar=logrange_g+1.
     rmin=min(alog10(smoothgas(peak_res,*,*)),/nan)
-    rmax=alog10(5.);max(alog10(smoothgas(peak_res,*,*)),/nan) -- !!TEMP FIX FOR SIMULATIONS, REMOVE LATER
+    rmax=max(alog10(smoothgas(peak_res,*,*)),/nan)
     plotfits,rundir+'res_'+res(peak_res)+'pc'+path_sep()+gasfileshort,rmax-rmin-rtar,0.,3,log=1
-    oplot,gaspeaks(inclgas-nstarpeaks,0),gaspeaks(inclgas-nstarpeaks,1),psym=1,color=fsc_color('blue'),symsize=.6
+    oplot,gaspeaks(inclgas-nstarpeaks,0),gaspeaks(inclgas-nstarpeaks,1),psym=7,color=fsc_color('blue'),symsize=.8
     oplot,ring1x,ring1y
     oplot,ring2x,ring2y
     device,/close
@@ -696,8 +697,7 @@ if generate_plot then begin
         rmin=min(alog10(smoothstar3(peak_res,*,*)),/nan)
         rmax=max(alog10(smoothstar3(peak_res,*,*)),/nan)
         plotfits,rundir+'res_'+res(peak_res)+'pc'+path_sep()+galaxy+'_star3',rmax-rmin-rtar,0.,1,log=1
-        oplot,starpeaks(*,0),starpeaks(*,1),psym=1,color=fsc_color('red')
-        oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=7,color=fsc_color('white')
+        oplot,starpeaks(inclstar,0),starpeaks(inclstar,1),psym=7,color=fsc_color('red'),symsize=.8
         oplot,ring1x,ring1y
         oplot,ring2x,ring2y
         device,/close
@@ -1050,7 +1050,7 @@ if calc_fit then begin
             der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
                                                   tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir)
         endif
-        aux=[nincludepeak_star,nincludepeak_gas,beta_star,beta_gas]
+        aux=[nincludepeak_star,nincludepeak_gas,beta_star,beta_gas,lap_min]
 
         ;write table output row and output file
         fitqty=['redchi2', $
@@ -1137,11 +1137,13 @@ if calc_fit then begin
         endif
         
         auxqty=['npeak_star','npeak_gas', $
-                'beta_star','beta_gas']
-        auxunit=['','','','']
+                'beta_star','beta_gas', $
+                'lap_min']
+        auxunit=['','','pc']
         auxad='Derived'
         auxstrings=[auxad+' '+auxqty(0)+', '+auxqty(1)+' ['+auxunit(0)+']', $
-                    auxad+' '+auxqty(2)+', '+auxqty(3)+' ['+auxunit(1)+']']
+                    auxad+' '+auxqty(2)+', '+auxqty(3)+' ['+auxunit(1)+']', $
+                    auxad+' '+auxqty(4)+' ['+auxunit(2)+']']
         nfit=n_elements(fitstrings)
         if map_units gt 0 then begin
             next=n_elements(extstrings)
@@ -1152,32 +1154,42 @@ if calc_fit then begin
         endelse
         naux=n_elements(auxstrings)
         ntot=nfit+next+nder+naux
-        nentries=1+(nfit-1)*3+next*3+nder*3+naux*2
+        nvarfit0=1
+        nvarfit=3
+        nvarext=3
+        nvarder=3
+        nvaraux=2
+        nvaraux2=1
+        nentries=nvarfit0+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+naux*nvaraux-1
         colstrings=strarr(ntot)
         onecol='Column'
         multicol='Columns'
         for i=0,ntot-1 do begin
             if i eq 0 then begin
-                nvar=1
+                nvar=nvarfit0
                 nstart=i
             endif
             if i ge 1 && i lt nfit then begin
-                nvar=3
+                nvar=nvarfit
                 nstart=1+nvar*(i-1)
             endif
             if i ge nfit && i lt nfit+next && map_units gt 0 then begin
-                nvar=3
-                nstart=nfit+nvar*i
+                nvar=nvarext
+                nstart=1+(nfit-1)*nvarfit+nvar*(i-nfit)
             endif
             if i ge nfit+next && i lt nfit+next+nder && map_units gt 0 then begin
-                nvar=3
-                nstart=nfit+next+nvar*i
+                nvar=nvarder
+                nstart=1+(nfit-1)*nvarfit+next*nvarext+nvar*(i-nfit-next)
             endif
-            if i ge nfit+next+nder && i lt nfit+next+nder+naux then begin
-                nvar=2
-                nstart=nfit+next+nder+nvar*i
+            if i ge nfit+next+nder && i lt nfit+next+nder+naux-1 then begin
+                nvar=nvaraux
+                nstart=1+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+nvar*(i-nfit-next-nder)
             endif
-            if nvar gt 1 then colstrings(i)=multicol+' '+f_string(nstart+1,0)+'-'+f_string(nstart+nvar+1,0)+': ' else colstrings(i)=onecol+' '+f_string(nstart+1,0)+': '
+            if i eq nfit+next+nder+naux-1 then begin
+                nvar=nvaraux2
+                nstart=1+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+(naux-1)*nvaraux
+            endif
+            if nvar gt 1 then colstrings(i)=multicol+' '+f_string(nstart+1,0)+'-'+f_string(nstart+nvar,0)+': ' else colstrings(i)=onecol+' '+f_string(nstart+1,0)+': '
         endfor
 
         openw,lun,outputdir+galaxy+'tablerow.dat',/get_lun
@@ -1224,7 +1236,7 @@ if calc_fit then begin
             printf,lun,''
         endif
         printf,lun,'# AUXILIARY QUANTITIES (byproduct of the fitting process)'
-        for i=0,naux*2-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]'
+        for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]'
         printf,lun,''
         printf,lun,''
         printf,lun,'########################################################################################################################'
@@ -1244,7 +1256,8 @@ if calc_fit then begin
             for i=0,next-1 do print,'         '+extstrings(i)+strtrim(ext(3*i))+strtrim(ext(3*i+1))+strtrim(ext(3*i+2))
             for i=0,nder-1 do print,'         '+derstrings(i)+strtrim(der(3*i))+strtrim(der(3*i+1))+strtrim(der(3*i+2))
         endif
-        for i=0,naux-1 do print,'         '+auxstrings(i)+strtrim(aux(2*i))+strtrim(aux(2*i+1))
+        for i=0,naux-2 do print,'         '+auxstrings(i)+strtrim(aux(2*i))+strtrim(aux(2*i+1))
+        print,'         '+auxstrings(i)+strtrim(aux(2*i))
         print,''
 
         it+=1
