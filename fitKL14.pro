@@ -94,9 +94,6 @@ function f_pdftovalues,variable,dvariable,cumpdf,refvalue ;convert PDF to refval
     errminfrac_gaussian=1.-.5*(1.+erf(1./sqrt(2.)))
     errmaxfrac_gaussian=1.-errminfrac_gaussian
     refprob=interpol(cumpdf,variable,refvalue)
-    if refprob lt 0. then refprob=tiny
-    if refprob gt 1. then refprob=1.-tiny
-    if finite(refprob) eq 0. then refprob=0.5
     errminfrac=2.*errminfrac_gaussian*refprob ;(.5-errmin)/.5=(1-errmin2/p) => errmin2 = 2*errmin*p (32nd percentile below best-fitting value)
     errmaxfrac=2.*(1.-errmaxfrac_gaussian)*refprob+2.*(errmaxfrac_gaussian-.5) ;(errmax-.5)/.5=(errmax2-p)/(1-p) => errmax2 = (2*errmax-1)*(1-p)+p = 2*(1-errmax)*p+2*(errmax-.5) (68th percentile above best-fitting value)
     nvar=n_elements(variable)
@@ -107,8 +104,8 @@ function f_pdftovalues,variable,dvariable,cumpdf,refvalue ;convert PDF to refval
     minperc=interpol(variable,cumpdf,errminfrac)
     maxperc=interpol(variable,cumpdf,errmaxfrac)
     if minperc ne maxperc then begin
-        errmin=max([0.,refvalue-minperc])
-        errmax=max([0.,maxperc-refvalue])
+        errmin=refvalue-minperc
+        errmax=maxperc-refvalue
     endif else begin
         errmin=tiny
         errmax=tiny
@@ -160,9 +157,7 @@ function f_plotdistr,array,darray,pdf,value,galaxy,figdir,varstring,symstring,un
     oplot,[1,1]*value,[0,10.*ymax],linestyle=2
     oplot,[1,1]*value-errmin,[0,10.*ymax],linestyle=1
     oplot,[1,1]*value+errmax,[0,10.*ymax],linestyle=1
-    ndec=max([2,2-fix(alog10(value))])
-    if ndec gt 4 then ndec=4
-    xyouts,.6,.8,symstring+'!6 = '+textoidl(f_string(value,ndec)+'^{+'+f_string(errmax,ndec)+'}_{-'+f_string(errmin,ndec)+'}')+'!N '+unitstring,/normal
+    xyouts,.6,.8,symstring+'!6 = '+textoidl(f_string(value,2)+'^{+'+f_string(errmax,2)+'}_{-'+f_string(errmin,2)+'}')+'!N '+unitstring,/normal
     device,/close
     cumpdf=total(pdf*darray,/cumulative)
     ylabcum='!8p!6(<'+symstring+')'
@@ -172,9 +167,7 @@ function f_plotdistr,array,darray,pdf,value,galaxy,figdir,varstring,symstring,un
     oplot,[1,1]*value,[0,1],linestyle=2
     oplot,[1,1]*value-errmin,[0,1],linestyle=1
     oplot,[1,1]*value+errmax,[0,1],linestyle=1
-    ndec=max([2,2-fix(alog10(value))])
-    if ndec gt 4 then ndec=4
-    xyouts,.6,.4,symstring+'!6 = '+textoidl(f_string(value,ndec)+'^{+'+f_string(errmax,ndec)+'}_{-'+f_string(errmin,ndec)+'}')+'!N '+unitstring,/normal
+    xyouts,.6,.4,symstring+'!6 = '+textoidl(f_string(value,2)+'^{+'+f_string(errmax,2)+'}_{-'+f_string(errmin,2)+'}')+'!N '+unitstring,/normal
     device,/close
     set_plot,origdevice
     report='         1D Probability distribution functions of '+varstring+' plotted'
