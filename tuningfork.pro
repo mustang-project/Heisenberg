@@ -340,8 +340,8 @@ if map_units eq 1 then begin
     sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
     mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
     mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
-    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.)) ;gas depletion time + 1sigma
-    if tgasmaxi gt tdeplmax then tgasmaxi=tdeplmax ;tgas cannot exceed the gas depletion time
+    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.))/1.d9 ;gas depletion time + 1sigma
+    if tgasmaxi gt tdeplmax*1.d3 then tgasmaxi=tdeplmax*1.d3 ;tgas cannot exceed the gas depletion time
 endif
 if map_units eq 2 then begin
     mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
@@ -1019,35 +1019,34 @@ if calc_fit then begin
             print,' WARNING: derived lambda is smaller than peak dispersion, suggests inadequate map resolution'
         endif
 
-        fieldarea=total(incltot)*pixtopc^2.
         if map_units eq 1 then begin
-            surfsfr=sfr_galaxy/area
-            surfsfr_err=sfr_galaxy_err/area
-            surfgas=mgas_galaxy/area
-            surfgas_err=mgas_galaxy_err/area
+            surfsfr=sfr_galaxy/totalarea
+            surfsfr_err=sfr_galaxy_err/totalarea
+            surfgas=mgas_galaxy/totalarea
+            surfgas_err=mgas_galaxy_err/totalarea
             fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
             fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
         endif
         if map_units eq 2 then begin
-            surfsfr=mgas_galaxy1/area
-            surfsfr_err=mgas_galaxy1_err/area
-            surfgas=mgas_galaxy2/area
-            surfgas_err=mgas_galaxy2_err/area
+            surfsfr=mgas_galaxy1/totalarea
+            surfsfr_err=mgas_galaxy1_err/totalarea
+            surfgas=mgas_galaxy2/totalarea
+            surfgas_err=mgas_galaxy2_err/totalarea
             fcl=total(starmap,/nan)*convstar/mgas_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
             fgmc=total(gasmap,/nan)*convgas/mgas_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
         endif
         if map_units eq 3 then begin
-            surfsfr=sfr_galaxy1/area
-            surfsfr_err=sfr_galaxy1_err/area
-            surfgas=sfr_galaxy2/area
-            surfgas_err=sfr_galaxy2_err/area
+            surfsfr=sfr_galaxy1/totalarea
+            surfsfr_err=sfr_galaxy1_err/totalarea
+            surfgas=sfr_galaxy2/totalarea
+            surfgas_err=sfr_galaxy2_err/totalarea
             fcl=total(starmap,/nan)*convstar/sfr_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
             fgmc=total(gasmap,/nan)*convgas/sfr_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
         endif
         if map_units gt 0 then begin
-            ext=[surfsfr*area,surfsfr_err*area,surfsfr_err*area,surfgas*area,surfgas_err*area,surfgas_err*area,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
+            ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
                  fcl,fcl*convstar_err/convstar,fcl*convstar_err/convstar,fgmc,fgmc*convgas_err/convgas,fgmc*convgas_err/convgas]+tiny
-            der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
+            der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
                                                   tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir)
         endif
         aux=[nincludepeak_star,nincludepeak_gas,beta_star,beta_gas,lap_min]
@@ -1117,7 +1116,7 @@ if calc_fit then begin
                     'etaavg','etaavg_errmin','etaavg_errmax', $
                     'chie','chie_errmin','chie_errmax', $
                     'chip','chip_errmin','chip_errmax']
-            derunit=['yr','Myr','Myr','','','pc','pc','','Msun yr^-1','Msun yr^-1','km s^-1','','','','']
+            derunit=['Gyr','Myr','Myr','','','pc','pc','','Msun yr^-1','Msun yr^-1','km s^-1','','','','']
             derad='Derived'
             derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                         derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1202,8 +1201,9 @@ if calc_fit then begin
             for i=0,nder-1 do printf,lun,'# '+colstrings(i+nfit+next)+derstrings(i)
         endif
         for i=0,naux-1 do printf,lun,'# '+colstrings(i+nfit+next+nder)+auxstrings(i)
-        if map_units gt 0 then printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5))',alog10([fit,ext,der,aux]+tiny) $
-                          else printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(1x,f12.5))',alog10([fit,aux]+tiny)
+        printf,lun,'# '+onecol+' '+f_string(nstart+2,0)+': Run ID (galaxy)'
+        if map_units gt 0 then printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5),3x,a24)',alog10([fit,ext,der,aux]+tiny),galaxy $
+                          else printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(1x,f12.5),3x,a24)',alog10([fit,aux]+tiny),galaxy
         close,lun
         free_lun,lun
 
@@ -1283,7 +1283,6 @@ if calc_fit then begin
     endwhile
 endif
 
-;stop
 for i=0,2 do begin
     beep
     wait,1.
