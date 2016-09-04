@@ -17,7 +17,7 @@ function f_rpeak,zeta,lambda ;Tracer peak radius
 end
 
 function f_esf,tgas,tdepl,fcl,fgmc ;Star formation efficiency per star formation event
-    esf=min([fcl*tgas*1.d6/(fgmc*tdepl),1.]) ;cannot exceed unity
+    esf=min([fcl*tgas/(fgmc*tdepl*1.d3),1.]) ;cannot exceed unity
     return,esf
 end
 
@@ -128,7 +128,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                     tstar_incl,surfcontrasts,surfcontrastg,psi,phitrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir
         
     ;derived quantities for best-fitting model
-    tdepl=surfgas/surfsfr
+    tdepl=surfgas/surfsfr/1.d9
     if tstar_incl eq 0 then tstar=tstariso+tover else tstar=tstariso
     ttotal=tgas+tstar-tover
     zetastar=f_zeta(surfcontrasts,ttotal,tstar,peak_prof)
@@ -219,7 +219,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         surfgasmc(i)=surfgas+gaussarr(igauss)*surfgas_err
         igauss+=1
         
-        tdeplmc(i)=surfgasmc(i)/surfsfrmc(i)
+        tdeplmc(i)=surfgasmc(i)/surfsfrmc(i)/1.d9
         if tstar_incl eq 0 then tstarmc(i)=tstariso*xi+tovermc(i) else tstarmc(i)=tstariso*xi
         ttotalmc(i)=tgasmc(i)+tstarmc(i)-tovermc(i)
         zetastarmc(i)=f_zeta(surfcontrasts,ttotalmc(i),tstarmc(i),peak_prof)
@@ -331,8 +331,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     tdeplarr=dummy(*,0)
     dtdepl=dummy(*,1)
     probtdepl=dummy(*,2)
-    report=f_plotdistr(tdeplarr,dtdepl,probtdepl,tdepl,galaxy,figdir,'tdepl','!8t!6!Ddepl!N','!6yr')
-    report=f_writepdf(alog10(tdeplarr),alog10(dtdepl),alog10(probtdepl),galaxy,outputdir,'tdepl','# log10(tdepl[yr]), log10(dtdepl[yr]), log10(PDF[yr^-1])')
+    report=f_plotdistr(tdeplarr,dtdepl,probtdepl,tdepl,galaxy,figdir,'tdepl','!8t!6!Ddepl!N','!6Gyr')
+    report=f_writepdf(alog10(tdeplarr),alog10(dtdepl),alog10(probtdepl),galaxy,outputdir,'tdepl','# log10(tdepl[Gyr]), log10(dtdepl[Gyr]), log10(PDF[Gyr^-1])')
     dummy=f_createpdf(tstarmc,dtstarmc,cumdistr,ntry)
     tstararr=dummy(*,0)
     dtstar=dummy(*,1)
