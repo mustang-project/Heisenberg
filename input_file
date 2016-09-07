@@ -18,16 +18,16 @@ gasfile2        -                                                               
 starfile3       -                                                                       # Name of additional stellar map (only used if use_star3=1)
 # MASK FILE NAMES
 maskdir             /full/path/of/directory/where/region/files/are/stored/              # Full path of mask directory
-star_ext_mask       masks_external_pixels_for_SF.reg  # Region file for masking areas in starfile exterior to closed shapes (only used if mask_star=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-star_int_mask       masks_internal_pixels_for_SF.reg  # Region file for masking areas in starfile interior to closed shapes (only used if mask_star=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-gas_ext_mask        masks_external_pixels_for_gas.reg # Region file for masking areas in gasfile exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-gas_int_mask        masks_internal_pixels_for_gas.reg # Region file for masking areas in gasfile interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-star_ext_mask2      -                                 # Region file for masking areas in starfile2 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-star_int_mask2      -                                 # Region file for masking areas in starfile2 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-gas_ext_mask2       -                                 # Region file for masking areas in gasfile2 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-gas_int_mask2       -                                 # Region file for masking areas in gasfile2 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-star_ext_mask3      -                                 # Region file for masking areas in starfile3 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
-star_int_mask3      -                                 # Region file for masking areas in starfile3 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image co-ordinate system (other co-ordinate systems can be used if convert_masks =1, which calls ds9)
+star_ext_mask       masks_external_pixels_for_SF.reg  # Region file for masking areas in starfile exterior to closed shapes (only used if mask_star=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+star_int_mask       masks_internal_pixels_for_SF.reg  # Region file for masking areas in starfile interior to closed shapes (only used if mask_star=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+gas_ext_mask        masks_external_pixels_for_gas.reg # Region file for masking areas in gasfile exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+gas_int_mask        masks_internal_pixels_for_gas.reg # Region file for masking areas in gasfile interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+star_ext_mask2      -                                 # Region file for masking areas in starfile2 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+star_int_mask2      -                                 # Region file for masking areas in starfile2 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+gas_ext_mask2       -                                 # Region file for masking areas in gasfile2 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+gas_int_mask2       -                                 # Region file for masking areas in gasfile2 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+star_ext_mask3      -                                 # Region file for masking areas in starfile3 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
+star_int_mask3      -                                 # Region file for masking areas in starfile3 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
 
 
 # FLAGS 1 (module switches)
@@ -37,7 +37,6 @@ smoothen        1         # Create smoothened maps for each aperture size (on/of
 sensitivity     1         # Fit Gaussians to pixel intensity PDFs to determine sensitivity limits (on/off)
 id_peaks        1         # Identify peaks and save their locations (on/off)
 calc_ap_flux    1         # Calculate the enclosed flux for each peak and aperture size (on/off)
-cut_radius      1         # Cut peak sample to a radial interval within the galaxy (on/off)
 generate_plot   1         # Generate output plots and save to PostScript files (on/off)
 get_distances   1         # Calculate distances between all peak pairs (on/off)
 calc_fit        1         # Iteratively: Monte-Carlo sample peaks, get observed tuning fork, fit KL14 principle model (on/off)
@@ -58,7 +57,8 @@ mgas_ext2       0         # Mask areas in gasfile2 exterior to regions described
 mgas_int2       0         # Mask areas in gasfile2 interior to regions described in gas_int_mask2 (on/off)
 mstar_ext3      0         # Mask areas in starfile3 exterior to regions described in star_ext_mask3 (on/off)
 mstar_int3      0         # Mask areas in starfile3 interior to regions described in star_int_mask3 (on/off)
-convert_masks   0         # Convert masks from other ds9 region co-ordinate systems to image co-ordinates (requires command line version of ds9) (on/off)
+convert_masks   0         # Convert masks from other ds9 region coordinate systems to image coordinates (requires command line version of ds9) (on/off)
+cut_radius      1         # Cut peak sample to a radial interval within the galaxy (on/off)
 # FLAGS 4 (choose analysis options)
 set_centre      1         # [0] Pixel coordinates of galaxy centre are set to the central pixel of starfile; [1, DEFAULT] Specify pixel coordinates of galaxy centre under INPUT PARAMETERS 1 (basic map analysis)
 tophat          1         # [0] Use Gaussian kernel to smoothen maps to larger aperture sizes; [1, DEFAULT] Use tophat kernel to smoothen maps to larger aperture sizes
@@ -78,7 +78,7 @@ posangle        0.        # Position angle in degrees
 centrex         701       # Index of pixel x-axis coordinate of galaxy centre in starfile (important: start counting at zero on the left-hand side of the image)
 centrey         701       # Index of pixel y-axis coordinate of galaxy centre in starfile (important: start counting at zero on the bottom side of the image)
 minradius       0.        # Minimum radius for analysis in pc
-maxradius       10000.    # Minimum radius for analysis in pc
+maxradius       10000.    # Maximum radius for analysis in pc
 Fs1_Fs2_min     15.       # Minimum primary-to-secondary star formation tracer flux ratio for including pixels (only if use_star3=1)
 nbins           20        # Number of bins used during sensitivity limit calculation to sample the intensity PDFs and fit Gaussians
 # INPUT PARAMETERS 2 (apertures)

@@ -23,7 +23,7 @@ for i=0,nfiles-1 do begin
     multiplot
     map = readfits(files(i)+'.fits', hdr)
 
-    fasthist, map;,/log
+    fasthist, map
 
     loadct, ict
     reversect
@@ -37,10 +37,9 @@ for i=0,nfiles-1 do begin
     plmin=min(alog10(map),/nan)+loffs(i)
     plmax=max(alog10(map),/nan)-roffs(i)
     plrange=plmax-plmin
-    
-    print,plmin,plmax,plrange
-    
-    if log then disp, alog10(map), min=plmin, max=plmax, /squarepix,/noerase else disp, map, min=10.^plmin, max=10.^plmax, /squarepix,/noerase
+        
+    if log then disp, alog10(map), min=plmin, max=plmax, /squarepix,/noerase, xstyle=4, ystyle=4 $
+           else disp, map, min=10.^plmin, max=10.^plmax, /squarepix,/noerase, xstyle=4, ystyle=4
 endfor
 multiplot,/reset
 device,/close
