@@ -90,9 +90,9 @@ endwhile
 close,lun ;close the logical unit
 free_lun,lun ;make the logical unit available again
 
-expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','cut_radius','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
+expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
-expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks'] ;variable names of expected flags (3)
+expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
 expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
@@ -255,6 +255,10 @@ endif else begin
     gasmap2=gasmap
 endelse
 
+if ~cut_radius then begin
+    minradius=0.
+    maxradius=huge
+endif
 mapdim_orig=size(starmap)
 nx_orig=mapdim_orig(1) ;number of x pixels in original stellar map
 ny_orig=mapdim_orig(2) ; number of y pixels in original stellar map
@@ -335,34 +339,14 @@ if use_star3 then begin
     convstar3=10.^convstar3*(cdelt/cdeltstar3)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
     convstar3_err=convstar3*convstar3_rerr
 endif
-if map_units eq 1 then begin
-    sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
-    sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
-    mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
-    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.))/1.d9 ;gas depletion time + 1sigma
-    if tgasmaxi gt tdeplmax*1.d3 then tgasmaxi=tdeplmax*1.d3 ;tgas cannot exceed the gas depletion time
-endif
-if map_units eq 2 then begin
-    mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
-    mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
-    mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
-endif
-if map_units eq 3 then begin
-    sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
-    sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
-    sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
-    sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
-endif
 
 tstariso_rerrmin=tstariso_errmin/tstariso ;Relative downward standard error on tstariso
 tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tstariso
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;SYNCHRONISE MASKS FOR ALL IMAGES ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;SYNCHRONISE MASKS FOR ALL IMAGES AND CALCULATE TOTAL GAS MASSES AND/OR STAR FORMATION RATES;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 if regrid then begin
     print,' ==> syncronising masks of maps from '+griddir
@@ -393,9 +377,26 @@ if regrid then begin
             nan_list = where(finite(gasmap2, /nan), nancount)  ;find masked pixels in gasmap2
             if nancount gt 0 then mask_arr[nan_list] = 0.0
         endif
-        nan_list = where(mask_arr eq 0.0, nancount) ;final mask list
+        
+        ;make radial cut
+        pixx=dblarr(nx,ny) ;array containing map x pixel indices
+        pixy=dblarr(nx,ny) ;array containing map y pixel indices
+        for i=0,nx-1 do pixx(i,*)=i
+        for i=0,ny-1 do pixy(*,i)=i
+        pixdistxpix=pixx-centre(0) ;x distance of each pixel from centre in number of pixels
+        pixdistypix=pixy-centre(1) ;y distance of each pixel from centre in number of pixels
+        pixdistxpc=(cos(-posangle)*pixdistxpix-sin(-posangle)*pixdistypix)*distance*!dtor*cdelt ;x distance of each pixel from centre in pc
+        pixdistypc=(sin(-posangle)*pixdistxpix+cos(-posangle)*pixdistypix)*distance*!dtor*cdelt/cos(inclination) ;y distance of each pixel from centre in pc
+        pixradius=sqrt(pixdistxpc^2.+pixdistypc^2.) ;distance of each pixel from centre in pc
+        inclpix=where(pixradius ge minradius and pixradius le maxradius, ninclpix, complement=exclpix, ncomplement=nexclpix) ;find included pixels, excluded pixels and number of both for the radial cut
+        pixmeanradius=mean(pixradius(inclpix)) ;mean radius of included area
+        if nexclpix gt 0 then mask_arr[exclpix] = 0.0 ;mask excluded area
+        totalarea=total(mask_arr)*pixtopc^2. ;total included area
+        starfluxtotal=total(starmap*mask_arr,/nan) ;total SF flux in included area
+        gasfluxtotal=total(gasmap*mask_arr,/nan) ;total gas flux in included area
 
         ;propogate masks
+        nan_list = where(mask_arr eq 0.0, nancount) ;final mask list
         if nancount gt 0 then starmap[nan_list] = !values.f_nan ;propogate masks
         if nancount gt 0 then gasmap[nan_list] = !values.f_nan ;propogate masks
         writefits, starfiletot, starmap, starmaphdr ;write out masked starmap
@@ -424,6 +425,26 @@ if regrid then begin
         print, ' quitting...'
         stop
     endelse
+endif
+if map_units eq 1 then begin
+    sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
+    sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
+    mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
+    mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
+    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.))/1.d9 ;gas depletion time + 1sigma
+    if tgasmaxi gt tdeplmax*1.d3 then tgasmaxi=tdeplmax*1.d3 ;tgas cannot exceed the gas depletion time
+endif
+if map_units eq 2 then begin
+    mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
+    mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
+    mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
+    mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
+endif
+if map_units eq 3 then begin
+    sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
+    sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
+    sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
+    sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
 endif
 
 
@@ -583,6 +604,26 @@ if id_peaks then begin
     gaspeaks=gaspeaks(0:igasmax,*) ;reject gas peaks with gas flux lower than sensitivity limit
 
     peaks=[starpeaks,gaspeaks]
+    sz=size(peaks)
+    sz_s=size(starpeaks)
+    sz_g=size(gaspeaks)
+    npeaks=sz(1) ;total number of all peaks
+    nstarpeaks=sz_s(1) ;total number of stellar peaks
+    ngaspeaks=sz_g(1) ;total number of gas peaks
+    if npeaks ne nstarpeaks+ngaspeaks then begin
+        print,' error: total number of peaks does not match the sum of the numbers of gas and stellar peaks'
+        print,' this is an unknown bug, please contact the developers'
+        print,' quitting...'
+        stop
+    endif
+    
+    includepeak=mask_arr(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
+    inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
+    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
+    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
+    peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
+    peakmeanradius=mean(peakradius(inclpeaks))
+    lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
 endif
 
 
@@ -592,11 +633,6 @@ endif
 
 if calc_ap_flux then begin
     print,' ==> calculating aperture fluxes'
-    sz_s=size(starpeaks)
-    sz_g=size(gaspeaks)
-    nstarpeaks=sz_s(1) ;total number of stellar peaks
-    ngaspeaks=sz_g(1) ;total number of gas peaks
-    npeaks=nstarpeaks+ngaspeaks ;total number of all peaks
     starflux=dblarr(naperture,npeaks)
     if use_star3 then starflux3=dblarr(naperture,npeaks)
     gasflux=dblarr(naperture,npeaks)
@@ -613,43 +649,6 @@ if calc_ap_flux then begin
             endif
         endfor
     endfor
-endif
-
-
-;;;;;;;;;;;;;;;;;;
-;CUT RADIAL RANGE;
-;;;;;;;;;;;;;;;;;;
-
-if cut_radius then begin
-    print,' ==> cutting peak sample to a radial range'
-    maxap=max(apertures(fitap))*pctopix ;max aperture size in pixels
-
-    inclarea=dblarr(nx,ny) ;array for included area
-    pixx=dblarr(nx,ny)
-    pixy=dblarr(nx,ny)
-    for i=0,nx-1 do pixx(i,*)=i
-    for i=0,ny-1 do pixy(*,i)=i
-    pixdistxpix=pixx-centre(0)
-    pixdistypix=pixy-centre(1)
-    pixdistxpc=(cos(-posangle)*pixdistxpix-sin(-posangle)*pixdistypix)*distance*!dtor*cdelt
-    pixdistypc=(sin(-posangle)*pixdistxpix+cos(-posangle)*pixdistypix)*distance*!dtor*cdelt/cos(inclination)
-    pixradius=sqrt(pixdistxpc^2.+pixdistypc^2.)
-    inclpix=where(pixradius ge minradius and pixradius le maxradius)
-    pixmeanradius=mean(pixradius(inclpix))
-    inclarea(inclpix)=1
-
-    includepeak=inclarea(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
-    inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
-    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
-    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
-    peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
-    peakmeanradius=mean(peakradius(inclpeaks))
-    
-    incltot=inclarea*mask_arr ;account for limits on the radial area covered as well as any masks applied
-    totalarea=total(incltot)*pixtopc^2.
-    lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
-    starfluxtotal=total(starmap*incltot,/nan) ;total flux in SF tracer map
-    gasfluxtotal=total(gasmap*incltot,/nan) ;total flux in gas tracer map
 endif
 
 
@@ -736,6 +735,7 @@ if calc_fit then begin
 
     while istop ne 1 do begin ;start fitting loop, adjusting beta_star and beta_gas on the fly based on the sorting of the g/s flux ratio
         ;calculate geometric lambda
+        maxap=max(apertures(fitap))*pctopix ;max aperture size in pixels
         maxap_area=!pi*(.5*maxap)^2.
         nneigh=dblarr(nincludepeak)
         for i=0,nincludepeak-1 do begin
