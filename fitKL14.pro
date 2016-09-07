@@ -444,7 +444,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             decmax=alog10(max([fg,fgiso,10.^(alog10(fluxratio_gas)+err_gas_log)])*2.)
             decmaxfix=fix(decmax)
             ymax=10.^decmaxfix*(fix(10.^(decmax-decmaxfix))+1.)
-            plot,r,fg,/xlog,/ylog,yr=[ymin,ymax],/nodata,xr=[xmin,xmax],xstyle=1,ystyle=1,xtitle='!8l!6!Dap!N [pc]',ytitle='!8t!6!Ddepl!N/!8t!6!Ddepl,gal!N',charsize=1.3,xtickformat='logticks',ytickformat='logticks'
+            plot,r,fg,/xlog,/ylog,yr=[ymin,ymax],/nodata,xr=[xmin,xmax],xstyle=1,ystyle=1,xtitle='!8l!6!Dap!N [pc]',ytitle='!8t!6!Ddepl,peaks!N/!8t!6!Ddepl,tot!N',charsize=1.3,xtickformat='logticks',ytickformat='logticks'
             oplot,[xmin,xmax],[1,1]*fg(0),linestyle=2,color=fsc_color('black'),thick=3
             oplot,[xmin,xmax],[1,1]*fs(0),linestyle=2,color=fsc_color('black'),thick=3
             xdyn=alog10(xmax/xmin)

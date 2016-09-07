@@ -16,7 +16,7 @@ pro plotfits,file,loff,roff,ict,log=log
     
     map = readfits(file+'.fits', hdr)
 
-    fasthist, map;,/log
+    fasthist, map
 
     loadct, ict
     reversect
@@ -31,9 +31,8 @@ pro plotfits,file,loff,roff,ict,log=log
     plmax=max(alog10(map),/nan)-roff
     plrange=plmax-plmin
     
-    print,plmin,plmax,plrange
-    
-    if log then disp, alog10(map), min=plmin, max=plmax, /squarepix else disp, map, min=10.^plmin, max=10.^plmax, /squarepix
+    if log then disp, alog10(map), min=plmin, max=plmax, /squarepix $
+           else disp, map, min=10.^plmin, max=10.^plmax, /squarepix
 
     loadct,0
     
