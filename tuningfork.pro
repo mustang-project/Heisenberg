@@ -691,7 +691,7 @@ if generate_plot then begin
     device,/close
 
     if use_star3 then begin
-        device,filename=figdir+'map_star3.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8
+        device,filename=figdir+galaxy+'_map_star3.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8
         rtar=1.25
         rmin=min(alog10(smoothstar3(peak_res,*,*)),/nan)
         rmax=max(alog10(smoothstar3(peak_res,*,*)),/nan)
