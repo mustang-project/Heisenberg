@@ -377,7 +377,7 @@ if regrid then begin
             nan_list = where(finite(gasmap2, /nan), nancount)  ;find masked pixels in gasmap2
             if nancount gt 0 then mask_arr[nan_list] = 0.0
         endif
-        
+
         ;make radial cut
         pixx=dblarr(nx,ny) ;array containing map x pixel indices
         pixy=dblarr(nx,ny) ;array containing map y pixel indices
@@ -616,7 +616,7 @@ if id_peaks then begin
         print,' quitting...'
         stop
     endif
-    
+
     includepeak=mask_arr(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
     inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
     inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
@@ -670,7 +670,7 @@ if generate_plot then begin
     ring2x=maxradius/distance/!dtor/cdelt*(cos(phi)*cos(-posangle)+sin(-posangle)*sin(phi)*cos(inclination))+centre(0)
     ring2y=maxradius/distance/!dtor/cdelt*(-cos(phi)*sin(-posangle)+cos(-posangle)*sin(phi)*cos(inclination))+centre(1)
 
-    device,filename=figdir+'map_star.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+galaxy+'_map_star.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
     rtar=logrange_s+1.
     rmin=min(alog10(smoothstar(peak_res,*,*)),/nan)
     rmax=max(alog10(smoothstar(peak_res,*,*)),/nan)
@@ -680,7 +680,7 @@ if generate_plot then begin
     oplot,ring2x,ring2y
     device,/close
 
-    device,filename=figdir+'map_gas.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+galaxy+'_map_gas.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
     rtar=logrange_g+1.
     rmin=min(alog10(smoothgas(peak_res,*,*)),/nan)
     rmax=max(alog10(smoothgas(peak_res,*,*)),/nan)
@@ -1134,7 +1134,7 @@ if calc_fit then begin
                         derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
                         derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']']
         endif
-        
+
         auxqty=['npeak_star','npeak_gas', $
                 'beta_star','beta_gas', $
                 'lap_min']
