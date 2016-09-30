@@ -183,28 +183,28 @@ end
 
 function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,beta_star,beta_gas,apertures_star,apertures_gas, $
                  surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar,nfitgas,ndepth,ntry,galaxy,figdir,genplot,outputdir,arrdir,window_plot
-    
+
     COMMON numbers
-    
+
     if n_elements(apertures_star) ne n_elements(apertures_gas) then begin ;ensure that there are the same number of star and gas apertures
         print,' error: apertures_star and apertures_gas must have the same number of elements'
         print,' quitting...'
         stop
     endif
     napertures=n_elements(apertures_star)
-    
+
     use=where(finite(alog10(fluxratio_star(0:napertures-1))) and finite(alog10(fluxratio_gas(0:napertures-1))))
     nvar=3
     nfit=total(nfitstar(use))+total(nfitgas(use))
     ndeg=nfit-nvar-1.
     weights=[nfitstar(use),nfitgas(use)]
     weights/=mean(weights)
-    
+
 
     if tstar_incl eq 0 then tovermaxi=tgasmaxi else tovermaxi=min([tstariso,tgasmaxi])
-    lambdamini=.3*min([apertures_star[use],apertures_gas[use]]) 
+    lambdamini=.3*min([apertures_star[use],apertures_gas[use]])
     lambdamaxi=3.*max([apertures_star[use],apertures_gas[use]])
-    
+
     tgasmin=tgasmini
     tgasmax=tgasmaxi
     tovermin=tovermini
@@ -264,7 +264,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         prob=exp(-chi2/2.)
         probcst=1./total(prob*dtgasarr*dtoverarr*dlambdaarr)
         probnorm=prob*probcst
-        
+
         probtgas=dblarr(ntry)
         probtover=dblarr(ntry)
         problambda=dblarr(ntry)
@@ -281,21 +281,21 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
                 probtoverlambda(i,j)=total(probnorm(*,i,j)*dtgasarr(*,i,j))
             endfor
         endfor
-        
+
         meantgas=total(tgasarr*probtgas*dtgas)
         meantover=total(toverarr*probtover*dtover)
         meanlambda=total(lambdaarr*problambda*dlambda)
-        stdevtgas=sqrt(total((tgasarr-meantgas)^2.*probtgas*dtgas)) 
+        stdevtgas=sqrt(total((tgasarr-meantgas)^2.*probtgas*dtgas))
         stdevtover=sqrt(total((toverarr-meantover)^2.*probtover*dtover))
         stdevlambda=sqrt(total((lambdaarr-meanlambda)^2.*problambda*dlambda))
-        
+
         meantgastover=total(tgasarr3d*toverarr3d*probnorm*dtgasarr*dtoverarr*dlambdaarr)
         meantgaslambda=total(tgasarr3d*lambdaarr3d*probnorm*dtgasarr*dtoverarr*dlambdaarr)
         meantoverlambda=total(toverarr3d*lambdaarr3d*probnorm*dtgasarr*dtoverarr*dlambdaarr)
         corrtgastover=(meantgastover-meantgas*meantover)/stdevtgas/stdevtover
         corrtgaslambda=(meantgaslambda-meantgas*meanlambda)/stdevtgas/stdevlambda
         corrtoverlambda=(meantoverlambda-meantover*meanlambda)/stdevtover/stdevlambda
-                
+
         tgas=tgasarr(ibest)
         tover=toverarr(jbest)
         lambda=lambdaarr(kbest)
@@ -315,7 +315,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         lambda_errmin=dummy(1)
         lambda_errmax=dummy(2)
         if abs(lambda-dummy(0)) gt max([lambda_errmin,lambda_errmax]) then print,' WARNING: lambda PDF is highly asymmetric, recommend using PDF rather than calculated value and error bars'
-        
+
         ;if best fit gets too close to the edge of the fitted range, stop iteratively shrinking the fitting range
         errminfrac=1.-.5*(1.+erf(1./sqrt(2.)))
         errmaxfrac=1.-errminfrac
@@ -340,7 +340,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         kmax=min(where(problambdacum ge errmaxfraclambda))
         if kmax(0) eq -1 then kmax=ntry-1
         if kmax(0) eq kmin then kmax=kmin+3
-                
+
         edge=4 ;stop refining if all fitting limits are within 4 elements from the array edge
         tgasminold=tgasmin
         tgasmaxold=tgasmax
@@ -380,14 +380,14 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         if abs(tgasminold/tgasmin-1.) le tol and abs(tgasmaxold/tgasmax-1.) le tol and $
            abs(toverminold/tovermin-1.) le tol and abs(tovermaxold/tovermax-1.) le tol and $
            abs(lambdaminold/lambdamin-1.) le tol and abs(lambdamaxold/lambdamax-1.) le tol then go=0.
-        
+
         logdifftgas=0.5*(2.-alog10(tgasmax/tgasmin)) ;is the range at least two orders of magnitude?
         if logdifftgas gt 0 then tgr=[tgasmin/10.^logdifftgas,tgasmax*10.^logdifftgas] else tgr=[tgasmin,tgasmax] ;if not, extend for plotting
         logdifftover=0.5*(2.-alog10(tovermax/tovermin)) ;is the range at least two orders of magnitude?
         if logdifftover gt 0 then tor=[tovermin/10.^logdifftover,tovermax*10.^logdifftover] else tor=[tovermin,tovermax] ;if not, extend for plotting
         logdifflambda=0.5*(2.-alog10(lambdamax/lambdamin)) ;is the range at least two orders of magnitude?
         if logdifflambda gt 0 then lar=[lambdamin/10.^logdifflambda,lambdamax*10.^logdifflambda] else lar=[lambdamin,lambdamax] ;if not, extend for plotting
-        
+
         xmin=min([apertures_star(0),apertures_gas(0)])^2./min([apertures_star(1),apertures_gas(1)])
         xmax=max([apertures_star(napertures-1),apertures_gas(napertures-1)])^2./max([apertures_star(napertures-2),apertures_gas(napertures-2)])
         ymin=min([fluxratio_star(use),1./fluxratio_gas(use)])
@@ -422,7 +422,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)-err_gas_log)-fluxratio_gas,psym=3,/lobar
         set_plot,'x'
         if timeloop lt 1. then wait,1.
-        
+
         if genplot eq 1 then begin
             nr=1001
             r=min([apertures_star,apertures_gas])*10.^(dindgen(nr)/(nr-1)*alog10(max([apertures_star,apertures_gas])/min([apertures_star,apertures_gas])))
@@ -435,7 +435,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             y=a*sin(findgen(33)*!pi/16.)
             USERSYM,x,y,/FILL
             set_plot,'ps'
-            device,filename=figdir+galaxy+'fit.ps',xsize=12,ysize=11,/color,bits_per_pixel=8,/encapsulated
+            device,filename=figdir+galaxy+'_fit.ps',xsize=12,ysize=11,/color,bits_per_pixel=8,/encapsulated
             xmin=10.*round(0.5*min(r)/10.)
             xmax=10.*round(2.*max(r)/10.)
             decmin=alog10(min([fs,fsiso,10.^(alog10(fluxratio_star)-err_star_log)])/2.)
@@ -470,11 +470,11 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             xyouts,.805,.803,'!6Stars',color=fsc_color('blue'),charthick=3,charsize=1.3,/normal
             xyouts,.675-(strlen(galaxy)-3)*.023,.8204,'!6'+strmid(galaxy,0,strlen(galaxy))+':',charthick=3,charsize=1.3,/normal
             device,/close
-            
+
             fracsig1=(1.+erf(1./sqrt(2.)))-1.
             fracsig2=(1.+erf(2./sqrt(2.)))-1.
             fracsig3=(1.+erf(3./sqrt(2.)))-1.
-    
+
             maxprob=max(probtgastover)
             nc=1001
             contours=dindgen(nc)/(nc-1.)*maxprob
@@ -518,7 +518,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[1,1]*tgasarr(ibest),[toverarr(jbest)-tover_errmin,toverarr(jbest)+tover_errmax],linestyle=0
             xyouts,.2,.77,'!7q!6 = '+f_string(corrtgastover,2),/normal,charsize=chsize
             device,/close
-            
+
             maxprob=max(probtgaslambda)
             nc=1001
             contours=dindgen(nc)/(nc-1.)*maxprob
@@ -562,7 +562,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[1,1]*tgasarr(ibest),[lambdaarr(kbest)-lambda_errmin,lambdaarr(kbest)+lambda_errmax],linestyle=0
             xyouts,.2,.77,'!7q!6 = '+f_string(corrtgaslambda,2),/normal,charsize=chsize
             device,/close
-                    
+
             maxprob=max(probtoverlambda)
             nc=1001
             contours=dindgen(nc)/(nc-1.)*maxprob
@@ -606,14 +606,14 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[1,1]*toverarr(jbest),[lambdaarr(kbest)-lambda_errmin,lambdaarr(kbest)+lambda_errmax],linestyle=0
             xyouts,.2,.77,'!7q!6 = '+f_string(corrtoverlambda,2),/normal,charsize=chsize
             device,/close
-            
+
             report=f_plotdistr(tgasarr,dtgas,probtgas,tgas,galaxy,figdir,'tgas','!8t!6!Dgas!N','!6Myr')
             report=f_plotdistr(toverarr,dtover,probtover,tover,galaxy,figdir,'tover','!8t!6!Dover!N','!6Myr')
             report=f_plotdistr(lambdaarr,dlambda,problambda,lambda,galaxy,figdir,'lambda','!7k!6','!6pc')
-                        
+
             set_plot,'x'
         endif
-                               
+
         n=n+1
     endwhile
 
@@ -643,16 +643,5 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
     report=f_writepdf(alog10(lambdaarr),alog10(dlambda),alog10(problambda),galaxy,outputdir,'lambda','# log10(lambda[pc]), log10(dlambda[pc]), log10(PDF[pc^-1])')
 
     return,[minchi2,tgas,tgas_errmin,tgas_errmax,tover,tover_errmin,tover_errmax,lambda,lambda_errmin,lambda_errmax]
-    
+
 end
-
-
-
-
-
-
-
-
-
-
-
