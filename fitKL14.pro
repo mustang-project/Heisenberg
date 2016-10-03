@@ -119,7 +119,7 @@ end
 function f_writepdf,array,darray,probarray,galaxy,outputdir,varstring,commentstring ;write table with PDF to file
     openw,lun,outputdir+galaxy+'PDF_'+varstring+'.dat',/get_lun
     printf,lun,'# 1D Probability distribution function of '+varstring+' for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2016) for details on how this PDF was calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this PDF was calculated'
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(array)
@@ -132,6 +132,49 @@ function f_writepdf,array,darray,probarray,galaxy,outputdir,varstring,commentstr
     close,lun
     free_lun,lun
     report='         1D Probability distribution function of '+varstring+' written'
+    return,report
+end
+
+function f_writetf_model,xarray,yarraystar,yarraygas,galaxy,outputdir,commentstring ;write table with tuningfork model line to file
+    openw,lun,outputdir+galaxy+'tuningfork_model.dat',/get_lun
+    printf,lun,'# Best-fitting model output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
+    printf,lun,commentstring
+    printf,lun,''
+    n=n_elements(xarray)
+    for i=0,n-1 do begin
+        v1=xarray(i)
+        v2=yarraystar(i)
+        v3=yarraygas(i)
+        printf,lun,format='(f12.5,2(3x,f12.5))',v1,v2,v3
+    endfor
+    close,lun
+    free_lun,lun
+    report='         Best-fitting model output written'
+    return,report
+end
+
+function f_writetf_obs,xarraystar,xarraygas,yarraystar,yarraygas,errbarstar,errbargas,errfitstar,errfitgas,galaxy,outputdir,commentstring ;write table with tuningfork observational data points to file
+    openw,lun,outputdir+galaxy+'tuningfork_obs.dat',/get_lun
+    printf,lun,'# Observational data point output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these data points were calculated'
+    printf,lun,commentstring
+    printf,lun,''
+    n=n_elements(xarraystar)
+    for i=0,n-1 do begin
+        v1=xarraystar(i)
+        v2=xarraygas(i)
+        v3=yarraystar(i)
+        v4=yarraygas(i)
+        v5=errbarstar(i)
+        v6=errbargas(i)
+        v7=errfitstar(i)
+        v8=errfitgas(i)
+        printf,lun,format='(f12.5,7(3x,f12.5))',v1,v2,v3,v4,v5,v6,v7,v8
+    endfor
+    close,lun
+    free_lun,lun
+    report='         Observational data point output written'
     return,report
 end
 
@@ -474,10 +517,12 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[xmin,xmax],[1,1]*fs(0),linestyle=2,color=fsc_color('black'),thick=3
             xdyn=alog10(xmax/xmin)
             ydyn=alog10(ymax/ymin)
-            oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)+err_star_log/sqrt(nfitstar)*mean(nfitstar)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use)))-fluxratio_star,psym=3,/hibar,errcolor=180,errthick=20,/nohat
-            oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)-err_star_log/sqrt(nfitstar)*mean(nfitstar)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use)))-fluxratio_star,psym=3,/lobar,errcolor=180,errthick=20,/nohat
-            oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)+err_gas_log/sqrt(nfitgas)*mean(nfitgas)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use)))-fluxratio_gas,psym=3,/hibar,errcolor=180,errthick=20,/nohat
-            oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)-err_gas_log/sqrt(nfitgas)*mean(nfitgas)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use)))-fluxratio_gas,psym=3,/lobar,errcolor=180,errthick=20,/nohat
+            err_star_log_grey=err_star_log/sqrt(nfitstar)*mean(nfitstar)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use))
+            err_gas_log_grey=err_gas_log/sqrt(nfitgas)*mean(nfitgas)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use))
+            oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)+err_star_log_grey)-fluxratio_star,psym=3,/hibar,errcolor=180,errthick=20,/nohat
+            oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)-err_star_log_grey)-fluxratio_star,psym=3,/lobar,errcolor=180,errthick=20,/nohat
+            oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)+err_gas_log_grey)-fluxratio_gas,psym=3,/hibar,errcolor=180,errthick=20,/nohat
+            oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)-err_gas_log_grey)-fluxratio_gas,psym=3,/lobar,errcolor=180,errthick=20,/nohat
             arrowlen=.1*ydyn
             arrowoff=0.25*arrowlen
             oplot,[1,1]*lambda,ymin*[10.^(arrowoff),10.^(arrowoff+arrowlen)],thick=3
@@ -641,6 +686,17 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
 
         n=n+1
     endwhile
+        
+    print,'     ==> writing tuningfork plot data to output directory'
+    report=f_writetf_model(alog10(r),alog10(fs),alog10(fg),galaxy,outputdir,'# log10(apertures), log10(fluxratio_star_model), log10(fluxratio_gas_model)')
+    report=f_writetf_obs(alog10(apertures_star),alog10(apertures_gas),alog10(fluxratio_star),alog10(fluxratio_gas),err_star_log,err_gas_log,err_star_log_grey,err_gas_log_grey,galaxy,outputdir, $
+                         '# log10(apertures_star), log10(apertures_gas), log10(fluxratio_star_obs), log10(fluxratio_gas_obs), ' $
+                         +'log10(fluxratio_star_errorbar), log10(fluxratio_gas_errorbar), log10(fluxratio_star_errorgrey), log10(fluxratio_gas_errorgrey)')
+
+    print,'     ==> writing probability distribution functions to output directory'
+    report=f_writepdf(alog10(tgasarr),alog10(dtgas),alog10(probtgas),galaxy,outputdir,'tgas','# log10(tgas[Myr]), log10(dtgas[Myr]), log10(PDF[Myr^-1])')
+    report=f_writepdf(alog10(toverarr),alog10(dtover),alog10(probtover),galaxy,outputdir,'tover','# log10(tover[Myr]), log10(dtover[Myr]), log10(PDF[Myr^-1])')
+    report=f_writepdf(alog10(lambdaarr),alog10(dlambda),alog10(problambda),galaxy,outputdir,'lambda','# log10(lambda[pc]), log10(dlambda[pc]), log10(PDF[pc^-1])')
 
     print,'     ==> writing probability distribution arrays to temporary array directory'
     save,filename=arrdir+'probnorm.sav',probnorm
@@ -662,10 +718,6 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
     save,filename=arrdir+'dtgasarr.sav',dtgasarr
     save,filename=arrdir+'dtoverarr.sav',dtoverarr
     save,filename=arrdir+'dtlambdaarr.sav',dlambdaarr
-    print,'     ==> writing probability distribution functions to output directory'
-    report=f_writepdf(alog10(tgasarr),alog10(dtgas),alog10(probtgas),galaxy,outputdir,'tgas','# log10(tgas[Myr]), log10(dtgas[Myr]), log10(PDF[Myr^-1])')
-    report=f_writepdf(alog10(toverarr),alog10(dtover),alog10(probtover),galaxy,outputdir,'tover','# log10(tover[Myr]), log10(dtover[Myr]), log10(PDF[Myr^-1])')
-    report=f_writepdf(alog10(lambdaarr),alog10(dlambda),alog10(problambda),galaxy,outputdir,'lambda','# log10(lambda[pc]), log10(dlambda[pc]), log10(PDF[pc^-1])')
 
     return,[minchi2,tgas,tgas_errmin,tgas_errmax,tover,tover_errmin,tover_errmax,lambda,lambda_errmin,lambda_errmax,beta_star_best,beta_gas_best]
 
