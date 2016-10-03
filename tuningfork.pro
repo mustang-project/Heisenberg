@@ -90,7 +90,7 @@ endwhile
 close,lun ;close the logical unit
 free_lun,lun ;make the logical unit available again
 
-expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_fit','cleanup','autoexit'] ;variable names of expected flags (1)
+expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','derive_phys','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
 expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
 expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
@@ -100,8 +100,8 @@ expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','ga
 expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','nbins'] ;variable names of expected input parameters (1)
 expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
-expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini','fstarover','fgasover'] ;variable names of expected input parameters (4)
-expected_params5=['nit','nmc','ndepth','ntry','nphysmc'] ;variable names of expected input parameters (5)
+expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
+expected_params5=['nmc','ndepth','ntry','nphysmc'] ;variable names of expected input parameters (5)
 expected_params6=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','photontrap','kappa0'] ;variable names of expected input parameters (6)
 expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6] ;variable names of expected input parameters (all)
 expected_vars=[expected_flags,expected_filenames,expected_masknames,expected_params] ;names of all expected variables
@@ -140,6 +140,10 @@ endif else begin ;set number of linear contour levels for peak identification
     nlevels_s=nlinlevels_s ;number of stellar contour levels
     nlevels_g=nlinlevels_s ;number of gas contour levels
 endelse
+if tstar_incl eq 0 then tovermaxi=tgasmaxi else tovermaxi=min([tstariso,tgasmaxi])
+tgasarr=tgasmini*(tgasmaxi/tgasmini)^((dindgen(ntry)+.5)/ntry) ;log-spaced array covering possible range of tgas
+toverarr=tovermini*(tovermaxi/tovermini)^((dindgen(ntry)+.5)/ntry) ;log-spaced array covering possible range of tover
+tstararr=tstariso+(1-tstar_incl)*toverarr ;log-spaced array covering possible range of tstar
 
 mainseed=systime(1) ;source seed for random number generation
 nseed=100*nmc*naperture ;number of random seeds needed
@@ -722,572 +726,572 @@ if get_distances then begin
 endif
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;DERIVE OBSERVED FLUX RATIO BIASES AND INPUT QUANTITIES FOR FITTING KL14 PRINCIPLE;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if calc_obs then begin
+    print,' ==> deriving observed fluxratio biases and input parameters for fitting KL14 principle'
+    fluxratio_galaxy=gasfluxtotal/starfluxtotal ;average g/s flux ratio in the included area
+
+    ;start calculating observed fluxratio biases with Monte Carlo sampling of non-overlapping peaks
+    totgas_star=dblarr(naperture,nmc) ;total gas flux in apertures centered on SF peaks
+    totstar_star=dblarr(naperture,nmc) ;total SF flux in apertures centered on SF peaks
+    totgas_gas=dblarr(naperture,nmc) ;total gas flux in apertures centered on gas peaks
+    totstar_gas=dblarr(naperture,nmc) ;total SF flux in apertures centered on gas peaks
+    apertures_star=dblarr(naperture) ;mean aperture size centred on SF peaks for ith target aperture size
+    apertures_gas=dblarr(naperture) ;mean aperture size centred on gas peaks for ith target aperture size
+    meanapgas_star=dblarr(naperture) ;mean gas flux in apertures centered on SF peaks
+    meanapstar_star=dblarr(naperture) ;mean SF flux in apertures centered on SF peaks
+    meanapgas_gas=dblarr(naperture) ;mean gas flux in apertures centered on gas peaks
+    meanapstar_gas=dblarr(naperture) ;mean SF flux in apertures centered on gas peaks
+    meantotgas_star=dblarr(naperture) ;mean total gas flux in apertures centered on SF peaks
+    meantotstar_star=dblarr(naperture) ;mean total SF flux in apertures centered on SF peaks
+    meantotgas_gas=dblarr(naperture) ;mean total gas flux in apertures centered on gas peaks
+    meantotstar_gas=dblarr(naperture) ;mean total SF flux in apertures centered on gas peaks
+    fluxratio_star=dblarr(naperture)
+    fluxratio_gas=dblarr(naperture)
+    err_sens_star2=dblarr(naperture)
+    err_apgas_star2=dblarr(naperture)
+    err_apstar_star2=dblarr(naperture)
+    err_apcov_star2=dblarr(naperture)
+    err_sens_gas2=dblarr(naperture)
+    err_apgas_gas2=dblarr(naperture)
+    err_apstar_gas2=dblarr(naperture)
+    err_apcov_gas2=dblarr(naperture)
+    err_star=dblarr(naperture)
+    err_gas=dblarr(naperture)
+    err_star_log=dblarr(naperture)
+    err_gas_log=dblarr(naperture)
+    nexpstar=dblarr(naperture)
+    nexpgas=dblarr(naperture)
+    nfitstar=dblarr(naperture)
+    nfitgas=dblarr(naperture)
+    nusestar=dblarr(naperture,nmc) ;number of used stellar peaks in MC sample
+    nusegas=dblarr(naperture,nmc) ;number of used gas peaks in MC sample
+    nusestariso=dblarr(nmc,nincludepeak_star+1) ;number of used isolated stellar peaks in MC sample
+    nusegasiso=dblarr(nmc,nincludepeak_gas+1) ;number of used isolated gas peaks in MC sample
+    nstarmc=dblarr(naperture)
+    ngasmc=dblarr(naperture)
+    nstarisomc=dblarr(nincludepeak_star+1)
+    ngasisomc=dblarr(nincludepeak_gas+1)
+    fstarover=dindgen(nincludepeak_star+1)/double(nincludepeak_star)
+    fgasover=dindgen(nincludepeak_gas+1)/double(nincludepeak_gas)
+    betastarmc=dblarr(nmc,nincludepeak_star+1) ;betastar for each MC realisation and each possible value of tover
+    betagasmc=dblarr(nmc,nincludepeak_gas+1) ;betagas for each MC realisation and each possible value of tover and tgas
+    beta_star=dblarr(nincludepeak_star+1) ;betastar for each possible value of tover, averaged over all MC realisations
+    beta_gas=dblarr(nincludepeak_gas+1) ;betagas for each possible value of tover and tgas, averaged over all MC realisations
+    for i=peak_res,max_res do begin ;add up all apertures at a given aperture size to obtain flux ratio bias
+        usestar=intarr(nmc,nincludepeak_star) ;used stellar peaks in MC sample
+        usegas=intarr(nmc,nincludepeak_gas) ;used gas peaks in MC sample
+        for j=0,nmc-1 do begin ;start MC drawing of non-overlapping peak samples (separately for stars and gas)
+            rnd_star=randomu(seedarr(iseed),nincludepeak_star) ;random numbers for drawing stellar peaks in a random order
+            iseed+=1 ;seed was used, on to the next one
+            possiblestar=dindgen(nincludepeak_star) ;stellar peak indices
+            candidate=floor(rnd_star(0)*(nincludepeak_star)) ;first stellar peak
+            usestar(j,0)=possiblestar(candidate) ;include candidate peak
+            remove,candidate,possiblestar ;remove used peak from list of possible candidates
+            nusestar(i,j)+=1 ;got one stellar peak
+            for k=1,nincludepeak_star-1 do begin ;start looping over other stellar peaks
+                candidate=floor(rnd_star(k)*(nincludepeak_star-k)) ;randomly-drawn, new candidate stellar peak
+                usedstar=reform(usestar(j,0:nusestar(i,j)-1)) ;other stellar peaks used so far
+                distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))] ;distances between candidate and used peaks
+                distances_candidate_usestar=distances_candidate_usestar(where(distances_candidate_usestar gt 0.)) ;remove zeroes
+                mindist=min(distances_candidate_usestar) ;smallest distance between candidate and any of the used peaks
+                if mindist gt apertures(i) then begin ;if at least one aperture size away from all used peaks, then:
+                    usestar(j,nusestar(i,j))=possiblestar(candidate) ;include candidate peak
+                    nusestar(i,j)+=1 ;got one more stellar peak
+                endif
+                if n_elements(possiblestar) gt 1 then remove,candidate,possiblestar ;remove used peak from list of possible candidates
+            endfor
+            rnd_gas=randomu(seedarr(iseed),nincludepeak_gas) ;random numbers for drawing gas peaks in a random order
+            iseed+=1 ;seed was used, on to the next one
+            possiblegas=dindgen(nincludepeak_gas) ;gas peak indices
+            candidate=floor(rnd_gas(0)*(nincludepeak_gas)) ;first gas peak
+            usegas(j,0)=possiblegas(candidate) ;include candidate peak
+            remove,candidate,possiblegas ;remove used peak from list of possible candidates
+            nusegas(i,j)+=1 ;got one gas peak
+            for k=1,nincludepeak_gas-1 do begin ;start looping over other gas peaks
+                candidate=floor(rnd_gas(k)*(nincludepeak_gas-k)) ;randomly-drawn, new candidate gas peak
+                usedgas=reform(usegas(j,0:nusegas(i,j)-1)) ;other gas peaks used so far
+                distances_candidate_usegas=[reform(distances_all(possiblegas(candidate)+nincludepeak_star,usedgas+nincludepeak_star)), $
+                                            reform(distances_all(usedgas+nincludepeak_star,possiblegas(candidate)+nincludepeak_star))]
+                                            ;distances between candidate and used peaks
+                distances_candidate_usegas=distances_candidate_usegas(where(distances_candidate_usegas gt 0.)) ;remove zeroes
+                mindist=min(distances_candidate_usegas) ;smallest distance between candidate and any of the used peaks
+                if mindist gt apertures(i) then begin ;if at least one aperture size away from all used peaks, then:
+                    usegas(j,nusegas(i,j))=possiblegas(candidate) ;include candidate peak
+                    nusegas(i,j)+=1 ;got one more gas peak
+                endif
+                if n_elements(possiblegas) gt 1 then remove,candidate,possiblegas ;remove used peak from list of possible candidates
+            endfor
+            usedstar=reform(usestar(j,0:nusestar(i,j)-1)) ;IDs of SF peaks used in this MC sample
+            nusedstar=n_elements(usedstar) ;number of SF peaks used in this MC sample
+            usedstarcount=dindgen(nusedstar) ;array to count used SF peaks
+            usedgas=reform(usegas(j,0:nusegas(i,j)-1)) ;IDs of gas peaks used in this MC sample
+            nusedgas=n_elements(usedgas) ;number of gas peaks used in this MC sample
+            usedgascount=dindgen(nusedgas) ;array to count used gas peaks
+            totgas_star(i,j)=max([0.,total(gasflux(i,inclstar(usedstar)),/nan)]) ;total gas flux in apertures centered on SF peaks (must be > 0)
+            totstar_star(i,j)=max([0.,total(starflux(i,inclstar(usedstar)),/nan)]) ;total SF flux in apertures centered on SF peaks (must be > 0)
+            totgas_gas(i,j)=max([0.,total(gasflux(i,inclgas(usedgas)),/nan)]) ;total gas flux in apertures centered on gas peaks (must be > 0)
+            totstar_gas(i,j)=max([0.,total(starflux(i,inclgas(usedgas)),/nan)]) ;total SF flux in apertures centered on gas peaks (must be > 0)
+            if i eq peak_res then begin ;determine Monte Carlo betastar and betagas based on fractional timescale coverage of each phase projected onto list of peaks sorted by gas fraction-to-star fraction ratio
+                star_gascon=gasflux(i,inclstar(usedstar))/(gasfluxtotal/totalarea) ;excess gas flux around SF peak
+                star_starcon=starflux(i,inclstar(usedstar))/(starfluxtotal/totalarea) ;excess SF flux around SF peak
+                starratio=reform(star_gascon/star_starcon) ;ratio of excess gas flux to excess SF flux around SF peak
+                sortstarratio=reverse(sort(starratio)) ;reverse-sort the above, i.e. in order of decreasing excess ratio and thus of increasing SF peak prominence relative to associated gas peak
+                gas_gascon=gasflux(i,inclgas(usedgas))/(gasfluxtotal/totalarea) ;excess gas flux around gas peak
+                gas_starcon=starflux(i,inclgas(usedgas))/(starfluxtotal/totalarea) ;excess SF flux around gas peak
+                gasratio=reform(gas_starcon/gas_gascon) ;ratio of excess SF flux to excess gas flux around gas peak
+                sortgasratio=reverse(sort(gasratio)) ;reverse-sort the above, i.e. in order of decreasing excess ratio and thus of increasing gas peak prominence relative to associated SF peak
+                for k=0,nincludepeak_star do begin
+                    nstarover=fstarover(k)*nusedstar ;number of SF peaks in overlap
+                    star_critcon=interpol(starratio(sortstarratio),usedstarcount,nstarover) ;critical difference in contrast with respect to background between gas and SF emission to call it an isolated SF peak
+                    i_stariso=where(starratio le star_critcon,nusestarisotemp) ;IDs of isolated SF peaks
+                    nusestariso(j,k)=nusestarisotemp ;number of isolated SF peaks
+                    if nusestariso(j,k) gt 0 && nusestariso(j,k) lt nusedstar then begin ;if isolated SF peaks exist and not all SF peaks are isolated
+                        i_starover=usedstarcount ;create array with overlapping SF peak IDs
+                        remove,reform(i_stariso),i_starover ;remove isolated SF peaks from overlapping SF peak ID array
+                        betastarmc(j,k)=mean(starflux(i,inclstar(usedstar(i_starover))))/mean(starflux(i,inclstar(usedstar(i_stariso)))) ;define betastar as ratio between mean overlapping and isolated SF peak fluxes
+                    endif else betastarmc(j,k)=0. ;if no isolated SF peaks exist or all SF peaks are isolated, set betastar=0
+                endfor
+                for k=0,nincludepeak_gas do begin
+                    ngasover=fgasover(k)*nusedgas ;number of gas peaks in overlap
+                    gas_critcon=interpol(gasratio(sortgasratio),usedgascount,ngasover) ;critical difference in contrast with respect to background between gas and SF emission to call it an isolated gas peak
+                    i_gasiso=where(gasratio le gas_critcon,nusegasisotemp) ;IDs of isolated gas peaks
+                    nusegasiso(j,k)=nusegasisotemp ;number of isolated gas peaks
+                    if nusegasiso(j,k) gt 0 && nusegasiso(j,k) lt nusedgas then begin ;if isolated gas peaks exist and not all gas peaks are isolated
+                        i_gasover=usedgascount ;create array with overlapping gas peak IDs
+                        remove,reform(i_gasiso),i_gasover ;remove isolated gas peaks from overlapping gas peak ID array
+                        betagasmc(j,k)=mean(gasflux(i,inclgas(usedgas(i_gasover))))/mean(gasflux(i,inclgas(usedgas(i_gasiso)))) ;define betagas as ratio between mean overlapping and isolated gas peak fluxes
+                    endif else betagasmc(j,k)=0. ;if no isolated gas peaks exist or all gas peaks are isolated, set betagas=0
+                endfor
+            endif
+            progress,'     ==> Monte-Carlo sampling peak maps to get uncorrelated peak samples',j+i*nmc,nmc*naperture-1
+        endfor
+        ;APERTURE AREAS
+        if calc_ap_area then begin ;calculate aperture area
+            apertures_star[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclstar])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
+            apertures_gas[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclgas])) ;mean aperture size centred on gas peaks for ith target aperture size (order of sqrt(mean) is intentional)
+        endif else begin ;use the area of user-defined aperture areas
+            apertures_star[i] = apertures[i] ;replicate non-mask functionality for fitKL14
+            apertures_gas[i] = apertures[i]  ;replicate non-mask functionality for fitKL14
+        endelse
+
+        ;APERTURES CENTERED ON SF PEAKS -- obtain data points and errors
+        nstarmc(i)=mean(nusestar(i,*)) ;mean number of SF peaks
+        for k=0,nincludepeak_star do begin
+            beta_star_use=where(betastarmc(*,k) gt 0.,n_beta_star_use) ;avoid including MC realisations where no beta_star could be estimated
+            if n_beta_star_use gt tiny then beta_star(k)=mean(betastarmc(beta_star_use,k)) ;betastar for each possible value of tover, averaged over all MC realisations
+        endfor
+        meanapgas_star(i)=mean(gasflux(i,inclstar)) ;mean gas flux density per aperture in apertures centered on SF peaks
+        meanapstar_star(i)=mean(starflux(i,inclstar)) ;mean SF flux density per aperture in apertures centered on SF peaks
+        meantotgas_star(i)=mean(totgas_star(i,*)) ;mean total gas flux density across all apertures centered on SF peaks
+        meantotstar_star(i)=mean(totstar_star(i,*)) ;mean total SF flux density across all apertures centered on SF peaks
+        fluxratio_star(i)=meantotgas_star(i)/meantotstar_star(i) ;gas-to-stellar flux ratio across all apertures centered on SF peaks, averaged over all MC realisations
+        ;obtain individual error components
+        err_sensgas_star=sensgas*(apertures_star(peak_res)/apertures_star(i))*sqrt(nstarmc(i)) ;total gas flux error due to sensitivity
+        err_sensstar_star=sensstar*(apertures_star(peak_res)/apertures_star(i))*sqrt(nstarmc(i)) ;total SF flux error due to sensitivity
+        err_apgas_star=stdev(gasflux(i,inclstar)) ;standard deviation of the gas flux in individual apertures centered on SF peaks
+        err_apstar_star=stdev(starflux(i,inclstar)) ;standard deviation of the stellar flux in individual apertures centered on SF peaks
+        err_totgas_star=stdev(totgas_star(i,*)) ;standard deviation of the total gas flux for apertures centered on SF peaks, across all MC realisations -- ancillary quantity
+        err_totstar_star=stdev(totstar_star(i,*)) ;standard deviation of the total stellar flux for apertures centered on SF peaks, across all MC realisations -- ancillary quantity
+        ;obtain relative error terms and covariance of numerator and denominator
+        nexpstar(i)=nstarmc(i) ;the number of experiments that we are averaging over
+        err_sens_star2(i)=((err_sensgas_star/meantotgas_star(i))^2.+(err_sensstar_star/meantotstar_star(i))^2.) ;relative error due to sensitivity
+        err_apgas_star2(i)=(err_apgas_star/meanapgas_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (gas)
+        err_apstar_star2(i)=(err_apstar_star/meanapstar_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (stars)
+        err_apcov_star2(i)=-2.*correlate(gasflux(i,inclstar),starflux(i,inclstar),/covariance)/meanapgas_star(i)/meanapstar_star(i)/nexpstar(i) ;covariance
+        ;get total error
+        err_star(i)=sqrt(err_sens_star2(i)+err_apgas_star2(i)+err_apstar_star2(i)+err_apcov_star2(i))*fluxratio_star(i)
+        err_star_log(i)=err_star(i)/fluxratio_star(i)/alog(10.) ;error in log space
+        ;APERTURES CENTERED ON GAS PEAKS -- obtain data points and errors
+        ngasmc(i)=mean(nusegas(i,*)) ;mean number of gas peaks
+        for k=0,nincludepeak_gas do begin
+            beta_gas_use=where(betagasmc(*,k) gt 0.,n_beta_gas_use) ;avoid including MC realisations where no beta_gas could be estimated
+            if n_beta_gas_use gt tiny then beta_gas(k)=mean(betagasmc(beta_gas_use,k)) ;betagas for each possible value of tover and tgas, averaged over all MC realisations
+        endfor
+        meanapgas_gas(i)=mean(gasflux(i,inclgas)) ;mean gas flux per aperture in apertures centered on gas peaks
+        meanapstar_gas(i)=mean(starflux(i,inclgas)) ;mean SF flux per aperture in apertures centered on gas peaks
+        meantotgas_gas(i)=mean(totgas_gas(i,*)) ;mean total gas flux across all apertures centered on gas peaks
+        meantotstar_gas(i)=mean(totstar_gas(i,*)) ;mean total SF flux across all apertures centered on gas peaks
+        fluxratio_gas(i)=meantotgas_gas(i)/meantotstar_gas(i) ;gas-to-stellar flux ratio across all apertures centered on gas peaks, averaged over all MC realisations
+        ;obtain individual error components
+        err_sensgas_gas=sensgas*(apertures_gas(peak_res)/apertures_gas(i))*sqrt(ngasmc(i)) ;total SF flux error due to sensitivity
+        err_sensstar_gas=sensstar*(apertures_gas(peak_res)/apertures_gas(i))*sqrt(ngasmc(i)) ;total gas flux error due to sensitivity
+        err_apgas_gas=stdev(gasflux(i,inclgas)) ;standard deviation of the gas flux in individual apertures centered on gas peaks
+        err_apstar_gas=stdev(starflux(i,inclgas)) ;standard deviation of the stellar flux in individual apertures centered on gas peaks
+        err_totgas_gas=stdev(totgas_gas(i,*)) ;standard deviation of the total gas flux for apertures centered on gas peaks, across all MC realisations -- ancillary quantity
+        err_totstar_gas=stdev(totstar_gas(i,*)) ;standard deviation of the total stellar flux for apertures centered on gas peaks, across all MC realisations -- ancillary quantity
+        ;obtain relative error terms and covariance of numerator and denominator
+        nexpgas(i)=ngasmc(i) ;the number of experiments that we are averaging over
+        err_sens_gas2(i)=((err_sensgas_gas/meantotgas_gas(i))^2.+(err_sensstar_gas/meantotstar_gas(i))^2.) ;relative error due to sensitivity
+        err_apgas_gas2(i)=(err_apgas_gas/meanapgas_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (gas)
+        err_apstar_gas2(i)=(err_apstar_gas/meanapstar_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (stars)
+        err_apcov_gas2(i)=-2.*correlate(gasflux(i,inclgas),starflux(i,inclgas),/covariance)/meanapgas_gas(i)/meanapstar_gas(i)/nexpgas(i) ;covariance
+        ;get total error
+        err_gas(i)=sqrt(err_sens_gas2(i)+err_apgas_gas2(i)+err_apstar_gas2(i)+err_apcov_gas2(i))*fluxratio_gas(i)
+        err_gas_log(i)=err_gas(i)/fluxratio_gas(i)/alog(10.) ;error in log space
+    endfor
+    corrgas_gas=dblarr(naperture,naperture)
+    corrstar_gas=dblarr(naperture,naperture)
+    corrgas_star=dblarr(naperture,naperture)
+    corrstar_star=dblarr(naperture,naperture)
+    for i=peak_res,naperture-1 do begin
+        for j=i,naperture-1 do begin
+            corrgas_gas(i,j)=meanapgas_gas(i)/meanapgas_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
+            corrstar_gas(i,j)=meanapstar_gas(i)/meanapstar_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
+            corrgas_star(i,j)=meanapgas_star(i)/meanapgas_star(j)*apertures_star(i)^2./apertures_star(j)^2.
+            corrstar_star(i,j)=meanapstar_star(i)/meanapstar_star(j)*apertures_star(i)^2./apertures_star(j)^2.
+            corrgas_gas(j,i)=corrgas_gas(i,j)
+            corrstar_gas(j,i)=corrstar_gas(i,j)
+            corrgas_star(j,i)=corrgas_star(i,j)
+            corrstar_star(j,i)=corrstar_star(i,j)
+        endfor
+    endfor
+    for i=peak_res,naperture-1 do begin ;total number of independent data points for gas and SF peaks
+        nfitgas(i)=.5/total(corrgas_gas(i,*))+.5/total(corrstar_gas(i,*)) ;take the mean of the number of independent datapoints for the numerator and the denominator (for N=>inf 1/2+1/2N is right, but 2/(1+N) is wrong)
+        nfitstar(i)=.5/total(corrgas_star(i,*))+.5/total(corrstar_star(i,*))
+    endfor
+    surfcontrasts=meantotstar_star(peak_res)/meantotstar_star(max_res)*nstarmc(max_res)/nstarmc(peak_res)-1. ;surface density contrast of SF peak - the -1 subtracts background & isolates the peak contribution
+    surfcontrastg=meantotgas_gas(peak_res)/meantotgas_gas(max_res)*ngasmc(max_res)/ngasmc(peak_res)-1. ;surface density contrast of gas peak - the -1 subtracts background & isolates the peak contribution
+    bias_star=fluxratio_star/fluxratio_galaxy
+    bias_gas=fluxratio_gas/fluxratio_galaxy
+    err_star=err_star/fluxratio_galaxy ;scale linear error -- log error is unchanged
+    err_gas=err_gas/fluxratio_galaxy ;scale linear error -- log error is unchanged
+endif
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;FIT KL14 PRINCIPLE TO DATA;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 if calc_fit then begin
     print,' ==> fitting KL14 principle'
-    it=0 ;iteration index
-    istop=0 ;stop indicator
-    redchi2=9.d99
-    fluxratio_galaxy=gasfluxtotal/starfluxtotal ;average g/s flux ratio in the included area
 
-    while istop ne 1 do begin ;start fitting loop, adjusting beta_star and beta_gas on the fly based on the sorting of the g/s flux ratio
-        ;calculate geometric lambda
-        maxap=max(apertures(fitap))*pctopix ;max aperture size in pixels
-        maxap_area=!pi*(.5*maxap)^2.
-        nneigh=dblarr(nincludepeak)
-        for i=0,nincludepeak-1 do begin
-            ipeak=inclpeaks(i)
-            others=dindgen(npeaks)
-            remove,ipeak,others
-            distances=sqrt((peaks(ipeak,0)-peaks(others,0))^2.+(peaks(ipeak,1)-peaks(others,1))^2.) ;distances to other peaks on the map in pixels
-            inap=where(distances le .5*maxap,ninap)
-            nneigh(i)=ninap
-        endfor
-        area=nincludepeak*maxap_area ;total area covered by map overlap in pc^2
-        lambda_map2=2.*sqrt(area/(0.5*total(nneigh))/!pi)*pixtopc ;geometric lambda from largest aperture area assuming points are randomly distributed -- 0.5*nneigh to correct for counting neighbours twice
+    fit=fitKL14(fluxratio_star[fitap]/fluxratio_galaxy,fluxratio_gas[fitap]/fluxratio_galaxy, $
+                err_star_log[fitap],err_gas_log[fitap],tstariso,beta_star,beta_gas,fstarover,fgasover,apertures_star[fitap],apertures_gas[fitap], $
+                surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,tovermaxi,nfitstar[fitap],nfitgas[fitap], $
+                ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir, window_plot)
+    tgas=fit(1)
+    tgas_errmin=sqrt(fit(2)^2.+(tgas*tstariso_rerrmin)^2.)
+    tgas_errmax=sqrt(fit(3)^2.+(tgas*tstariso_rerrmax)^2.)
+    tover=fit(4)
+    tover_errmin=sqrt(fit(5)^2.+(tover*tstariso_rerrmin)^2.)
+    tover_errmax=sqrt(fit(6)^2.+(tover*tstariso_rerrmax)^2.)
+    lambda=fit(7)
+    lambda_errmin=fit(8)
+    lambda_errmax=fit(9)
+    if tstar_incl eq 0 then tstar=tstariso+tover else tstar=tstariso
+    ttotal=tgas+tstar-tover
+    beta_star_fit=fit(10)
+    beta_gas_fit=fit(11)
+    redchi2=fit(0)
+    fit=fit(0:9)
 
-        totgas_star=dblarr(naperture,nmc) ;total gas flux in apertures centered on SF peaks
-        totstar_star=dblarr(naperture,nmc) ;total SF flux in apertures centered on SF peaks
-        totgas_gas=dblarr(naperture,nmc) ;total gas flux in apertures centered on gas peaks
-        totstar_gas=dblarr(naperture,nmc) ;total SF flux in apertures centered on gas peaks
-        totgas_stariso=dblarr(naperture,nmc) ;total gas flux in apertures centered on isolated SF peaks
-        totstar_stariso=dblarr(naperture,nmc) ;total SF flux in apertures centered on isolated SF peaks
-        totgas_gasiso=dblarr(naperture,nmc) ;total gas flux in apertures centered on isolated gas peaks
-        totstar_gasiso=dblarr(naperture,nmc) ;total SF flux in apertures centered on isolated gas peaks
-        apertures_star=dblarr(naperture) ;mean aperture size centred on SF peaks for ith target aperture size
-        apertures_gas=dblarr(naperture) ;mean aperture size centred on gas peaks for ith target aperture size
-        meanapgas_star=dblarr(naperture) ;mean gas flux in apertures centered on SF peaks
-        meanapstar_star=dblarr(naperture) ;mean SF flux in apertures centered on SF peaks
-        meanapgas_gas=dblarr(naperture) ;mean gas flux in apertures centered on gas peaks
-        meanapstar_gas=dblarr(naperture) ;mean SF flux in apertures centered on gas peaks
-        meantotgas_star=dblarr(naperture) ;mean total gas flux in apertures centered on SF peaks
-        meantotstar_star=dblarr(naperture) ;mean total SF flux in apertures centered on SF peaks
-        meantotgas_gas=dblarr(naperture) ;mean total gas flux in apertures centered on gas peaks
-        meantotstar_gas=dblarr(naperture) ;mean total SF flux in apertures centered on gas peaks
-        meantotgas_stariso=dblarr(naperture) ;mean total gas flux in apertures centered on isolated SF peaks
-        meantotstar_stariso=dblarr(naperture) ;mean total SF flux in apertures centered on isolated SF peaks
-        meantotgas_gasiso=dblarr(naperture) ;mean total gas flux in apertures centered on isolated gas peaks
-        meantotstar_gasiso=dblarr(naperture) ;mean total SF flux in apertures centered on isolated gas peaks
-        fluxratio_star=dblarr(naperture)
-        fluxratio_gas=dblarr(naperture)
-        err_sens_star2=dblarr(naperture)
-        err_apgas_star2=dblarr(naperture)
-        err_apstar_star2=dblarr(naperture)
-        err_apcov_star2=dblarr(naperture)
-        err_sens_gas2=dblarr(naperture)
-        err_apgas_gas2=dblarr(naperture)
-        err_apstar_gas2=dblarr(naperture)
-        err_apcov_gas2=dblarr(naperture)
-        err_star=dblarr(naperture)
-        err_gas=dblarr(naperture)
-        err_star_log=dblarr(naperture)
-        err_gas_log=dblarr(naperture)
-        nexpstar=dblarr(naperture)
-        nexpgas=dblarr(naperture)
-        nfitstar=dblarr(naperture)
-        nfitgas=dblarr(naperture)
-        nusestar=dblarr(naperture,nmc) ;number of used stellar peaks in MC sample
-        nusegas=dblarr(naperture,nmc) ;number of used gas peaks in MC sample
-        nisostar=dblarr(naperture,nmc)
-        nisogas=dblarr(naperture,nmc)
-        nstarmc=dblarr(naperture)
-        ngasmc=dblarr(naperture)
-        nstarisomc=dblarr(naperture)
-        ngasisomc=dblarr(naperture)
-        betastarmc=dblarr(nmc)
-        betagasmc=dblarr(nmc)
-        for i=peak_res,max_res do begin ;add up all apertures at a given aperture size to obtain flux ratio bias
-            usestar=intarr(nmc,nincludepeak_star) ;used stellar peaks in MC sample
-            usegas=intarr(nmc,nincludepeak_gas) ;used gas peaks in MC sample
-            for j=0,nmc-1 do begin ;start MC drawing of non-overlapping peak samples (separately for stars and gas)
-                rnd_star=randomu(seedarr(iseed),nincludepeak_star) ;random numbers for drawing stellar peaks in a random order
-                iseed+=1 ;seed was used, on to the next one
-                possiblestar=dindgen(nincludepeak_star) ;stellar peak indices
-                candidate=floor(rnd_star(0)*(nincludepeak_star)) ;first stellar peak
-                usestar(j,0)=possiblestar(candidate) ;include candidate peak
-                remove,candidate,possiblestar ;remove used peak from list of possible candidates
-                nusestar(i,j)+=1 ;got one stellar peak
-                for k=1,nincludepeak_star-1 do begin ;start looping over other stellar peaks
-                    candidate=floor(rnd_star(k)*(nincludepeak_star-k)) ;randomly-drawn, new candidate stellar peak
-                    usedstar=reform(usestar(j,0:nusestar(i,j)-1)) ;other stellar peaks used so far
-                    distances_candidate_usestar=[reform(distances_all(possiblestar(candidate),usedstar)),reform(distances_all(usedstar,possiblestar(candidate)))] ;distances between candidate and used peaks
-                    distances_candidate_usestar=distances_candidate_usestar(where(distances_candidate_usestar gt 0.)) ;remove zeroes
-                    mindist=min(distances_candidate_usestar) ;smallest distance between candidate and any of the used peaks
-                    if mindist gt apertures(i) then begin ;if at least one aperture size away from all used peaks, then:
-                        usestar(j,nusestar(i,j))=possiblestar(candidate) ;include candidate peak
-                        nusestar(i,j)+=1 ;got one more stellar peak
-                    endif
-                    if n_elements(possiblestar) gt 1 then remove,candidate,possiblestar ;remove used peak from list of possible candidates
-                endfor
-                rnd_gas=randomu(seedarr(iseed),nincludepeak_gas) ;random numbers for drawing gas peaks in a random order
-                iseed+=1 ;seed was used, on to the next one
-                possiblegas=dindgen(nincludepeak_gas) ;gas peak indices
-                candidate=floor(rnd_gas(0)*(nincludepeak_gas)) ;first gas peak
-                usegas(j,0)=possiblegas(candidate) ;include candidate peak
-                remove,candidate,possiblegas ;remove used peak from list of possible candidates
-                nusegas(i,j)+=1 ;got one gas peak
-                for k=1,nincludepeak_gas-1 do begin ;start looping over other gas peaks
-                    candidate=floor(rnd_gas(k)*(nincludepeak_gas-k)) ;randomly-drawn, new candidate gas peak
-                    usedgas=reform(usegas(j,0:nusegas(i,j)-1)) ;other gas peaks used so far
-                    distances_candidate_usegas=[reform(distances_all(possiblegas(candidate)+nincludepeak_star,usedgas+nincludepeak_star)), $
-                                                reform(distances_all(usedgas+nincludepeak_star,possiblegas(candidate)+nincludepeak_star))]
-                                                ;distances between candidate and used peaks
-                    distances_candidate_usegas=distances_candidate_usegas(where(distances_candidate_usegas gt 0.)) ;remove zeroes
-                    mindist=min(distances_candidate_usegas) ;smallest distance between candidate and any of the used peaks
-                    if mindist gt apertures(i) then begin ;if at least one aperture size away from all used peaks, then:
-                        usegas(j,nusegas(i,j))=possiblegas(candidate) ;include candidate peak
-                        nusegas(i,j)+=1 ;got one more gas peak
-                    endif
-                    if n_elements(possiblegas) gt 1 then remove,candidate,possiblegas ;remove used peak from list of possible candidates
-                endfor
-                usedstar=reform(usestar(j,0:nusestar(i,j)-1))
-                usedgas=reform(usegas(j,0:nusegas(i,j)-1))
-                totgas_star(i,j)=max([0.,total(gasflux(i,inclstar(usedstar)),/nan)]) ;total gas flux in apertures centered on SF peaks (must be > 0)
-                totstar_star(i,j)=max([0.,total(starflux(i,inclstar(usedstar)),/nan)]) ;total SF flux in apertures centered on SF peaks (must be > 0)
-                totgas_gas(i,j)=max([0.,total(gasflux(i,inclgas(usedgas)),/nan)]) ;total gas flux in apertures centered on gas peaks (must be > 0)
-                totstar_gas(i,j)=max([0.,total(starflux(i,inclgas(usedgas)),/nan)]) ;total SF flux in apertures centered on gas peaks (must be > 0)
-                if i eq peak_res then begin ;determine Monte Carlo betastar and betagas based on fractional timescale coverage of each phase projected onto list of peaks sorted by gas fraction-to-star fraction ratio
-                    star_gascon=gasflux(i,inclstar(usedstar))/(gasfluxtotal/totalarea)
-                    star_starcon=starflux(i,inclstar(usedstar))/(starfluxtotal/totalarea)
-                    starratio=reform(star_gascon/star_starcon)
-                    sortstarratio=reverse(sort(starratio))
-                    nstarratio=n_elements(starratio)
-                    star_critcon=starratio(sortstarratio(fstarover*nstarratio)) ;initial critical difference in contrast with respect to background between gas and stellar emission to call peak isolated stellar
-                    i_stariso=where(star_gascon le star_critcon*star_starcon)
-                    gas_gascon=gasflux(i,inclgas(usedgas))/(gasfluxtotal/totalarea)
-                    gas_starcon=starflux(i,inclgas(usedgas))/(starfluxtotal/totalarea)
-                    gasratio=reform(gas_starcon/gas_gascon)
-                    sortgasratio=reverse(sort(gasratio))
-                    ngasratio=n_elements(gasratio)
-                    gas_critcon=gasratio(sortgasratio(fgasover*ngasratio)) ;initial critical difference in contrast with respect to background between gas and stellar emission to call peak isolated gas
-                    i_gasiso=where(gas_starcon le gas_critcon*gas_gascon)
-                    nstariso=n_elements(i_stariso)
-                    nusedstar=n_elements(usedstar)
-                    ngasiso=n_elements(i_gasiso)
-                    nusedgas=n_elements(usedgas)
-                    if nstariso gt 0 && nstariso lt nusedstar then begin
-                        i_starover=dindgen(nusedstar)
-                        remove,reform(i_stariso),i_starover
-                        betastarmc(j)=mean(starflux(i,inclstar(usedstar(i_starover))))/mean(starflux(i,inclstar(usedstar(i_stariso))))
-                    endif else betastarmc(j)=1.
-                    if ngasiso gt 0 && ngasiso lt nusedgas then begin
-                        i_gasover=dindgen(nusedgas)
-                        remove,reform(i_gasiso),i_gasover
-                        betagasmc(j)=mean(gasflux(i,inclgas(usedgas(i_gasover))))/mean(gasflux(i,inclgas(usedgas(i_gasiso))))
-                    endif else betagasmc(j)=1.
-                    usedstariso=usedstar(i_stariso)
-                    usedgasiso=usedgas(i_gasiso)
-                endif
-                i_isostar=intersect(usedstariso,usedstar)
-                i_isogas=intersect(usedgasiso,usedgas)
-                if finite(i_isostar(0)) ne 0 then begin
-                    nisostar(i,j)=n_elements(i_isostar)
-                    totgas_stariso(i,j)=max([0.,total(gasflux(i,inclstar(i_isostar)),/nan)]) ;total gas flux in apertures centered on isolated SF peaks (must be > 0)
-                    totstar_stariso(i,j)=max([0.,total(starflux(i,inclstar(i_isostar)),/nan)]) ;total SF flux in apertures centered on isolated SF peaks (must be > 0)
-                endif else nisostar(i,j)=0
-                if finite(i_isogas(0)) ne 0 then begin
-                    nisogas(i,j)=n_elements(i_isogas)
-                    totgas_gasiso(i,j)=max([0.,total(gasflux(i,inclgas(i_isogas)),/nan)]) ;total gas flux in apertures centered on isolated gas peaks (must be > 0)
-                    totstar_gasiso(i,j)=max([0.,total(starflux(i,inclgas(i_isogas)),/nan)]) ;total SF flux in apertures centered on isolated gas peaks (must be > 0)
-                endif else nisogas(i,j)=0
-                progress,'     ==> Monte-Carlo sampling peak maps to get uncorrelated peak samples',j+i*nmc,nmc*naperture-1
-            endfor
-            ;APERTURE AREAS
-            if calc_ap_area then begin ;calculate aperture area
-                apertures_star[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclstar])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
-                apertures_gas[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclgas])) ;mean aperture size centred on gas peaks for ith target aperture size (order of sqrt(mean) is intentional)
-            endif else begin ;use the area of user-defined aperture areas
-                apertures_star[i] = apertures[i] ;replicate non-mask functionality for fitKL14
-                apertures_gas[i] = apertures[i]  ;replicate non-mask functionality for fitKL14
-            endelse
+    if peak_prof le 1 then begin
+        rpeaks=0.5*lambda*sqrt(ttotal/(surfcontrasts*tstar)) ; ~lambda*((tgas/tstariso+1)/(tover/tstariso+1))^.5 (if tstar_incl=0) or ~lambda*((tgas/tstariso-tover/tstariso+1)^.5 (if tstar_incl=1)
+        rpeakg=0.5*lambda*sqrt(ttotal/(surfcontrastg*tgas)) ; ~lambda*(1+tstariso/tgas)^.5 (if tstar_incl=0) or ~lambda*((tstariso/tgas-tover/tgas+1)^.5 (if tstar_incl=1)
+    endif
+    if peak_prof eq 2 then begin
+        rpeaks=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrasts*tstar))
+        rpeakg=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrastg*tgas))
+    endif
+    if tstar_incl eq 0 then terrs=0. else terrs=0.
+    if tstar_incl eq 0 then terrg=0. else terrg=0.
 
-            ;APERTURES CENTERED ON SF PEAKS -- obtain data points and errors
-            nstarmc(i)=mean(nusestar(i,*))
-            nstarisomc(i)=mean(nisostar(i,*))
-            meanapgas_star(i)=mean(gasflux(i,inclstar)) ;mean gas flux density per aperture in apertures centered on SF peaks
-            meanapstar_star(i)=mean(starflux(i,inclstar)) ;mean SF flux density per aperture in apertures centered on SF peaks
-            meantotgas_star(i)=mean(totgas_star(i,*)) ;mean total gas flux density across all apertures centered on SF peaks
-            meantotstar_star(i)=mean(totstar_star(i,*)) ;mean total SF flux density across all apertures centered on SF peaks
-            meantotgas_stariso(i)=mean(totgas_stariso(i,*)) ;mean total gas flux density across all apertures centered on isolated SF peaks -- ancillary quantity
-            meantotstar_stariso(i)=mean(totstar_stariso(i,*)) ;mean total SF flux density across all apertures centered on isolated SF peaks -- ancillary quantity
-            fluxratio_star(i)=meantotgas_star(i)/meantotstar_star(i) ;gas-to-stellar flux ratio across all apertures centered on SF peaks, averaged over all MC realisations
-            ;obtain individual error components
-            err_sensgas_star=sensgas*(apertures_star(peak_res)/apertures_star(i))*sqrt(nstarmc(i)) ;total gas flux error due to sensitivity
-            err_sensstar_star=sensstar*(apertures_star(peak_res)/apertures_star(i))*sqrt(nstarmc(i)) ;total SF flux error due to sensitivity
-            err_apgas_star=stdev(gasflux(i,inclstar)) ;standard deviation of the gas flux in individual apertures centered on SF peaks
-            err_apstar_star=stdev(starflux(i,inclstar)) ;standard deviation of the stellar flux in individual apertures centered on SF peaks
-            err_totgas_star=stdev(totgas_star(i,*)) ;standard deviation of the total gas flux for apertures centered on SF peaks, across all MC realisations -- ancillary quantity
-            err_totstar_star=stdev(totstar_star(i,*)) ;standard deviation of the total stellar flux for apertures centered on SF peaks, across all MC realisations -- ancillary quantity
-            ;obtain relative error terms and covariance of numerator and denominator
-            nexpstar(i)=nstarmc(i) ;the number of experiments that we are averaging over
-            err_sens_star2(i)=((err_sensgas_star/meantotgas_star(i))^2.+(err_sensstar_star/meantotstar_star(i))^2.) ;relative error due to sensitivity
-            err_apgas_star2(i)=(err_apgas_star/meanapgas_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (gas)
-            err_apstar_star2(i)=(err_apstar_star/meanapstar_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (stars)
-            err_apcov_star2(i)=-2.*correlate(gasflux(i,inclstar),starflux(i,inclstar),/covariance)/meanapgas_star(i)/meanapstar_star(i)/nexpstar(i) ;covariance
-            ;get total error
-            err_star(i)=sqrt(err_sens_star2(i)+err_apgas_star2(i)+err_apstar_star2(i)+err_apcov_star2(i))*fluxratio_star(i)
-            err_star_log(i)=err_star(i)/fluxratio_star(i)/alog(10.) ;error in log space
-            ;APERTURES CENTERED ON GAS PEAKS -- obtain data points and errors
-            ngasmc(i)=mean(nusegas(i,*))
-            ngasisomc(i)=mean(nisogas(i,*))
-            meanapgas_gas(i)=mean(gasflux(i,inclgas)) ;mean gas flux per aperture in apertures centered on gas peaks
-            meanapstar_gas(i)=mean(starflux(i,inclgas)) ;mean SF flux per aperture in apertures centered on gas peaks
-            meantotgas_gas(i)=mean(totgas_gas(i,*)) ;mean total gas flux across all apertures centered on gas peaks
-            meantotstar_gas(i)=mean(totstar_gas(i,*)) ;mean total SF flux across all apertures centered on gas peaks
-            meantotgas_gasiso(i)=mean(totgas_gasiso(i,*)) ;mean total gas flux across all apertures centered on isolated gas peaks -- ancillary quantity
-            meantotstar_gasiso(i)=mean(totstar_gasiso(i,*)) ;mean total SF flux across all apertures centered on isolated gas peaks -- ancillary quantity
-            fluxratio_gas(i)=meantotgas_gas(i)/meantotstar_gas(i) ;gas-to-stellar flux ratio across all apertures centered on gas peaks, averaged over all MC realisations
-            ;obtain individual error components
-            err_sensgas_gas=sensgas*(apertures_gas(peak_res)/apertures_gas(i))*sqrt(ngasmc(i)) ;total SF flux error due to sensitivity
-            err_sensstar_gas=sensstar*(apertures_gas(peak_res)/apertures_gas(i))*sqrt(ngasmc(i)) ;total gas flux error due to sensitivity
-            err_apgas_gas=stdev(gasflux(i,inclgas)) ;standard deviation of the gas flux in individual apertures centered on gas peaks
-            err_apstar_gas=stdev(starflux(i,inclgas)) ;standard deviation of the stellar flux in individual apertures centered on gas peaks
-            err_totgas_gas=stdev(totgas_gas(i,*)) ;standard deviation of the total gas flux for apertures centered on gas peaks, across all MC realisations -- ancillary quantity
-            err_totstar_gas=stdev(totstar_gas(i,*)) ;standard deviation of the total stellar flux for apertures centered on gas peaks, across all MC realisations -- ancillary quantity
-            ;obtain relative error terms and covariance of numerator and denominator
-            nexpgas(i)=ngasmc(i) ;the number of experiments that we are averaging over
-            err_sens_gas2(i)=((err_sensgas_gas/meantotgas_gas(i))^2.+(err_sensstar_gas/meantotstar_gas(i))^2.) ;relative error due to sensitivity
-            err_apgas_gas2(i)=(err_apgas_gas/meanapgas_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (gas)
-            err_apstar_gas2(i)=(err_apstar_gas/meanapstar_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (stars)
-            err_apcov_gas2(i)=-2.*correlate(gasflux(i,inclgas),starflux(i,inclgas),/covariance)/meanapgas_gas(i)/meanapstar_gas(i)/nexpgas(i) ;covariance
-            ;get total error
-            err_gas(i)=sqrt(err_sens_gas2(i)+err_apgas_gas2(i)+err_apstar_gas2(i)+err_apcov_gas2(i))*fluxratio_gas(i)
-            err_gas_log(i)=err_gas(i)/fluxratio_gas(i)/alog(10.) ;error in log space
-        endfor
-        corrgas_gas=dblarr(naperture,naperture)
-        corrstar_gas=dblarr(naperture,naperture)
-        corrgas_star=dblarr(naperture,naperture)
-        corrstar_star=dblarr(naperture,naperture)
-        for i=peak_res,naperture-1 do begin
-            for j=i,naperture-1 do begin
-                corrgas_gas(i,j)=meanapgas_gas(i)/meanapgas_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
-                corrstar_gas(i,j)=meanapstar_gas(i)/meanapstar_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
-                corrgas_star(i,j)=meanapgas_star(i)/meanapgas_star(j)*apertures_star(i)^2./apertures_star(j)^2.
-                corrstar_star(i,j)=meanapstar_star(i)/meanapstar_star(j)*apertures_star(i)^2./apertures_star(j)^2.
-                corrgas_gas(j,i)=corrgas_gas(i,j)
-                corrstar_gas(j,i)=corrstar_gas(i,j)
-                corrgas_star(j,i)=corrgas_star(i,j)
-                corrstar_star(j,i)=corrstar_star(i,j)
-            endfor
-        endfor
-        for i=peak_res,naperture-1 do begin ;total number of independent data points for gas and SF peaks
-            nfitgas(i)=.5/total(corrgas_gas(i,*))+.5/total(corrstar_gas(i,*)) ;take the mean of the number of independent datapoints for the numerator and the denominator (for N=>inf 1/2+1/2N is right, but 2/(1+N) is wrong)
-            nfitstar(i)=.5/total(corrgas_star(i,*))+.5/total(corrstar_star(i,*))
-        endfor
-        surfcontrasts=meantotstar_star(peak_res)/meantotstar_star(max_res)*nstarmc(max_res)/nstarmc(peak_res)-1. ;surface density contrast of SF peak - the -1 subtracts background & isolates the peak contribution
-        surfcontrastg=meantotgas_gas(peak_res)/meantotgas_gas(max_res)*ngasmc(max_res)/ngasmc(peak_res)-1. ;surface density contrast of gas peak - the -1 subtracts background & isolates the peak contribution
-        bias_star=fluxratio_star/fluxratio_galaxy
-        bias_gas=fluxratio_gas/fluxratio_galaxy
-        err_star=err_star/fluxratio_galaxy ;scale linear error -- log error is unchanged
-        err_gas=err_gas/fluxratio_galaxy ;scale linear error -- log error is unchanged
-        beta_star=mean(betastarmc)
-        beta_gas=mean(betagasmc)
-
-        fit=fitKL14(fluxratio_star[fitap]/fluxratio_galaxy,fluxratio_gas[fitap]/fluxratio_galaxy, $
-                    err_star_log[fitap],err_gas_log[fitap],tstariso,beta_star,beta_gas,apertures_star[fitap],apertures_gas[fitap], $
-                    surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,nfitstar[fitap],nfitgas[fitap],ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir, window_plot)
-        tgas=fit(1)
-        tgas_errmin=sqrt(fit(2)^2.+(tgas*tstariso_rerrmin)^2.)
-        tgas_errmax=sqrt(fit(3)^2.+(tgas*tstariso_rerrmax)^2.)
-        tover=fit(4)
-        tover_errmin=sqrt(fit(5)^2.+(tover*tstariso_rerrmin)^2.)
-        tover_errmax=sqrt(fit(6)^2.+(tover*tstariso_rerrmax)^2.)
-        lambda=fit(7)
-        lambda_errmin=fit(8)
-        lambda_errmax=fit(9)
-        if tstar_incl eq 0 then tstar=tstariso+tover else tstar=tstariso
-        ttotal=tgas+tstar-tover
-        redchi2_old=redchi2
-        redchi2=fit(0)
-
-        if peak_prof le 1 then begin
-            rpeaks=0.5*lambda*sqrt(ttotal/(surfcontrasts*tstar)) ; ~lambda*((tgas/tstariso+1)/(tover/tstariso+1))^.5 (if tstar_incl=0) or ~lambda*((tgas/tstariso-tover/tstariso+1)^.5 (if tstar_incl=1)
-            rpeakg=0.5*lambda*sqrt(ttotal/(surfcontrastg*tgas)) ; ~lambda*(1+tstariso/tgas)^.5 (if tstar_incl=0) or ~lambda*((tstariso/tgas-tover/tgas+1)^.5 (if tstar_incl=1)
-        endif
-        if peak_prof eq 2 then begin
-            rpeaks=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrasts*tstar))
-            rpeakg=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrastg*tgas))
-        endif
-        if tstar_incl eq 0 then terrs=0. else terrs=0.
-        if tstar_incl eq 0 then terrg=0. else terrg=0.
-
-        if lambda/2. le rpeaks || lambda/2. le rpeakg then begin
-            print,''
-            print,' WARNING: derived lambda is smaller than peak dispersion, suggests inadequate map resolution'
-        endif
-
-        if map_units eq 1 then begin
-            surfsfr=sfr_galaxy/totalarea
-            surfsfr_err=sfr_galaxy_err/totalarea
-            surfgas=mgas_galaxy/totalarea
-            surfgas_err=mgas_galaxy_err/totalarea
-            fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-        endif
-        if map_units eq 2 then begin
-            surfsfr=mgas_galaxy1/totalarea
-            surfsfr_err=mgas_galaxy1_err/totalarea
-            surfgas=mgas_galaxy2/totalarea
-            surfgas_err=mgas_galaxy2_err/totalarea
-            fcl=total(starmap,/nan)*convstar/mgas_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fgmc=total(gasmap,/nan)*convgas/mgas_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-        endif
-        if map_units eq 3 then begin
-            surfsfr=sfr_galaxy1/totalarea
-            surfsfr_err=sfr_galaxy1_err/totalarea
-            surfgas=sfr_galaxy2/totalarea
-            surfgas_err=sfr_galaxy2_err/totalarea
-            fcl=total(starmap,/nan)*convstar/sfr_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fgmc=total(gasmap,/nan)*convgas/sfr_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-        endif
-        if map_units gt 0 then begin
-            ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
-                 fcl,fcl*convstar_err/convstar,fcl*convstar_err/convstar,fgmc,fgmc*convgas_err/convgas,fgmc*convgas_err/convgas]+tiny
-            der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
-                                                  tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir)
-        endif
-        aux=[nincludepeak_star,nincludepeak_gas,beta_star,beta_gas,lap_min]
-
-        ;write table output row and output file
-        fitqty=['redchi2', $
-                'tgas','tgas_errmin','tgas_errmax', $
-                'tover','tover_errmin','tover_errmax', $
-                'lambda','lambda_errmin','lambda_errmax']
-        fitunit=['','Myr','Myr','pc']
-        fitad='Best-fitting'
-        fitstrings=[fitqty(0), $
-                    fitad+' '+fitqty(1)+', '+fitqty(2)+', '+fitqty(3)+' ['+fitunit(1)+']', $
-                    fitad+' '+fitqty(4)+', '+fitqty(5)+', '+fitqty(6)+' ['+fitunit(2)+']', $
-                    fitad+' '+fitqty(7)+', '+fitqty(8)+', '+fitqty(9)+' ['+fitunit(3)+']']
-
-        extunit=['Msun yr^-1','Msun','Msun yr^-1 pc^-2','Msun pc^-2','','']
-        extad='Derived'
-        if map_units eq 1 then begin
-            extqty=['sfr_galaxy','sfr_galaxy_errmin','sfr_galaxy_errmax', $
-                    'mgas_galaxy','mgas_galaxy_errmin','mgas_galaxy_errmax', $
-                    'surfsfr','surfsfr_errmin','surfsfr_errmax', $
-                    'surfgas','surfgas_errmin','surfgas_errmax', $
-                    'fcl','fcl_errmin','fcl_errmax', $
-                    'fgmc','fgmc_errmin','fgmc_errmax']
-        endif
-        if map_units eq 2 then begin
-            extunit(0)='Msun'
-            extunit(2)='Msun pc^-2'
-            extqty=['mgas_galaxy1','mgas_galaxy1_errmin','mgas_galaxy1_errmax', $
-                    'mgas_galaxy2','mgas_galaxy2_errmin','mgas_galaxy2_errmax', $
-                    'surfgas1','surfgas1_errmin','surfgas1_errmax', $
-                    'surfgas2','surfgas2_errmin','surfgas2_errmax', $
-                    'fcl','fcl_errmin','fcl_errmax', $
-                    'fgmc','fgmc_errmin','fgmc_errmax']
-        endif
-        if map_units eq 3 then begin
-            extunit(1)='Msun yr^-1'
-            extunit(3)='Msun yr^-1 pc^-2'
-            extqty=['sfr_galaxy1','sfr_galaxy1_errmin','sfr_galaxy1_errmax', $
-                    'sfr_galaxy2','sfr_galaxy2_errmin','sfr_galaxy2_errmax', $
-                    'surfsfr1','surfsfr1_errmin','surfsfr1_errmax', $
-                    'surfsfr2','surfsfr2_errmin','surfsfr2_errmax', $
-                    'fcl','fcl_errmin','fcl_errmax', $
-                    'fgmc','fgmc_errmin','fgmc_errmax']
-        endif
-        if map_units gt 0 then extstrings=[extad+' '+extqty(0)+', '+extqty(1)+', '+extqty(2)+' ['+extunit(0)+']', $
-                               extad+' '+extqty(3)+', '+extqty(4)+', '+extqty(5)+' ['+extunit(1)+']', $
-                               extad+' '+extqty(6)+', '+extqty(7)+', '+extqty(8)+' ['+extunit(2)+']', $
-                               extad+' '+extqty(9)+', '+extqty(10)+', '+extqty(11)+' ['+extunit(3)+']', $
-                               extad+' '+extqty(12)+', '+extqty(13)+', '+extqty(14)+' ['+extunit(4)+']', $
-                               extad+' '+extqty(15)+', '+extqty(16)+', '+extqty(17)+' ['+extunit(5)+']']
-
-        if map_units gt 0 then begin
-            derqty=['tdepl','tdepl_errmin','tdepl_errmax', $
-                    'tstar','tstar_errmin','tstar_errmax', $
-                    'ttotal','ttotal_errmin','ttotal_errmax', $
-                    'zetastar','zetastar_errmin','zetastar_errmax', $
-                    'zetagas','zetagas_errmin','zetagas_errmax', $
-                    'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
-                    'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
-                    'esf','esf_errmin','esf_errmax', $
-                    'mdotsf','mdotsf_errmin','mdotsf_errmax', $
-                    'mdotfb','mdotfb_errmin','mdotfb_errmax', $
-                    'vfb','vfb_errmin','vfb_errmax', $
-                    'etainst','etainst_errmin','etainst_errmax', $
-                    'etaavg','etaavg_errmin','etaavg_errmax', $
-                    'chie','chie_errmin','chie_errmax', $
-                    'chip','chip_errmin','chip_errmax']
-            derunit=['Gyr','Myr','Myr','','','pc','pc','','Msun yr^-1','Msun yr^-1','km s^-1','','','','']
-            derad='Derived'
-            derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
-                        derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
-                        derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
-                        derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
-                        derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
-                        derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
-                        derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
-                        derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
-                        derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
-                        derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
-                        derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
-                        derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
-                        derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
-                        derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
-                        derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']']
-        endif
-
-        auxqty=['npeak_star','npeak_gas', $
-                'beta_star','beta_gas', $
-                'lap_min']
-        auxunit=['','','pc']
-        auxad='Derived'
-        auxstrings=[auxad+' '+auxqty(0)+', '+auxqty(1)+' ['+auxunit(0)+']', $
-                    auxad+' '+auxqty(2)+', '+auxqty(3)+' ['+auxunit(1)+']', $
-                    auxad+' '+auxqty(4)+' ['+auxunit(2)+']']
-        nfit=n_elements(fitstrings)
-        if map_units gt 0 then begin
-            next=n_elements(extstrings)
-            nder=n_elements(derstrings)
-        endif else begin
-            next=0
-            nder=0
-        endelse
-        naux=n_elements(auxstrings)
-        ntot=nfit+next+nder+naux
-        nvarfit0=1
-        nvarfit=3
-        nvarext=3
-        nvarder=3
-        nvaraux=2
-        nvaraux2=1
-        nentries=nvarfit0+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+naux*nvaraux-1
-        colstrings=strarr(ntot)
-        onecol='Column'
-        multicol='Columns'
-        for i=0,ntot-1 do begin
-            if i eq 0 then begin
-                nvar=nvarfit0
-                nstart=i
-            endif
-            if i ge 1 && i lt nfit then begin
-                nvar=nvarfit
-                nstart=1+nvar*(i-1)
-            endif
-            if i ge nfit && i lt nfit+next && map_units gt 0 then begin
-                nvar=nvarext
-                nstart=1+(nfit-1)*nvarfit+nvar*(i-nfit)
-            endif
-            if i ge nfit+next && i lt nfit+next+nder && map_units gt 0 then begin
-                nvar=nvarder
-                nstart=1+(nfit-1)*nvarfit+next*nvarext+nvar*(i-nfit-next)
-            endif
-            if i ge nfit+next+nder && i lt nfit+next+nder+naux-1 then begin
-                nvar=nvaraux
-                nstart=1+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+nvar*(i-nfit-next-nder)
-            endif
-            if i eq nfit+next+nder+naux-1 then begin
-                nvar=nvaraux2
-                nstart=1+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+(naux-1)*nvaraux
-            endif
-            if nvar gt 1 then colstrings(i)=multicol+' '+f_string(nstart+1,0)+'-'+f_string(nstart+nvar,0)+': ' else colstrings(i)=onecol+' '+f_string(nstart+1,0)+': '
-        endfor
-
-        openw,lun,outputdir+galaxy+'tablerow.dat',/get_lun
-        printf,lun,'# Best-fitting values and derived quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-        printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2016) for details on how these numbers were calculated'
-        printf,lun,'# IMPORTANT: all values represent log10(listed quantity)'
-        for i=0,nfit-1 do printf,lun,'# '+colstrings(i)+fitstrings(i)
-        if map_units gt 0 then begin
-            for i=0,next-1 do printf,lun,'# '+colstrings(i+nfit)+extstrings(i)
-            for i=0,nder-1 do printf,lun,'# '+colstrings(i+nfit+next)+derstrings(i)
-        endif
-        for i=0,naux-1 do printf,lun,'# '+colstrings(i+nfit+next+nder)+auxstrings(i)
-        printf,lun,'# '+onecol+' '+f_string(nstart+2,0)+': Run ID (galaxy)'
-        if map_units gt 0 then printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5),3x,a24)',alog10([fit,ext,der,aux]+tiny),galaxy $
-                          else printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(1x,f12.5),3x,a24)',alog10([fit,aux]+tiny),galaxy
-        close,lun
-        free_lun,lun
-
-        varlen=20
-        unitlen=40
-        openw,lun,outputdir+galaxy+'output.dat',/get_lun
-        printf,lun,'########################################################################################################################'
-        printf,lun,'#                                                                                                                      #'
-        printf,lun,'#                                      FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                                      #'
-        printf,lun,'# Best-fitting values and derived quantities generated with the Kruijssen & Longmore (2014) uncertainty principle code #'
-        printf,lun,'#           IMPORTANT: see Paper II (Kruijssen et al. 2016) for details on how these numbers were calculated           #'
-        printf,lun,'#                                                                                                                      #'
-        printf,lun,'#                                                  BEGIN OUTPUT FILE                                                   #'
-        printf,lun,'#                                                                                                                      #'
-        printf,lun,'########################################################################################################################'
-        printf,lun,''
-        printf,lun,''
-        printf,lun,'# FUNDAMENTAL QUANTITIES (obtained directly from the fitting process)'
-        for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log10['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
-        printf,lun,''
-        printf,lun,''
-        if map_units gt 0 then begin
-            printf,lun,'# EXTERNAL QUANTITIES (obtained through secondary analysis of the maps)'
-            for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log10['+extqty(i)+'/('+extunit(i/3)+')]'
-            printf,lun,''
-            printf,lun,''
-            printf,lun,'# DERIVED QUANTITIES (from fundamental and external quantities)'
-            for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log10['+derqty(i)+'/('+derunit(i/3)+')]'
-            printf,lun,''
-            printf,lun,''
-        endif
-        printf,lun,'# AUXILIARY QUANTITIES (byproduct of the fitting process)'
-        for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]'
-        printf,lun,''
-        printf,lun,''
-        printf,lun,'########################################################################################################################'
-        printf,lun,'#                                                                                                                      #'
-        printf,lun,'#                                                   END OUTPUT FILE                                                    #'
-        printf,lun,'#                                                                                                                      #'
-        printf,lun,'########################################################################################################################'
-        close,lun ;close the logical unit
-        free_lun,lun ;make the logical unit available again
-
+    if lambda/2. le rpeaks || lambda/2. le rpeakg then begin
         print,''
-        print,'         Galaxy: '+galaxy
-        print,'         iteration: '+strtrim(it+1)
-        for i=0,0 do print,'         '+fitstrings(i)+strtrim(fit(0))
-        for i=1,nfit-1 do print,'         '+fitstrings(i)+strtrim(fit(3*i-2))+strtrim(fit(3*i-1))+strtrim(fit(3*i))
-        if map_units gt 0 then begin
-            for i=0,next-1 do print,'         '+extstrings(i)+strtrim(ext(3*i))+strtrim(ext(3*i+1))+strtrim(ext(3*i+2))
-            for i=0,nder-1 do print,'         '+derstrings(i)+strtrim(der(3*i))+strtrim(der(3*i+1))+strtrim(der(3*i+2))
-        endif
-        for i=0,naux-2 do print,'         '+auxstrings(i)+strtrim(aux(2*i))+strtrim(aux(2*i+1))
-        print,'         '+auxstrings(i)+strtrim(aux(2*i))
-        print,''
-
-        it+=1
-        if it ge nit then begin
-            print,''
-            print,' no convergence reached for beta_star and beta_gas, quitting iteration ...'
-            istop=1 ;if maximum number of iterations is reached, end iteration
-        endif
-
-        fstarover_old=fstarover
-        fgasover_old=fgasover
-        fstarover=tover/tstar
-        fgasover=tover/tgas
-        if tover gt 0. then begin
-            star_fracerr=abs(mean([tover_errmin,tover_errmax])/(1.+tover/(tstar-tover))^2.)/(tover/tstar)
-            gas_fracerr=sqrt((mean([tover_errmin,tover_errmax])/tover)^2.+(mean([tgas_errmin,tgas_errmax])/tgas)^2.)
-        endif
-        if tover eq 0. && fstarover_old eq 0. && fgasover_old eq 0. then begin
-            star_fracerr=0.
-            gas_fracerr=0.
-        endif
-        if abs(fstarover_old-fstarover) le 0.5*star_fracerr*fstarover_old && abs(fgasover_old-fgasover) le 0.5*gas_fracerr*fgasover_old && abs(redchi2-redchi2_old) le 1. then istop=1
-    endwhile
+        print,' WARNING: derived lambda is smaller than peak dispersion, suggests inadequate map resolution'
+    endif
 endif
 
-for i=0,2 do begin
-    beep
-    wait,1.
-endfor
-endtime=systime(1)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;CALCULATE DERIVED PHYSICAL QUANTITIES;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if derive_phys then begin
+    print,' ==> calculate derived physical quantities'
+    if map_units eq 0 then begin
+        surfsfr=tiny
+        surfsfr_err=tiny
+        surfgas=tiny
+        surfgas_err=tiny
+        fcl=1. ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc=1. ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+    endif
+    if map_units eq 1 then begin
+        surfsfr=sfr_galaxy/totalarea
+        surfsfr_err=sfr_galaxy_err/totalarea
+        surfgas=mgas_galaxy/totalarea
+        surfgas_err=mgas_galaxy_err/totalarea
+        fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+    endif
+    if map_units eq 2 then begin
+        surfsfr=mgas_galaxy1/totalarea
+        surfsfr_err=mgas_galaxy1_err/totalarea
+        surfgas=mgas_galaxy2/totalarea
+        surfgas_err=mgas_galaxy2_err/totalarea
+        fcl=total(starmap,/nan)*convstar/mgas_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc=total(gasmap,/nan)*convgas/mgas_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+    endif
+    if map_units eq 3 then begin
+        surfsfr=sfr_galaxy1/totalarea
+        surfsfr_err=sfr_galaxy1_err/totalarea
+        surfgas=sfr_galaxy2/totalarea
+        surfgas_err=sfr_galaxy2_err/totalarea
+        fcl=total(starmap,/nan)*convstar/sfr_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc=total(gasmap,/nan)*convgas/sfr_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+    endif
+    if map_units gt 0 then begin
+        ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
+                fcl,fcl*convstar_err/convstar,fcl*convstar_err/convstar,fgmc,fgmc*convgas_err/convgas,fgmc*convgas_err/convgas]+tiny
+        der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
+                                                tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
+    endif else der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
+                                                tstar_incl,surfcontrasts,surfcontrastg,lighttomass,photontrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
+    aux=[nincludepeak_star,nincludepeak_gas,lap_min]
+endif
+
+
+;;;;;;;;;;;;;;;;;;;;
+;WRITE OUTPUT FILES;
+;;;;;;;;;;;;;;;;;;;;
+
+if write_output then begin
+    print,' ==> writing output files'
+    ;write table output row and output file
+    fitqty=['redchi2', $
+            'tgas','tgas_errmin','tgas_errmax', $
+            'tover','tover_errmin','tover_errmax', $
+            'lambda','lambda_errmin','lambda_errmax']
+    fitunit=['','Myr','Myr','pc']
+    fitad='Best-fitting'
+    fitstrings=[fitqty(0), $
+                fitad+' '+fitqty(1)+', '+fitqty(2)+', '+fitqty(3)+' ['+fitunit(1)+']', $
+                fitad+' '+fitqty(4)+', '+fitqty(5)+', '+fitqty(6)+' ['+fitunit(2)+']', $
+                fitad+' '+fitqty(7)+', '+fitqty(8)+', '+fitqty(9)+' ['+fitunit(3)+']']
+
+    extunit=['Msun yr^-1','Msun','Msun yr^-1 pc^-2','Msun pc^-2','','']
+    extad='Derived'
+    if map_units eq 1 then begin
+        extqty=['sfr_galaxy','sfr_galaxy_errmin','sfr_galaxy_errmax', $
+                'mgas_galaxy','mgas_galaxy_errmin','mgas_galaxy_errmax', $
+                'surfsfr','surfsfr_errmin','surfsfr_errmax', $
+                'surfgas','surfgas_errmin','surfgas_errmax', $
+                'fcl','fcl_errmin','fcl_errmax', $
+                'fgmc','fgmc_errmin','fgmc_errmax']
+    endif
+    if map_units eq 2 then begin
+        extunit(0)='Msun'
+        extunit(2)='Msun pc^-2'
+        extqty=['mgas_galaxy1','mgas_galaxy1_errmin','mgas_galaxy1_errmax', $
+                'mgas_galaxy2','mgas_galaxy2_errmin','mgas_galaxy2_errmax', $
+                'surfgas1','surfgas1_errmin','surfgas1_errmax', $
+                'surfgas2','surfgas2_errmin','surfgas2_errmax', $
+                'fcl','fcl_errmin','fcl_errmax', $
+                'fgmc','fgmc_errmin','fgmc_errmax']
+    endif
+    if map_units eq 3 then begin
+        extunit(1)='Msun yr^-1'
+        extunit(3)='Msun yr^-1 pc^-2'
+        extqty=['sfr_galaxy1','sfr_galaxy1_errmin','sfr_galaxy1_errmax', $
+                'sfr_galaxy2','sfr_galaxy2_errmin','sfr_galaxy2_errmax', $
+                'surfsfr1','surfsfr1_errmin','surfsfr1_errmax', $
+                'surfsfr2','surfsfr2_errmin','surfsfr2_errmax', $
+                'fcl','fcl_errmin','fcl_errmax', $
+                'fgmc','fgmc_errmin','fgmc_errmax']
+    endif
+    if map_units gt 0 then extstrings=[extad+' '+extqty(0)+', '+extqty(1)+', '+extqty(2)+' ['+extunit(0)+']', $
+                            extad+' '+extqty(3)+', '+extqty(4)+', '+extqty(5)+' ['+extunit(1)+']', $
+                            extad+' '+extqty(6)+', '+extqty(7)+', '+extqty(8)+' ['+extunit(2)+']', $
+                            extad+' '+extqty(9)+', '+extqty(10)+', '+extqty(11)+' ['+extunit(3)+']', $
+                            extad+' '+extqty(12)+', '+extqty(13)+', '+extqty(14)+' ['+extunit(4)+']', $
+                            extad+' '+extqty(15)+', '+extqty(16)+', '+extqty(17)+' ['+extunit(5)+']']
+
+    if map_units gt 0 then begin
+        derqty=['tdepl','tdepl_errmin','tdepl_errmax', $
+                'tstar','tstar_errmin','tstar_errmax', $
+                'ttotal','ttotal_errmin','ttotal_errmax', $
+                'betastar','betastar_errmin','betastar_errmax', $
+                'betagas','betagas_errmin','betagas_errmax', $
+                'zetastar','zetastar_errmin','zetastar_errmax', $
+                'zetagas','zetagas_errmin','zetagas_errmax', $
+                'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
+                'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
+                'esf','esf_errmin','esf_errmax', $
+                'mdotsf','mdotsf_errmin','mdotsf_errmax', $
+                'mdotfb','mdotfb_errmin','mdotfb_errmax', $
+                'vfb','vfb_errmin','vfb_errmax', $
+                'etainst','etainst_errmin','etainst_errmax', $
+                'etaavg','etaavg_errmin','etaavg_errmax', $
+                'chie','chie_errmin','chie_errmax', $
+                'chip','chip_errmin','chip_errmax']
+        derunit=['Gyr','Myr','Myr','','','','','pc','pc','','Msun yr^-1','Msun yr^-1','km s^-1','','','','']
+        derad='Derived'
+        derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
+                    derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
+                    derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
+                    derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
+                    derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
+                    derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
+                    derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
+                    derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
+                    derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
+                    derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
+                    derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
+                    derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
+                    derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
+                    derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
+                    derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']', $
+                    derad+' '+derqty(45)+', '+derqty(46)+', '+derqty(47)+' ['+derunit(15)+']', $
+                    derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']']
+    endif else begin
+        derqty=['tstar','tstar_errmin','tstar_errmax', $
+                'ttotal','ttotal_errmin','ttotal_errmax', $
+                'betastar','betastar_errmin','betastar_errmax', $
+                'betagas','betagas_errmin','betagas_errmax', $
+                'zetastar','zetastar_errmin','zetastar_errmax', $
+                'zetagas','zetagas_errmin','zetagas_errmax', $
+                'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
+                'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
+                'vfb','vfb_errmin','vfb_errmax']
+        derunit=['Myr','Myr','','','','','pc','pc','km s^-1']
+        derad='Derived'
+        derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
+                    derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
+                    derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
+                    derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
+                    derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
+                    derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
+                    derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
+                    derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
+                    derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']']
+    endelse
+
+    auxqty=['npeak_star','npeak_gas', $
+            'lap_min']
+    auxunit=['','pc']
+    auxad='Derived'
+    auxstrings=[auxad+' '+auxqty(0)+', '+auxqty(1)+' ['+auxunit(0)+']', $
+                auxad+' '+auxqty(2)+' ['+auxunit(1)+']']
+    nfit=n_elements(fitstrings)
+    nder=n_elements(derstrings)
+    if map_units gt 0 then begin
+        next=n_elements(extstrings)
+    endif else begin
+        next=0
+    endelse
+    naux=n_elements(auxstrings)
+    ntot=nfit+next+nder+naux
+    nvarfit0=1
+    nvarfit=3
+    nvarext=3
+    nvarder=3
+    nvaraux=2
+    nvaraux2=1
+    nentries=nvarfit0+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+naux*nvaraux-1
+    colstrings=strarr(ntot)
+    onecol='Column'
+    multicol='Columns'
+    for i=0,ntot-1 do begin
+        if i eq 0 then begin
+            nvar=nvarfit0
+            nstart=i
+        endif
+        if i ge 1 && i lt nfit then begin
+            nvar=nvarfit
+            nstart=1+nvar*(i-1)
+        endif
+        if i ge nfit && i lt nfit+next && map_units gt 0 then begin
+            nvar=nvarext
+            nstart=1+(nfit-1)*nvarfit+nvar*(i-nfit)
+        endif
+        if i ge nfit+next && i lt nfit+next+nder then begin
+            nvar=nvarder
+            nstart=1+(nfit-1)*nvarfit+next*nvarext+nvar*(i-nfit-next)
+        endif
+        if i ge nfit+next+nder && i lt nfit+next+nder+naux-1 then begin
+            nvar=nvaraux
+            nstart=1+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+nvar*(i-nfit-next-nder)
+        endif
+        if i eq nfit+next+nder+naux-1 then begin
+            nvar=nvaraux2
+            nstart=1+(nfit-1)*nvarfit+next*nvarext+nder*nvarder+(naux-1)*nvaraux
+        endif
+        if nvar gt 1 then colstrings(i)=multicol+' '+f_string(nstart+1,0)+'-'+f_string(nstart+nvar,0)+': ' else colstrings(i)=onecol+' '+f_string(nstart+1,0)+': '
+    endfor
+
+    openw,lun,outputdir+galaxy+'tablerow.dat',/get_lun
+    printf,lun,'# Best-fitting values and derived quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these numbers were calculated'
+    printf,lun,'# IMPORTANT: all values represent log10(listed quantity)'
+    for i=0,nfit-1 do printf,lun,'# '+colstrings(i)+fitstrings(i)
+    if map_units gt 0 then begin
+        for i=0,next-1 do printf,lun,'# '+colstrings(i+nfit)+extstrings(i)
+    endif
+    for i=0,nder-1 do printf,lun,'# '+colstrings(i+nfit+next)+derstrings(i)
+    for i=0,naux-1 do printf,lun,'# '+colstrings(i+nfit+next+nder)+auxstrings(i)
+    printf,lun,'# '+onecol+' '+f_string(nstart+2,0)+': Run ID (galaxy)'
+    if map_units gt 0 then printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(3x,f12.5),3x,a24)',alog10([fit,ext,der,aux]+tiny),galaxy $
+                        else printf,lun,format='(f12.5,'+f_string(nentries-1,0)+'(1x,f12.5),3x,a24)',alog10([fit,der,aux]+tiny),galaxy
+    close,lun
+    free_lun,lun
+
+    varlen=20
+    unitlen=40
+    openw,lun,outputdir+galaxy+'output.dat',/get_lun
+    printf,lun,'########################################################################################################################'
+    printf,lun,'#                                                                                                                      #'
+    printf,lun,'#                                      FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                                      #'
+    printf,lun,'# Best-fitting values and derived quantities generated with the Kruijssen & Longmore (2014) uncertainty principle code #'
+    printf,lun,'#           IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these numbers were calculated           #'
+    printf,lun,'#                                                                                                                      #'
+    printf,lun,'#                                                  BEGIN OUTPUT FILE                                                   #'
+    printf,lun,'#                                                                                                                      #'
+    printf,lun,'########################################################################################################################'
+    printf,lun,''
+    printf,lun,''
+    printf,lun,'# FUNDAMENTAL QUANTITIES (obtained directly from the fitting process)'
+    for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log10['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
+    printf,lun,''
+    printf,lun,''
+    if map_units gt 0 then begin
+        printf,lun,'# EXTERNAL QUANTITIES (obtained through secondary analysis of the maps)'
+        for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log10['+extqty(i)+'/('+extunit(i/3)+')]'
+        printf,lun,''
+        printf,lun,''
+        printf,lun,'# DERIVED QUANTITIES (from fundamental and external quantities)'
+    endif else printf,lun,'# DERIVED QUANTITIES (from fundamental quantities)'
+    for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log10['+derqty(i)+'/('+derunit(i/3)+')]'
+    printf,lun,''
+    printf,lun,''
+    printf,lun,'# AUXILIARY QUANTITIES (byproduct of the fitting process)'
+    for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]'
+    printf,lun,''
+    printf,lun,''
+    printf,lun,'########################################################################################################################'
+    printf,lun,'#                                                                                                                      #'
+    printf,lun,'#                                                   END OUTPUT FILE                                                    #'
+    printf,lun,'#                                                                                                                      #'
+    printf,lun,'########################################################################################################################'
+    close,lun ;close the logical unit
+    free_lun,lun ;make the logical unit available again
+
+    print,''
+    print,'         Galaxy: '+galaxy
+    for i=0,0 do print,'         '+fitstrings(i)+strtrim(fit(0))
+    for i=1,nfit-1 do print,'         '+fitstrings(i)+strtrim(fit(3*i-2))+strtrim(fit(3*i-1))+strtrim(fit(3*i))
+    if map_units gt 0 then begin
+        for i=0,next-1 do print,'         '+extstrings(i)+strtrim(ext(3*i))+strtrim(ext(3*i+1))+strtrim(ext(3*i+2))
+    endif
+    for i=0,nder-1 do print,'         '+derstrings(i)+strtrim(der(3*i))+strtrim(der(3*i+1))+strtrim(der(3*i+2))
+    for i=0,naux-2 do print,'         '+auxstrings(i)+strtrim(aux(2*i))+strtrim(aux(2*i+1))
+    print,'         '+auxstrings(i)+strtrim(aux(2*i))
+    print,''
+endif
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1332,6 +1336,11 @@ endif
 ;END ANALYSIS;
 ;;;;;;;;;;;;;;
 
+for i=0,2 do begin
+    beep
+    wait,1.
+endfor
+endtime=systime(1)
 duration=endtime-starttime
 hours=fix(duration/3600.)
 minutes=fix((duration/3600.-hours)*60.)
