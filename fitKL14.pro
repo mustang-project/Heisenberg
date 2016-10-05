@@ -117,9 +117,11 @@ function f_pdftovalues,variable,dvariable,cumpdf,refvalue ;convert PDF to refval
 end
 
 function f_writepdf,array,darray,probarray,galaxy,outputdir,varstring,commentstring ;write table with PDF to file
-    openw,lun,outputdir+galaxy+'PDF_'+varstring+'.dat',/get_lun
+    openw,lun,outputdir+galaxy+'_PDF_'+varstring+'.dat',/get_lun
     printf,lun,'# 1D Probability distribution function of '+varstring+' for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this PDF was calculated'
+    printf,lun,'# IMPORTANT: this PDF uses a coarser grid than the PDF used to calculate the best-fitting values in the PDF figures'
+    printf,lun,'# IMPORTANT: rounding errors may therefore cause small differences when using this file to reproduce the PDF figures'
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(array)
@@ -136,7 +138,7 @@ function f_writepdf,array,darray,probarray,galaxy,outputdir,varstring,commentstr
 end
 
 function f_writetf_model,xarray,yarraystar,yarraygas,galaxy,outputdir,commentstring ;write table with tuningfork model line to file
-    openw,lun,outputdir+galaxy+'tuningfork_model.dat',/get_lun
+    openw,lun,outputdir+galaxy+'_tuningfork_model.dat',/get_lun
     printf,lun,'# Best-fitting model output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
     printf,lun,commentstring
@@ -155,7 +157,7 @@ function f_writetf_model,xarray,yarraystar,yarraygas,galaxy,outputdir,commentstr
 end
 
 function f_writetf_obs,xarraystar,xarraygas,yarraystar,yarraygas,errbarstar,errbargas,errfitstar,errfitgas,galaxy,outputdir,commentstring ;write table with tuningfork observational data points to file
-    openw,lun,outputdir+galaxy+'tuningfork_obs.dat',/get_lun
+    openw,lun,outputdir+galaxy+'_tuningfork_obs.dat',/get_lun
     printf,lun,'# Observational data point output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these data points were calculated'
     printf,lun,commentstring
@@ -178,13 +180,23 @@ function f_writetf_obs,xarraystar,xarraygas,yarraystar,yarraygas,errbarstar,errb
     return,report
 end
 
-function f_plotdistr,array,darray,pdf,value,galaxy,figdir,varstring,symstring,unitstring ;plot PDFs to postscript
+function f_plotdistr,array,darray,pdf,value,errmin,errmax,galaxy,figdir,varstring,symstring,unitstring,verbose ;plot PDFs to postscript
     arraymin=min(array)
     arraymax=max(array)
     cumpdf=total(pdf*darray,/cumulative)
     dummy=f_pdftovalues(array,darray,cumpdf,value)
-    errmin=dummy(1)
-    errmax=dummy(2)
+    value_frompdf=dummy(0)
+    errmin_frompdf=dummy(1)
+    errmax_frompdf=dummy(2)
+    if verbose then begin
+        print,'         value specified: '+f_string(value,2)
+        print,'         errmin specified: '+f_string(errmin,2)
+        print,'         errmax specified: '+f_string(errmax,2)
+        print,'         value calculated from PDF: '+f_string(value_frompdf,2)
+        print,'         errmin calculated from PDF: '+f_string(errmin_frompdf,2)
+        print,'         errmax calculated from PDF: '+f_string(errmax_frompdf,2)
+        print,'         the above specified and calculated values may differ due to rounding errors from using differently-sized PDF grids'
+    endif
     logdiffarray=0.5*(2.-alog10(arraymax/arraymin)) ;is the range at least two orders of magnitude?
     if logdiffarray gt 0 then arrange=[arraymin/10.^logdiffarray,arraymax*10.^logdiffarray] else arrange=[arraymin,arraymax] ;if not, extend for plotting
     if strlen(unitstring) gt 0 then begin
@@ -677,9 +689,9 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             xyouts,.2,.77,'!7q!6 = '+f_string(corrtoverlambda,2),/normal,charsize=chsize
             device,/close
 
-            report=f_plotdistr(tgasarr,dtgas,probtgas,tgas,galaxy,figdir,'tgas','!8t!6!Dgas!N','!6Myr')
-            report=f_plotdistr(toverarr,dtover,probtover,tover,galaxy,figdir,'tover','!8t!6!Dover!N','!6Myr')
-            report=f_plotdistr(lambdaarr,dlambda,problambda,lambda,galaxy,figdir,'lambda','!7k!6','!6pc')
+            report=f_plotdistr(tgasarr,dtgas,probtgas,tgas,tgas_errmin,tgas_errmax,galaxy,figdir,'tgas','!8t!6!Dgas!N','!6Myr',0)
+            report=f_plotdistr(toverarr,dtover,probtover,tover,tover_errmin,tover_errmax,galaxy,figdir,'tover','!8t!6!Dover!N','!6Myr',0)
+            report=f_plotdistr(lambdaarr,dlambda,problambda,lambda,lambda_errmin,lambda_errmax,galaxy,figdir,'lambda','!7k!6','!6pc',0)
 
             set_plot,'x'
         endif
