@@ -1350,7 +1350,7 @@ print,' ==> total analysis time for galaxy '+galaxy+' was '+f_string(hours,0)+'h
 
 if autoexit then print,' ==> IDL will now exit automatically'
 journal
-spawn,'mv '+outputdir+logfile+' '+outputdir+galaxy+logfile
+spawn,'mv '+outputdir+logfile+' '+outputdir+galaxy+'_'+logfile
 if autoexit then exit
 
 end
