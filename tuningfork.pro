@@ -674,7 +674,7 @@ if generate_plot then begin
     ring2x=maxradius/distance/!dtor/cdelt*(cos(phi)*cos(-posangle)+sin(-posangle)*sin(phi)*cos(inclination))+centre(0)
     ring2y=maxradius/distance/!dtor/cdelt*(-cos(phi)*sin(-posangle)+cos(-posangle)*sin(phi)*cos(inclination))+centre(1)
 
-    device,filename=figdir+galaxy+'_map_star.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+galaxy+'_map_star.eps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
     rtar=logrange_s+1.
     rmin=min(alog10(smoothstar(peak_res,*,*)),/nan)
     rmax=max(alog10(smoothstar(peak_res,*,*)),/nan)
@@ -684,7 +684,7 @@ if generate_plot then begin
     oplot,ring2x,ring2y
     device,/close
 
-    device,filename=figdir+galaxy+'_map_gas.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+galaxy+'_map_gas.eps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8,/encapsulated
     rtar=logrange_g+1.
     rmin=min(alog10(smoothgas(peak_res,*,*)),/nan)
     rmax=max(alog10(smoothgas(peak_res,*,*)),/nan)
@@ -695,7 +695,7 @@ if generate_plot then begin
     device,/close
 
     if use_star3 then begin
-        device,filename=figdir+galaxy+'_map_star3.ps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8
+        device,filename=figdir+galaxy+'_map_star3.eps',xsize=10,ysize=10*dim(2)/dim(1),/color,bits_per_pixel=8
         rtar=1.25
         rmin=min(alog10(smoothstar3(peak_res,*,*)),/nan)
         rmax=max(alog10(smoothstar3(peak_res,*,*)),/nan)
@@ -1224,7 +1224,7 @@ if write_output then begin
         if nvar gt 1 then colstrings(i)=multicol+' '+f_string(nstart+1,0)+'-'+f_string(nstart+nvar,0)+': ' else colstrings(i)=onecol+' '+f_string(nstart+1,0)+': '
     endfor
 
-    openw,lun,outputdir+galaxy+'tablerow.dat',/get_lun
+    openw,lun,outputdir+galaxy+'_tablerow.dat',/get_lun
     printf,lun,'# Best-fitting values and derived quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these numbers were calculated'
     printf,lun,'# IMPORTANT: all values represent log10(listed quantity)'
@@ -1242,7 +1242,7 @@ if write_output then begin
 
     varlen=20
     unitlen=40
-    openw,lun,outputdir+galaxy+'output.dat',/get_lun
+    openw,lun,outputdir+galaxy+'_output.dat',/get_lun
     printf,lun,'########################################################################################################################'
     printf,lun,'#                                                                                                                      #'
     printf,lun,'#                                      FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                                      #'

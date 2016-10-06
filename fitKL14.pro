@@ -208,7 +208,7 @@ function f_plotdistr,array,darray,pdf,value,errmin,errmax,galaxy,figdir,varstrin
     endelse
     origdevice=!D.name
     set_plot,'ps'
-    device,filename=figdir+galaxy+'_distr_'+varstring+'.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+galaxy+'_distr_'+varstring+'.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
     ymax=max(pdf)
     plot,array,pdf,/nodata,/xlog,xtitle=xlab,ytitle=ylab,xr=arrange,xstyle=1
     oplot,array,pdf
@@ -221,7 +221,7 @@ function f_plotdistr,array,darray,pdf,value,errmin,errmax,galaxy,figdir,varstrin
     device,/close
     cumpdf=total(pdf*darray,/cumulative)
     ylabcum='!8p!6(<'+symstring+')'
-    device,filename=figdir+galaxy+'_cumdistr_'+varstring+'.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
+    device,filename=figdir+galaxy+'_cumdistr_'+varstring+'.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
     plot,array,cumpdf,/nodata,/xlog,xtitle=xlab,ytitle=ylab,xr=arrange,xstyle=1
     oplot,array,cumpdf
     oplot,[1,1]*value,[0,1],linestyle=2
@@ -495,7 +495,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             xmax=1
             ymin=0
             ymax=3
-            device,filename=figdir+galaxy+'_beta_star.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
+            device,filename=figdir+galaxy+'_beta_star.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
             plot,fstarover,beta_star,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1,ystyle=1,xtitle='!8f!6!Dstar,over!N=!8t!6!Dover!N/!8t!6!Dstar!N',ytitle='!7b!6!Dstar!N',charsize=1.3
             oplot,fstarover,beta_star
             oplot,[1,1]*tover/tstar,[ymin,ymax],linestyle=1
@@ -503,7 +503,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[tover/tstar],[beta_star_best],psym=8
             device,/close
             
-            device,filename=figdir+galaxy+'_beta_gas.ps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
+            device,filename=figdir+galaxy+'_beta_gas.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
             plot,fgasover,beta_gas,xr=[0,1],yr=[0,3],/nodata,xstyle=1,ystyle=1,xtitle='!8f!6!Dgas,over!N=!8t!6!Dover!N/!8t!6!Dgas!N',ytitle='!7b!6!Dgas!N',charsize=1.3
             oplot,fgasover,beta_gas
             oplot,[1,1]*tover/tgas,[ymin,ymax],linestyle=1
@@ -515,7 +515,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             r=min([apertures_star,apertures_gas])*10.^(dindgen(nr)/(nr-1)*alog10(max([apertures_star,apertures_gas])/min([apertures_star,apertures_gas])))
             fg=f_fluxratiogas(tgas,tstar,tover,r,lambda,beta_star_best,surfcontrasts,surfcontrastg,peak_prof)
             fs=f_fluxratiostar(tgas,tstar,tover,r,lambda,beta_gas_best,surfcontrasts,surfcontrastg,peak_prof)
-            device,filename=figdir+galaxy+'_fit.ps',xsize=12,ysize=11,/color,bits_per_pixel=8,/encapsulated
+            device,filename=figdir+galaxy+'_fit.eps',xsize=12,ysize=11,/color,bits_per_pixel=8,/encapsulated
             xmin=10.*round(0.5*min(r)/10.)
             xmax=10.*round(2.*max(r)/10.)
             decmin=alog10(min([fs,10.^(alog10(fluxratio_star)-err_star_log)])/2.)
@@ -587,7 +587,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             show=[2,3]
             inter=[0,1]
             labels=['3!7r!6','2!7r!6','1!7r!6',textoidl('\chi^2_{min}')]
-            device,filename=figdir+galaxy+'_prob_tgas_tover.ps',xsize=11,ysize=11,/color,bits_per_pixel=8,/encapsulated
+            device,filename=figdir+galaxy+'_prob_tgas_tover.eps',xsize=11,ysize=11,/color,bits_per_pixel=8,/encapsulated
             contour,probtgastover,tgasarr,toverarr,/nodata,/xlog,/ylog,xtitle='!8t!6!Dgas!N [Myr]',ytitle='!8t!6!Dover!N [Myr]',xr=tgr,yr=tor,xstyle=5,ystyle=5,charsize=chsize,position=aspect(1.)
             ctload,22
             contour,probtgastover,tgasarr,toverarr,levels=finelvl,/fill,/overplot,charsize=chsize
@@ -631,7 +631,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             show=[2,3]
             inter=[0,1]
             labels=['3!7r!6','2!7r!6','1!7r!6',textoidl('\chi^2_{min}')]
-            device,filename=figdir+galaxy+'_prob_tgas_lambda.ps',xsize=11,ysize=11,/color,bits_per_pixel=8,/encapsulated
+            device,filename=figdir+galaxy+'_prob_tgas_lambda.eps',xsize=11,ysize=11,/color,bits_per_pixel=8,/encapsulated
             contour,probtgaslambda,tgasarr,lambdaarr,/nodata,/xlog,/ylog,xtitle='!8t!6!Dgas!N [Myr]',ytitle='!7k!6 [pc]',xr=tgr,yr=lar,xstyle=5,ystyle=5,charsize=chsize,position=aspect(1.)
             ctload,22
             contour,probtgaslambda,tgasarr,lambdaarr,levels=finelvl,/fill,/overplot,charsize=chsize
@@ -675,7 +675,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             show=[2,3]
             inter=[0,1]
             labels=['3!7r!6','2!7r!6','1!7r!6',textoidl('\chi^2_{min}')]
-            device,filename=figdir+galaxy+'_prob_tover_lambda.ps',xsize=11,ysize=11,/color,bits_per_pixel=8,/encapsulated
+            device,filename=figdir+galaxy+'_prob_tover_lambda.eps',xsize=11,ysize=11,/color,bits_per_pixel=8,/encapsulated
             contour,probtoverlambda,toverarr,lambdaarr,/nodata,/xlog,/ylog,xtitle='!8t!6!Dover!N [Myr]',ytitle='!7k!6 [pc]',xr=tor,yr=lar,xstyle=5,ystyle=5,charsize=chsize,position=aspect(1.)
             ctload,22
             contour,probtoverlambda,toverarr,lambdaarr,levels=finelvl,/fill,/overplot,charsize=chsize
