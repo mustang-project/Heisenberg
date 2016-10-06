@@ -841,9 +841,9 @@ if calc_obs then begin
                 starratio=reform(star_gascon/star_starcon) ;ratio of excess gas flux to excess SF flux around SF peak
                 sortstarratio=reverse(sort(starratio)) ;reverse-sort the above, i.e. in order of decreasing excess ratio and thus of increasing SF peak prominence relative to associated gas peak
                 nstarover=fstarover*nusedstar ;number of SF peaks in overlap
-                kmin=min(where(nstarover gt 0)) ;avoid case of no overlap
-                kmax=max(where(nstarover lt nusedstar)) ;avoid case of all overlap
-                for k=kmin,kmax do begin
+                kminstar=min(where(nstarover gt 0)) ;avoid case of no overlap
+                kmaxstar=max(where(nstarover lt nusedstar)) ;avoid case of all overlap
+                for k=kminstar,kmaxstar do begin
                     star_critcon=interpol(starratio(sortstarratio),usedstarcount,nstarover(k)) ;critical difference in contrast with respect to background between gas and SF emission to call it an isolated SF peak
                     i_stariso=where(starratio le star_critcon,nusestarisotemp) ;IDs of isolated SF peaks
                     nusestariso(j,k)=nusestarisotemp ;number of isolated SF peaks
@@ -853,16 +853,16 @@ if calc_obs then begin
                         betastarmc(j,k)=mean(starflux(i,inclstar(usedstar(i_starover))))/mean(starflux(i,inclstar(usedstar(i_stariso)))) ;define betastar as ratio between mean overlapping and isolated SF peak fluxes
                     endif else betastarmc(j,k)=1. ;if no isolated SF peaks exist or all SF peaks are isolated, set betastar=1
                 endfor
-                if kmin gt 0 then betastarmc(j,0:kmin-1)=betastarmc(j,kmin) ;extrapolate beta for no overlap case(s)
-                if kmax lt nusedstar then betastarmc(j,kmax+1:nusedstar)=betastarmc(j,kmax) ;extrapolate beta for all overlap case(s)
+                if kminstar gt 0 then betastarmc(j,0:kminstar-1)=betastarmc(j,kminstar) ;extrapolate beta for no overlap case(s)
+                if kmaxstar lt nusedstar then betastarmc(j,kmaxstar+1:nusedstar)=betastarmc(j,kmaxstar) ;extrapolate beta for all overlap case(s)
                 gas_gascon=gasflux(i,inclgas(usedgas))/(gasfluxtotal/totalarea) ;excess gas flux around gas peak
                 gas_starcon=starflux(i,inclgas(usedgas))/(starfluxtotal/totalarea) ;excess SF flux around gas peak
                 gasratio=reform(gas_starcon/gas_gascon) ;ratio of excess SF flux to excess gas flux around gas peak
                 sortgasratio=reverse(sort(gasratio)) ;reverse-sort the above, i.e. in order of decreasing excess ratio and thus of increasing gas peak prominence relative to associated SF peak
                 ngasover=fgasover*nusedgas ;number of gas peaks in overlap
-                kmin=min(where(ngasover gt 0)) ;avoid case of no overlap
-                kmax=max(where(ngasover lt nusedgas)) ;avoid case of all overlap
-                for k=kmin,kmax do begin
+                kmingas=min(where(ngasover gt 0)) ;avoid case of no overlap
+                kmaxgas=max(where(ngasover lt nusedgas)) ;avoid case of all overlap
+                for k=kmingas,kmaxgas do begin
                     gas_critcon=interpol(gasratio(sortgasratio),usedgascount,ngasover(k)) ;critical difference in contrast with respect to background between gas and SF emission to call it an isolated gas peak
                     i_gasiso=where(gasratio le gas_critcon,nusegasisotemp) ;IDs of isolated gas peaks
                     nusegasiso(j,k)=nusegasisotemp ;number of isolated gas peaks
@@ -872,8 +872,8 @@ if calc_obs then begin
                         betagasmc(j,k)=mean(gasflux(i,inclgas(usedgas(i_gasover))))/mean(gasflux(i,inclgas(usedgas(i_gasiso)))) ;define betagas as ratio between mean overlapping and isolated gas peak fluxes
                     endif else betagasmc(j,k)=1. ;if no isolated gas peaks exist or all gas peaks are isolated, set betagas=1
                 endfor
-                if kmin gt 0 then betagasmc(j,0:kmin-1)=betagasmc(j,kmin) ;extrapolate beta for no overlap case(s)
-                if kmax lt nusedgas then betagasmc(j,kmax+1:nusedgas)=betagasmc(j,kmax) ;extrapolate beta for all overlap case(s)
+                if kmingas gt 0 then betagasmc(j,0:kmingas-1)=betagasmc(j,kmingas) ;extrapolate beta for no overlap case(s)
+                if kmaxgas lt nusedgas then betagasmc(j,kmaxgas+1:nusedgas)=betagasmc(j,kmaxgas) ;extrapolate beta for all overlap case(s)
             endif
             progress,'     ==> Monte-Carlo sampling peak maps to get uncorrelated peak samples',j+i*nmc,nmc*naperture-1
         endfor
