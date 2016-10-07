@@ -113,6 +113,11 @@ for i=0,nvars-1 do begin ;verify input reading
         stop
     endif
 endfor
+if peak_prof eq 0 and npixmin gt 1 then begin
+    print,' error: peak_prof=0 (points), but minimum number of pixels npixmin>1; please set npixmin=1 or peak_prof>0'
+    print,' quitting...'
+    stop
+endif
 
 if use_X11 then begin ;set window properties
     window_plot='x'
