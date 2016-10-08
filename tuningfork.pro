@@ -334,10 +334,17 @@ endif else centre=centre_orig
 
 cdelt=abs(sxpar(starmaphdr,'CDELT1'))
 pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
-if pixtopc gt apertures(peak_res) then begin
-    print, ' error: aperture size is smaller than pixel size'
+if sqrt(2.)*pixtopc gt apertures(naperture-2) then begin
+    print, ' error: less than 3 aperture sizes larger than pixel diagonal'
     print, ' quitting...'
     stop
+endif
+if sqrt(2.)*pixtopc gt apertures(peak_res) then begin
+    print, ' WARNING: minimum aperture size ('+f_string(lap_min,0)+' pc) is smaller than inclination-corrected pixel diagonal ('+f_string(sqrt(2.)*pixtopc,1)+' pc)'
+    peak_res=min(where(apertures gt sqrt(2.)*pixtopc)) ;ensure that the smallest aperture size exceeds the pixel size
+    fitap=fix(peak_res)+indgen(max_res-peak_res+1) ;aperture sizes used in fitting the KL14 principle model
+    lap_min=apertures(peak_res) ;size of smallest aperture
+    print, ' WARNING: setting minimum aperture size to '+f_string(lap_min,0)+' pc to exceed pixel diagonal'
 endif
 pctopix=1./pixtopc ;pc in number of pixels
 convstar=10.^convstar*(cdelt/cdeltstar)^2. ;change pixel conversion factor to physical units to linear scale and account for regridding
