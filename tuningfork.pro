@@ -335,7 +335,7 @@ endif else centre=centre_orig
 cdelt=abs(sxpar(starmaphdr,'CDELT1'))
 pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
 if sqrt(2.)*pixtopc gt apertures(naperture-2) then begin
-    print, ' error: less than 3 aperture sizes larger than pixel diagonal'
+    print, ' error: less than 2 aperture sizes exceed inclination-corrected pixel diagonal'
     print, ' quitting...'
     stop
 endif
