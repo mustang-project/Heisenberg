@@ -560,6 +560,7 @@ if sensitivity then begin
     nans=where(finite(sensgaslist,/nan),ct)
     if ct ne 0 then remove,nans,sensgaslist
     sensgasmin=min(sensgaslist)
+    sensgasmed=median(sensgaslist)
     if sensgasmin lt 0. then use=where(abs(sensgaslist) le abs(sensgasmin))
     if sensgasmin ge 0. then use=where(abs(sensgaslist) le sensgasmed)
     if sensgasmin ge 0. && sensgasmed eq 0. then use=where(abs(sensgaslist) le min(sensgaslist(where(sensgaslist gt 0.)))) ;in practice should only happen with near-perfect S/N
