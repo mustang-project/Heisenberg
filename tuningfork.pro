@@ -523,8 +523,8 @@ if sensitivity then begin
     if ct ne 0 then remove,nans,sensstarlist
     sensstarmin=min(sensstarlist)
     sensstarmed=median(sensstarlist)
-    if sensstarmin lt 0. then use=where(abs(sensstarlist) le abs(sensstarmin))
-    if sensstarmin ge 0. then use=where(abs(sensstarlist) le sensstarmed)
+    if sensstarmin lt 0. then use=where(abs(sensstarlist) le abs(sensstarmin)) else use=[-1]
+    if sensstarmin ge 0. || n_elements(use) lt nbins then use=where(abs(sensstarlist) le sensstarmed)
     if sensstarmin ge 0. && sensstarmed eq 0. then use=where(abs(sensstarlist) le min(sensstarlist(where(sensstarlist gt 0.)))) ;in practice should only happen with near-perfect S/N
     disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
     binwidth=disp/nbins
@@ -542,8 +542,8 @@ if sensitivity then begin
         if ct ne 0 then remove,nans,sensstarlist3
         sensstarmin3=min(sensstarlist3)
         sensstarmed3=median(sensstarlist3)
-        if sensstarmin3 lt 0. then use=where(abs(sensstarlist3) le abs(sensstarmin3))
-        if sensstarmin3 ge 0. then use=where(abs(sensstarlist3) le sensstarmed3)
+        if sensstarmin3 lt 0. then use=where(abs(sensstarlist3) le abs(sensstarmin3)) else use=[-1]
+        if sensstarmin3 ge 0. || n_elements(use) lt nbins then use=where(abs(sensstarlist3) le sensstarmed3)
         if sensstarmin3 ge 0. && sensstarmed3 eq 0. then use=where(abs(sensstarlist3) le min(sensstarlist3(where(sensstarlist3 gt 0.)))) ;in practice should only happen with near-perfect S/N
         disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
         binwidth=disp/nbins
@@ -561,8 +561,8 @@ if sensitivity then begin
     if ct ne 0 then remove,nans,sensgaslist
     sensgasmin=min(sensgaslist)
     sensgasmed=median(sensgaslist)
-    if sensgasmin lt 0. then use=where(abs(sensgaslist) le abs(sensgasmin))
-    if sensgasmin ge 0. then use=where(abs(sensgaslist) le sensgasmed)
+    if sensgasmin lt 0. then use=where(abs(sensgaslist) le abs(sensgasmin)) else use=[-1]
+    if sensgasmin ge 0. || n_elements(use) lt nbins then use=where(abs(sensgaslist) le sensgasmed)
     if sensgasmin ge 0. && sensgasmed eq 0. then use=where(abs(sensgaslist) le min(sensgaslist(where(sensgaslist gt 0.)))) ;in practice should only happen with near-perfect S/N
     disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
     binwidth=disp/nbins
