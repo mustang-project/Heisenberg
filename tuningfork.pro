@@ -97,7 +97,7 @@ expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area',
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
-expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','nbins'] ;variable names of expected input parameters (1)
+expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','nbins'] ;variable names of expected input parameters (1)
 expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
@@ -293,33 +293,33 @@ lap_min=apertures(peak_res) ;size of smallest aperture
 if regrid then begin
     print,' ==> regridding maps'
     if mask_images then regriddir = maskeddir else regriddir = resdir ;if images are masked, get them from corresponding directory
-    starmap=smoothfits(distance,inclination,apertures(peak_res),starfile,regriddir,griddir,tophat=0,regrid=regrid)
+    starmap=smoothfits(distance,inclination,apertures(peak_res),starfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
     starfileshort=strmid(starfile,0,strpos(starfile,'.fits')) ;short name without extension
     starfile2short=strmid(starfile2,0,strpos(starfile2,'.fits')) ;short name without extension
     starfiletot=griddir+starfile ;Halpha map (total)
     starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
     starmaphdr=hdr ;header of Halpha map
     if use_star2 then begin
-        starmap2=smoothfits(distance,inclination,apertures(peak_res),starfile2,regriddir,griddir,tophat=0,regrid=regrid)
+        starmap2=smoothfits(distance,inclination,apertures(peak_res),starfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
         starfiletot2=griddir+starfile2 ;Halpha peak map
         starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
         starmaphdr2=hdr ;header of Halpha peak map
     endif
     if use_star3 then begin
-        starmap3=smoothfits(distance,inclination,apertures(peak_res),starfile3,regriddir,griddir,tophat=0,regrid=regrid)
+        starmap3=smoothfits(distance,inclination,apertures(peak_res),starfile3,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
         starfile3short=strmid(starfile3,0,strpos(starfile3,'.fits')) ;short name without extension
         starfiletot3=griddir+starfile3 ;FUV map
         starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
         starmaphdr3=hdr ;header of FUV map
     endif
-    gasmap=smoothfits(distance,inclination,apertures(peak_res),gasfile,regriddir,griddir,tophat=0,regrid=regrid)
+    gasmap=smoothfits(distance,inclination,apertures(peak_res),gasfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
     gasfileshort=strmid(gasfile,0,strpos(gasfile,'.fits')) ;short name without extension
     gasfile2short=strmid(gasfile2,0,strpos(gasfile2,'.fits')) ;short name without extension
     gasfiletot=griddir+gasfile ;moment zero CO map (velocity mask for better flux estimate)
     gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
     gasmaphdr=hdr ;moment zero CO header
     if use_gas2 then begin
-        gasmap2=smoothfits(distance,inclination,apertures(peak_res),gasfile2,regriddir,griddir,tophat=0,regrid=regrid)
+        gasmap2=smoothfits(distance,inclination,apertures(peak_res),gasfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
         gasfiletot2=griddir+gasfile2 ;moment zero CO map (signal mask for better peak ID)
         gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
         gasmaphdr2=hdr ;moment zero CO peak header
@@ -470,21 +470,21 @@ endif
 
 if smoothen then begin
     print,' ==> smoothing data'
-    peakidstar=smoothfits(distance,inclination,apertures(peak_res),starfile2,griddir,peakdir,tophat=0) ;generate Gaussian psf-smoothened Ha map for peak ID
-    peakidgas=smoothfits(distance,inclination,apertures(peak_res),gasfile2,griddir,peakdir,tophat=0) ;generate Gaussian psf-smoothened gas map for peak ID
+    peakidstar=smoothfits(distance,inclination,apertures(peak_res),starfile2,griddir,peakdir,max_sample,tophat=0) ;generate Gaussian psf-smoothened Ha map for peak ID
+    peakidgas=smoothfits(distance,inclination,apertures(peak_res),gasfile2,griddir,peakdir,max_sample,tophat=0) ;generate Gaussian psf-smoothened gas map for peak ID
     smoothstar=dblarr([naperture,size(peakidstar,/dimensions)]) ;create Ha map array for different resolutions
     if use_star3 then smoothstar3=dblarr([naperture,size(peakidstar,/dimensions)]) ;create FUV map array for different resolutions
     smoothgas=dblarr([naperture,size(peakidstar,/dimensions)]) ;create gas map array for different resolutions
     smoothmask=dblarr([naperture,size(peakidstar,/dimensions)]) ;create total mask array for different resolutions
     for i=0,naperture-1 do begin ;generate smoothened maps
-        smoothstartemp=smoothfits(distance,inclination,apertures(i),starfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),tophat=tophat) ;get smoothened Ha map
-        smoothgastemp=smoothfits(distance,inclination,apertures(i),gasfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),tophat=tophat) ;get smoothened gas map
-        smoothmasktemp=smoothfits(distance,inclination,apertures(i),maskfile,maskeddir,rundir+'res_'+res(i)+'pc'+path_sep(),tophat=tophat) ;get smoothened mask
+        smoothstartemp=smoothfits(distance,inclination,apertures(i),starfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened Ha map
+        smoothgastemp=smoothfits(distance,inclination,apertures(i),gasfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened gas map
+        smoothmasktemp=smoothfits(distance,inclination,apertures(i),maskfile,maskeddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened mask
         smoothstar(i,*,*)=smoothstartemp
         smoothgas(i,*,*)=smoothgastemp
         smoothmask(i,*,*)=smoothmasktemp
         if use_star3 then begin
-            smoothstar3temp=smoothfits(distance,inclination,apertures(i),starfile3,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),tophat=tophat) ;get smoothened FUV map
+            smoothstar3temp=smoothfits(distance,inclination,apertures(i),starfile3,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened FUV map
             smoothstar3(i,*,*)=smoothstar3temp
         endif
     endfor

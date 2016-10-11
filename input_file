@@ -83,6 +83,7 @@ centrey         701       # Index of pixel y-axis coordinate of galaxy centre in
 minradius       0.        # Minimum radius for analysis in pc
 maxradius       10000.    # Maximum radius for analysis in pc
 Fs1_Fs2_min     15.       # Minimum primary-to-secondary star formation tracer flux ratio for including pixels (only if use_star3=1)
+max_sample      10        # Maximum number of pixels per map resolution FWHM
 nbins           20        # Number of bins used during sensitivity limit calculation to sample the intensity PDFs and fit Gaussians
 # INPUT PARAMETERS 2 (apertures)
 lapmin          25.       # Minimum aperture size (i.e. diameter) in pc to create smoothened maps for
