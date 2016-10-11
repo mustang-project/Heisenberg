@@ -1,4 +1,4 @@
-function smoothfits,distance,incl,res_pc,filename,origdir,newdir,tophat=tophat,regrid=regrid
+function smoothfits,distance,incl,res_pc,filename,origdir,newdir,max_sample,tophat=tophat,regrid=regrid
 
 if keyword_set(regrid) eq 0 then regrid=0
 ; motivate clfind levels
@@ -8,7 +8,7 @@ if keyword_set(regrid) eq 0 then regrid=0
 
 if regrid then begin
 ;    NYQUIST RESOLUTION
-     nyquist=res_as/2.5
+     nyquist=res_as/max_sample
    
 ;    for resolutions of 0 - 5 round to 0.5 values
      ind = where(nyquist lt 5, ct)
