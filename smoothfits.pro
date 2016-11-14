@@ -114,8 +114,10 @@ if regrid then begin
            sxaddpar, hdr_new, 'NAXIS2', round(naxis2 / scale)
            sxaddpar, hdr_new, 'CRPIX1', round(crpix1 / scale)
            sxaddpar, hdr_new, 'CRPIX2', round(crpix2 / scale)
-           sxaddpar, hdr_new, 'CDELT1', nyquist/3600d
-           sxaddpar, hdr_new, 'CDELT2', nyquist/3600d
+           sxaddpar, hdr_new, 'CDELT1', cdelt1*scale
+           sxaddpar, hdr_new, 'CDELT2', cdelt2*scale
+           sxaddpar, hdr_new, 'CD1_1',  cdelt1*scale
+           sxaddpar, hdr_new, 'CD2_2',  cdelt2*scale  
 
 ;          Check if map is 2D or 3D
            if sz[0] eq 2 then begin

@@ -176,7 +176,8 @@ mask_tool, starfiletot $ ;image variables
     , header_output = starmaphdr $
     , convert = convert_masks, /run_without_masks
 
-cdeltstar=abs(sxpar(starmaphdr,'CDELT1'))
+cdeltstar=abs(sxpar(starmaphdr,'CDELT1',count=ct))
+if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -195,7 +196,8 @@ if use_star2 then begin
         , header_output = starmaphdr2 $
         , convert = convert_masks, /run_without_masks
 
-        cdeltstar2=abs(sxpar(starmaphdr2,'CDELT1'))
+        cdeltstar2=abs(sxpar(starmaphdr2,'CDELT1',count=ct))
+        if ct eq 0 then cdelt = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -218,7 +220,8 @@ if use_star3 then begin
         , header_output = starmaphdr3 $
         , convert = convert_masks, /run_without_masks
 
-        cdeltstar3=abs(sxpar(starmaphdr3,'CDELT1'))
+        cdeltstar3=abs(sxpar(starmaphdr3,'CDELT1',count=ct))
+        if ct eq 0 then cdelt = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif
@@ -237,7 +240,8 @@ mask_tool, gasfiletot $ ;image variables
     , header_output = gasmaphdr $
     , convert = convert_masks, /run_without_masks
 
-cdeltgas=abs(sxpar(gasmaphdr,'CDELT1'))
+cdeltgas=abs(sxpar(gasmaphdr,'CDELT1',count=ct))
+if ct eq 0 then cdelt = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -256,7 +260,8 @@ if use_gas2 then begin
         , header_output = gasmaphdr2 $
         , convert = convert_masks, /run_without_masks
 
-        cdeltgas2=abs(sxpar(gasmaphdr2,'CDELT1'))
+        cdeltgas2=abs(sxpar(gasmaphdr2,'CDELT1',count=ct))
+        if ct eq 0 then cdelt = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -332,8 +337,9 @@ if regrid then begin
     centre=[centrefracx*(nx-1),centrefracy*(ny-1)] ;pixel coordinates of the galaxy centre in the regridded stellar map
 endif else centre=centre_orig
 
-cdelt=abs(sxpar(starmaphdr,'CDELT1'))
-pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
+ cdelt=abs(sxpar(starmaphdr,'CDELT1',count=ct))
+ if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
+ pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
 if sqrt(2.)*pixtopc gt apertures(naperture-2) then begin
     print, ' error: less than 2 aperture sizes exceed inclination-corrected pixel diagonal'
     print, ' quitting...'
