@@ -125,7 +125,7 @@ if use_X11 then begin ;set window properties
     ; set color
     device,true_color=24
     device,decomposed=0
-    window,xsize=600,ysize=840,title='IDL graphics',colors=100
+    window,xsize=600,ysize=400,title='IDL graphics',colors=100
     loadct,12
 endif else window_plot='z' ;prevents window creation
 
@@ -177,7 +177,7 @@ mask_tool, starfiletot $ ;image variables
     , convert = convert_masks, /run_without_masks
 
 cdeltstar=abs(sxpar(starmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
+if ct eq 0 then cdeltstar = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -197,7 +197,7 @@ if use_star2 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltstar2=abs(sxpar(starmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltstar2 = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -221,7 +221,7 @@ if use_star3 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltstar3=abs(sxpar(starmaphdr3,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltstar3 = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif
@@ -241,7 +241,7 @@ mask_tool, gasfiletot $ ;image variables
     , convert = convert_masks, /run_without_masks
 
 cdeltgas=abs(sxpar(gasmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdelt = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
+if ct eq 0 then cdeltgas = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -261,7 +261,7 @@ if use_gas2 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltgas2=abs(sxpar(gasmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltgas2 = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -373,11 +373,11 @@ tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tst
 if regrid then begin
     print,' ==> syncronising masks of maps from '+griddir
     masksimple = 1 ; propogate masks using simple pixel by pixel comparison
-    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
-        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
-        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
-        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
-    endif else masksimple = 0
+;    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
+;        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
+;        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
+;        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
+;    endif else masksimple = 0
 
     if masksimple then begin ;create array of total mask
         mask_arr = starmap ;create array to hold masked pixels
