@@ -177,7 +177,7 @@ mask_tool, starfiletot $ ;image variables
     , convert = convert_masks, /run_without_masks
 
 cdeltstar=abs(sxpar(starmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
+if ct eq 0 then cdeltstar = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -197,7 +197,7 @@ if use_star2 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltstar2=abs(sxpar(starmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltstar2 = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -221,7 +221,7 @@ if use_star3 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltstar3=abs(sxpar(starmaphdr3,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltstar3 = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif
@@ -241,7 +241,7 @@ mask_tool, gasfiletot $ ;image variables
     , convert = convert_masks, /run_without_masks
 
 cdeltgas=abs(sxpar(gasmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdelt = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
+if ct eq 0 then cdeltgas = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -261,7 +261,7 @@ if use_gas2 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltgas2=abs(sxpar(gasmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltgas2 = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
