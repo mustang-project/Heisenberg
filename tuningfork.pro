@@ -125,7 +125,7 @@ if use_X11 then begin ;set window properties
     ; set color
     device,true_color=24
     device,decomposed=0
-    window,xsize=600,ysize=400,title='IDL graphics',colors=100
+    window,xsize=600,ysize=840,title='IDL graphics',colors=100
     loadct,12
 endif else window_plot='z' ;prevents window creation
 
@@ -373,11 +373,11 @@ tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tst
 if regrid then begin
     print,' ==> syncronising masks of maps from '+griddir
     masksimple = 1 ; propogate masks using simple pixel by pixel comparison
-;    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
-;        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
-;        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
-;        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
-;    endif else masksimple = 0
+    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
+        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
+        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
+        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
+    endif else masksimple = 0
 
     if masksimple then begin ;create array of total mask
         mask_arr = starmap ;create array to hold masked pixels
