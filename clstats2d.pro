@@ -169,9 +169,9 @@ if(edge eq 2) then flag="Y"
 if(edge eq 3) then flag="XY"
 
 if not(keyword_set(silent)) then $
-  print,format='(i6,2(2x,i5),3x,f16.8,3(2x,f8.4),x,f18.10,2x,i6,x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
+  print,format='(i6,2(2x,i5),3x,e18.6,3(2x,f8.4),x,e18.6,2x,i6,x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
 if keyword_set(log) then $
-  printf,1,format='(i6,2(2x,i5),3x,f16.8,3(2x,f8.4),x,f18.10,2x,i6,x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
+  printf,1,format='(i6,2(2x,i5),3x,e18.6,3(2x,f8.4),x,e18.6,2x,i6,x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
 
 return
 end
