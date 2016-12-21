@@ -964,8 +964,8 @@ if calc_obs then begin
     corrstar_gas=dblarr(naperture,naperture)
     corrgas_star=dblarr(naperture,naperture)
     corrstar_star=dblarr(naperture,naperture)
-    for i=peak_res,naperture-1 do begin
-        for j=i,naperture-1 do begin
+    for i=peak_res,max_res do begin
+        for j=i,max_res do begin
             corrgas_gas(i,j)=meanapgas_gas(i)/meanapgas_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
             corrstar_gas(i,j)=meanapstar_gas(i)/meanapstar_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
             corrgas_star(i,j)=meanapgas_star(i)/meanapgas_star(j)*apertures_star(i)^2./apertures_star(j)^2.
@@ -976,7 +976,7 @@ if calc_obs then begin
             corrstar_star(j,i)=corrstar_star(i,j)
         endfor
     endfor
-    for i=peak_res,naperture-1 do begin ;total number of independent data points for gas and SF peaks
+    for i=peak_res,max_res do begin ;total number of independent data points for gas and SF peaks
         nfitgas(i)=.5/total(corrgas_gas(i,*))+.5/total(corrstar_gas(i,*)) ;take the mean of the number of independent datapoints for the numerator and the denominator (for N=>inf 1/2+1/2N is right, but 2/(1+N) is wrong)
         nfitstar(i)=.5/total(corrgas_star(i,*))+.5/total(corrstar_star(i,*))
     endfor
