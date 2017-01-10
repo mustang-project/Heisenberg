@@ -31,7 +31,7 @@ print,"----------------------------------------------------------------"
 print,"CLFIND2d: ",systime()
 print,"----------------------------------------------------------------"
 print,format='("Filename = ",a0)',file
-print,format='("Contour levels at =",f10.6)',levels
+print,format='("Contour levels at =",e12.6)',levels
 print,"----------------------------------------------------------------"
 if keyword_set(log) then begin
   openw,1,file+'_clfind.dat'
@@ -39,7 +39,7 @@ if keyword_set(log) then begin
   printf,1,"#CLFIND2d: ",systime()
   printf,1,"#----------------------------------------------------------------"
   printf,1,format='("#Filename = ",a0)',file
-  printf,1,format='("#Contour levels at =",f10.6)',levels
+  printf,1,format='("#Contour levels at =",e12.6)',levels
   printf,1,"#----------------------------------------------------------------"
 endif
 
@@ -67,15 +67,15 @@ clump_peak=intarr(max_clumps,2)
 ncl=0
 t0=systime(1)
 nlev=n_elements(levs)
-levs=[levs,99999]
+levs=[levs,max(data)*10d4]
 
 for nwork=nlev-1L,0,-1 do begin
   defreg,nwork,npix,reg,nreg
   
-  print,format='("Contour level ",I3,": ",I7," pixels ",I7," regions ",$)'$
+  print,format='("Contour level ",E7.1,": ",I7," pixels ",I7," regions ",$)'$
        ,levs(nwork),npix,nreg
   if keyword_set(log) then $
-    printf,1,format='("#Contour level ",I3,": ",I7," pixels ",I7," regions ",$)'$
+    printf,1,format='("#Contour level ",E7.1,": ",I7," pixels ",I7," regions ",$)'$
             ,levs(nwork),npix,nreg
   print,''
   defclump,nwork,reg,nreg,nnew
@@ -166,7 +166,7 @@ for nr=1L,nreg do begin
   dpeak=max(data(pix1),peak)
   jpeak=pix1(peak)/nx
   ipeak=pix1(peak)-jpeak*nx
-  pix2=search2d(data,ipeak,jpeak,levmin,99999,/diagonal)
+  pix2=search2d(data,ipeak,jpeak,levmin,max(data)*10d4,/diagonal)
   apix2=assign(pix2)
 
   if(max(apix2) eq 0) then begin
