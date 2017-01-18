@@ -97,7 +97,7 @@ expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area',
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
-expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','nbins'] ;variable names of expected input parameters (1)
+expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','nbins','astr_tolerance'] ;variable names of expected input parameters (1)
 expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
@@ -177,7 +177,7 @@ mask_tool, starfiletot $ ;image variables
     , convert = convert_masks, /run_without_masks
 
 cdeltstar=abs(sxpar(starmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
+if ct eq 0 then cdeltstar = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -197,7 +197,7 @@ if use_star2 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltstar2=abs(sxpar(starmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltstar2 = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -221,7 +221,7 @@ if use_star3 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltstar3=abs(sxpar(starmaphdr3,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltstar3 = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif
@@ -241,7 +241,7 @@ mask_tool, gasfiletot $ ;image variables
     , convert = convert_masks, /run_without_masks
 
 cdeltgas=abs(sxpar(gasmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdelt = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
+if ct eq 0 then cdeltgas = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 
@@ -261,7 +261,7 @@ if use_gas2 then begin
         , convert = convert_masks, /run_without_masks
 
         cdeltgas2=abs(sxpar(gasmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
+        if ct eq 0 then cdeltgas2 = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
         beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -373,10 +373,10 @@ tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tst
 if regrid then begin
     print,' ==> syncronising masks of maps from '+griddir
     masksimple = 1 ; propogate masks using simple pixel by pixel comparison
-    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
-        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
-        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
-        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
+    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr, astr_tolerance) then begin ;check astrometry is equal
+        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2, astr_tolerance) ne 1 then masksimple = 0
+        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3, astr_tolerance) ne 1 then masksimple = 0
+        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2, astr_tolerance) ne 1 then masksimple = 0
     endif else masksimple = 0
 
     if masksimple then begin ;create array of total mask
@@ -964,8 +964,8 @@ if calc_obs then begin
     corrstar_gas=dblarr(naperture,naperture)
     corrgas_star=dblarr(naperture,naperture)
     corrstar_star=dblarr(naperture,naperture)
-    for i=peak_res,naperture-1 do begin
-        for j=i,naperture-1 do begin
+    for i=peak_res,max_res do begin
+        for j=i,max_res do begin
             corrgas_gas(i,j)=meanapgas_gas(i)/meanapgas_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
             corrstar_gas(i,j)=meanapstar_gas(i)/meanapstar_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
             corrgas_star(i,j)=meanapgas_star(i)/meanapgas_star(j)*apertures_star(i)^2./apertures_star(j)^2.
@@ -976,7 +976,7 @@ if calc_obs then begin
             corrstar_star(j,i)=corrstar_star(i,j)
         endfor
     endfor
-    for i=peak_res,naperture-1 do begin ;total number of independent data points for gas and SF peaks
+    for i=peak_res,max_res do begin ;total number of independent data points for gas and SF peaks
         nfitgas(i)=.5/total(corrgas_gas(i,*))+.5/total(corrstar_gas(i,*)) ;take the mean of the number of independent datapoints for the numerator and the denominator (for N=>inf 1/2+1/2N is right, but 2/(1+N) is wrong)
         nfitstar(i)=.5/total(corrgas_star(i,*))+.5/total(corrstar_star(i,*))
     endfor
