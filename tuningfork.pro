@@ -97,7 +97,7 @@ expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area',
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
-expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','nbins'] ;variable names of expected input parameters (1)
+expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','nbins','astr_tolerance'] ;variable names of expected input parameters (1)
 expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
@@ -373,10 +373,10 @@ tstariso_rerrmax=tstariso_errmax/tstariso ;Relative upward standard error on tst
 if regrid then begin
     print,' ==> syncronising masks of maps from '+griddir
     masksimple = 1 ; propogate masks using simple pixel by pixel comparison
-    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr) then begin ;check astrometry is equal
-        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2) ne 1 then masksimple = 0
-        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3) ne 1 then masksimple = 0
-        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2) ne 1 then masksimple = 0
+    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr, astr_tolerance) then begin ;check astrometry is equal
+        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2, astr_tolerance) ne 1 then masksimple = 0
+        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3, astr_tolerance) ne 1 then masksimple = 0
+        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2, astr_tolerance) ne 1 then masksimple = 0
     endif else masksimple = 0
 
     if masksimple then begin ;create array of total mask
