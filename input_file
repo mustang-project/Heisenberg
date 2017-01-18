@@ -85,6 +85,7 @@ maxradius       10000.    # Maximum radius for analysis in pc
 Fs1_Fs2_min     15.       # Minimum primary-to-secondary star formation tracer flux ratio for including pixels (only if use_star3=1)
 max_sample      10        # Maximum number of pixels per map resolution FWHM
 nbins           20        # Number of bins used during sensitivity limit calculation to sample the intensity PDFs and fit Gaussians
+astr_tolerance  2.5e-8    # allowable tolerance in decimal degrees between astrometric position of image pixels of different images (e.g. 0.9" = 2.5e-4 decimal degrees)
 # INPUT PARAMETERS 2 (apertures)
 lapmin          25.       # Minimum aperture size (i.e. diameter) in pc to create smoothened maps for
 lapmax          6400.     # Maximum aperture size (i.e. diameter) in pc to create smoothened maps for
@@ -129,5 +130,3 @@ kappa0         -4.61979   # Log of the Rosseland-mean opacity proportionality co
 #              END PARAMETER FILE              #
 #                                              #
 ################################################
-
-
