@@ -44,14 +44,15 @@ function f_fluxratiostar,tgas,tstar,tover,laps,lambda,beta_gas,surfcontrasts,sur
     nl=n_elements(laps) ;number of aperture sizes
     surfratios=dblarr(nl)
     surfratiog=dblarr(nl)
+    rpeak=rpeaks
     for i=0,nl-1 do begin
         if peak_prof le 1 then begin
             if rpeaks lt 0.5*laps(i) then surfratios(i)=ttotal/tstar*(lambda/laps(i))^2. else surfratios(i)=surfcontrasts
             if rpeakg lt 0.5*laps(i) then surfratiog(i)=ttotal/tgas*(lambda/laps(i))^2. else surfratiog(i)=surfcontrastg
         endif
         if peak_prof eq 2 then begin
-            surfratios(i)=ttotal/tstar*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeaks^2.))
-            surfratiog(i)=ttotal/tgas*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeakg^2.))
+            surfratios(i)=ttotal/tstar*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeak^2.))
+            surfratiog(i)=ttotal/tgas*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeak^2.))
         endif
     endfor
     others=1.
@@ -72,14 +73,15 @@ function f_fluxratiogas,tgas,tstar,tover,lapg,lambda,beta_star,surfcontrasts,sur
     nl=n_elements(lapg) ;number of aperture sizes
     surfratios=dblarr(nl)
     surfratiog=dblarr(nl)
+    rpeak=rpeakg
     for i=0,nl-1 do begin
         if peak_prof le 1 then begin
             if rpeaks lt 0.5*lapg(i) then surfratios(i)=ttotal/tstar*(lambda/lapg(i))^2. else surfratios(i)=surfcontrasts
             if rpeakg lt 0.5*lapg(i) then surfratiog(i)=ttotal/tgas*(lambda/lapg(i))^2. else surfratiog(i)=surfcontrastg
         endif
         if peak_prof eq 2 then begin
-            surfratios(i)=ttotal/tstar*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeaks^2.))
-            surfratiog(i)=ttotal/tgas*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeakg^2.))
+            surfratios(i)=ttotal/tstar*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeak^2.))
+            surfratiog(i)=ttotal/tgas*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeak^2.))
         endif
     endfor
     others=1.
@@ -177,6 +179,42 @@ function f_writetf_obs,xarraystar,xarraygas,yarraystar,yarraygas,errbarstar,errb
     close,lun
     free_lun,lun
     report='         Observational data point output written'
+    return,report
+end
+
+function f_writebetastar,farray,betaarray,galaxy,outputdir,commentstring ;write table with betastar curve to file
+    openw,lun,outputdir+galaxy+'_betastar.dat',/get_lun
+    printf,lun,'# Overlap-to-isolated stellar flux ratio output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
+    printf,lun,commentstring
+    printf,lun,''
+    n=n_elements(farray)
+    for i=0,n-1 do begin
+        v1=farray(i)
+        v2=betaarray(i)
+        printf,lun,format='(f12.5,3x,f12.5)',v1,v2
+    endfor
+    close,lun
+    free_lun,lun
+    report='         Overlap-to-isolated stellar flux ratio output written'
+    return,report
+end
+
+function f_writebetagas,farray,betaarray,galaxy,outputdir,commentstring ;write table with betagas curve to file
+    openw,lun,outputdir+galaxy+'_betagas.dat',/get_lun
+    printf,lun,'# Overlap-to-isolated gas flux ratio output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
+    printf,lun,commentstring
+    printf,lun,''
+    n=n_elements(farray)
+    for i=0,n-1 do begin
+        v1=farray(i)
+        v2=betaarray(i)
+        printf,lun,format='(f12.5,3x,f12.5)',v1,v2
+    endfor
+    close,lun
+    free_lun,lun
+    report='         Overlap-to-isolated gas flux ratio output written'
     return,report
 end
 
@@ -406,6 +444,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         tovermaxold=tovermax
         lambdaminold=lambdamin
         lambdamaxold=lambdamax
+        deltachi=14.2/ndeg
         if imin lt edge and imax gt ntry-edge-1 and jmin lt edge and jmax gt ntry-edge-1 and kmin lt edge and kmax gt ntry-edge-1 then go=0. else begin ;set fitting range for next loop
             iredchi=dblarr(ntry)
             jredchi=dblarr(ntry)
@@ -413,31 +452,39 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             for i=0,ntry-1 do iredchi(i)=min(redchi2(i,*,*))
             for j=0,ntry-1 do jredchi(j)=min(redchi2(*,j,*))
             for k=0,ntry-1 do kredchi(k)=min(redchi2(*,*,k))
-            imin=max([0,min(where(iredchi le minchi2+3.))-1])
-            imax=min([long(ntry-1),max(where(iredchi le minchi2+3.))+1])
-            jmin=max([0,min(where(jredchi le minchi2+3.))-1])
-            jmax=min([long(ntry-1),max(where(jredchi le minchi2+3.))+1])
-            kmin=max([0,min(where(kredchi le minchi2+3.))-1])
-            kmax=min([long(ntry-1),max(where(kredchi le minchi2+3.))+1])
-            tgasmin=tgasarr(imin)-.5*dtgas(imin)
-            tgasmax=tgasarr(imax)+.5*dtgas(imax)
-            tovermin=min([toverarr(jmin)-.5*dtover(jmin),tgasmin])
-            tovermax=toverarr(jmax)+.5*dtover(jmax)
-            lambdamin=lambdaarr(kmin)-.5*dlambda(kmin)
-            lambdamax=lambdaarr(kmax)+.5*dlambda(kmax)
+            imin=max([0,min(where(iredchi le minchi2+deltachi))-1])
+            imax=min([long(ntry-1),max(where(iredchi le minchi2+deltachi))+1])
+            jmin=max([0,min(where(jredchi le minchi2+deltachi))-1])
+            jmax=min([long(ntry-1),max(where(jredchi le minchi2+deltachi))+1])
+            kmin=max([0,min(where(kredchi le minchi2+deltachi))-1])
+            kmax=min([long(ntry-1),max(where(kredchi le minchi2+deltachi))+1])
+            tgasmin=tgasarr(imin)
+            tgasmax=tgasarr(imax)
+            tovermin=min([toverarr(jmin),tgasmin])
+            tovermax=toverarr(jmax)
+            lambdamin=lambdaarr(kmin)
+            lambdamax=lambdaarr(kmax)
         endelse
         ;avoid edge traps
-        if ibest eq 0 then tgasmin=max([tgasmin^2./tgasmax,tgasmini])
-        if ibest eq ntry-1 then tgasmax=min([tgasmax^2./tgasmin,tgasmaxi])
-        if jbest eq 0 then tovermin=max([2.*tovermin-tovermax,tovermini])
-        if jbest eq ntry-1 then tovermax=min([2.*tovermax-tovermin,tovermaxi])
-        if kbest eq 0 then lambdamin=max([lambdamin^2./lambdamax,lambdamini])
-        if kbest eq ntry-1 then lambdamax=min([lambdamax^2./lambdamin,lambdamaxi])
+        if ibest lt edge then tgasmin=max([tgasmin^2./tgasmax,tgasmini])
+        if ibest gt ntry-edge-1 then tgasmax=min([tgasmax^2./tgasmin,tgasmaxi])
+        if jbest lt edge then tovermin=max([2.*tovermin-tovermax,tovermini])
+        if jbest gt ntry-edge-1 then tovermax=min([2.*tovermax-tovermin,tovermaxi])
+        if kbest lt edge then lambdamin=max([lambdamin^2./lambdamax,lambdamini])
+        if kbest gt ntry-edge-1 then lambdamax=min([lambdamax^2./lambdamin,lambdamaxi])
         ;if the change in the fitting range becomes smaller than 5% for all variables, then stop iteratively shrinking it
-        tol=0.05
-        if abs(tgasminold/tgasmin-1.) le tol and abs(tgasmaxold/tgasmax-1.) le tol and $
-            abs(toverminold/tovermin-1.) le tol and abs(tovermaxold/tovermax-1.) le tol and $
-            abs(lambdaminold/lambdamin-1.) le tol and abs(lambdamaxold/lambdamax-1.) le tol then go=0.
+        tol=0.01
+        if abs(alog10(tgasminold/tgasmin)) le tol and abs(alog10(tgasmaxold/tgasmax)) le tol and $
+            abs(alog10(toverminold/tovermin)) le tol and abs(alog10(tovermaxold/tovermax)) le tol and $
+            abs(alog10(lambdaminold/lambdamin)) le tol and abs(alog10(lambdamaxold/lambdamax)) le tol then begin
+                go=0.
+                tgasmin=tgasminold
+                tgasmax=tgasmaxold
+                tovermin=toverminold
+                tovermax=tovermaxold
+                lambdamin=lambdaminold
+                lambdamax=lambdamaxold
+            endif
            
         logdifftgas=0.5*(2.-alog10(tgasmax/tgasmin)) ;is the range at least two orders of magnitude?
         if logdifftgas gt 0 then tgr=[tgasmin/10.^logdifftgas,tgasmax*10.^logdifftgas] else tgr=[tgasmin,tgasmax] ;if not, extend for plotting
@@ -529,8 +576,8 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[xmin,xmax],[1,1]*fs(0),linestyle=2,color=fsc_color('black'),thick=3
             xdyn=alog10(xmax/xmin)
             ydyn=alog10(ymax/ymin)
-            err_star_log_grey=err_star_log/sqrt(nfitstar)*mean(nfitstar)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use))
-            err_gas_log_grey=err_gas_log/sqrt(nfitgas)*mean(nfitgas)*sqrt(total(nfitgas+nfitstar)/2./n_elements(use))
+            err_star_log_grey=err_star_log/sqrt(weights)*sqrt((nfit-nvar-1.)/(n_elements(weights)-nvar-1.))
+            err_gas_log_grey=err_gas_log/sqrt(weights)*sqrt((nfit-nvar-1.)/(n_elements(weights)-nvar-1.))
             oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)+err_star_log_grey)-fluxratio_star,psym=3,/hibar,errcolor=180,errthick=20,/nohat
             oploterror,apertures_star,fluxratio_star,10.^(alog10(fluxratio_star)-err_star_log_grey)-fluxratio_star,psym=3,/lobar,errcolor=180,errthick=20,/nohat
             oploterror,apertures_gas,fluxratio_gas,10.^(alog10(fluxratio_gas)+err_gas_log_grey)-fluxratio_gas,psym=3,/hibar,errcolor=180,errthick=20,/nohat
@@ -699,6 +746,10 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         n=n+1
     endwhile
         
+    print,'     ==> writing beta plot data to output directory'
+    report=f_writebetastar(fstarover,beta_star,galaxy,outputdir,'# f_star,over, beta_star')
+    report=f_writebetagas(fgasover,beta_gas,galaxy,outputdir,'# f_gas,over, beta_gas')
+
     print,'     ==> writing tuningfork plot data to output directory'
     report=f_writetf_model(alog10(r),alog10(fs),alog10(fg),galaxy,outputdir,'# log10(apertures), log10(fluxratio_star_model), log10(fluxratio_gas_model)')
     report=f_writetf_obs(alog10(apertures_star),alog10(apertures_gas),alog10(fluxratio_star),alog10(fluxratio_gas),err_star_log,err_gas_log,err_star_log_grey,err_gas_log_grey,galaxy,outputdir, $
