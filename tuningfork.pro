@@ -97,7 +97,7 @@ expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area',
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
-expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','nbins','astr_tolerance'] ;variable names of expected input parameters (1)
+expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','astr_tolerance','nbins'] ;variable names of expected input parameters (1)
 expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
@@ -146,14 +146,11 @@ endif else begin ;set number of linear contour levels for peak identification
     nlevels_g=nlinlevels_s ;number of gas contour levels
 endelse
 if tstar_incl eq 0 then tovermaxi=tgasmaxi else tovermaxi=min([tstariso,tgasmaxi])
-tgasarr=tgasmini*(tgasmaxi/tgasmini)^((dindgen(ntry)+.5)/ntry) ;log-spaced array covering possible range of tgas
-toverarr=tovermini*(tovermaxi/tovermini)^((dindgen(ntry)+.5)/ntry) ;log-spaced array covering possible range of tover
-tstararr=tstariso+(1-tstar_incl)*toverarr ;log-spaced array covering possible range of tstar
 
 mainseed=systime(1) ;source seed for random number generation
 nseed=100*nmc*naperture ;number of random seeds needed
 seedarr=floor(randomu(mainseed,nseed)*nseed) ;random seed array
-iseed=0 ;index of next seed to be used
+iseed=long(0) ;index of next seed to be used
 
 
 ;;;;;;;;;;;
@@ -337,9 +334,9 @@ if regrid then begin
     centre=[centrefracx*(nx-1),centrefracy*(ny-1)] ;pixel coordinates of the galaxy centre in the regridded stellar map
 endif else centre=centre_orig
 
- cdelt=abs(sxpar(starmaphdr,'CDELT1',count=ct))
- if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
- pixtopc=distance*!dtor*cdelt/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
+cdelt=abs(sxpar(starmaphdr,'CDELT1',count=ct))
+if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
+pixtopc=distance*tan(!dtor*cdelt)/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
 if sqrt(2.)*pixtopc gt apertures(naperture-2) then begin
     print, ' error: less than 2 aperture sizes exceed inclination-corrected pixel diagonal'
     print, ' quitting...'
@@ -407,15 +404,15 @@ if regrid then begin
         for i=0,ny-1 do pixy(*,i)=i
         pixdistxpix=pixx-centre(0) ;x distance of each pixel from centre in number of pixels
         pixdistypix=pixy-centre(1) ;y distance of each pixel from centre in number of pixels
-        pixdistxpc=(cos(-posangle)*pixdistxpix-sin(-posangle)*pixdistypix)*distance*!dtor*cdelt ;x distance of each pixel from centre in pc
-        pixdistypc=(sin(-posangle)*pixdistxpix+cos(-posangle)*pixdistypix)*distance*!dtor*cdelt/cos(inclination) ;y distance of each pixel from centre in pc
+        pixdistxpc=(cos(-posangle)*pixdistxpix-sin(-posangle)*pixdistypix)*distance*tan(!dtor*cdelt) ;x distance of each pixel from centre in pc
+        pixdistypc=(sin(-posangle)*pixdistxpix+cos(-posangle)*pixdistypix)*distance*tan(!dtor*cdelt)/cos(inclination) ;y distance of each pixel from centre in pc
         pixradius=sqrt(pixdistxpc^2.+pixdistypc^2.) ;distance of each pixel from centre in pc
         inclpix=where(pixradius ge minradius and pixradius le maxradius, ninclpix, complement=exclpix, ncomplement=nexclpix) ;find included pixels, excluded pixels and number of both for the radial cut
         pixmeanradius=mean(pixradius(inclpix)) ;mean radius of included area
         if nexclpix gt 0 then mask_arr[exclpix] = 0.0 ;mask excluded area
         totalarea=total(mask_arr)*pixtopc^2. ;total included area
-        starfluxtotal=total(starmap*mask_arr,/nan) ;total SF flux in included area
-        gasfluxtotal=total(gasmap*mask_arr,/nan) ;total gas flux in included area
+        starfluxtotal=total(starmap*mask_arr,/nan)*pixtopc^2. ;total SF flux in included area
+        gasfluxtotal=total(gasmap*mask_arr,/nan)*pixtopc^2. ;total gas flux in included area
 
         ;propogate masks
         nan_list = where(mask_arr eq 0.0, nancount) ;final mask list
@@ -591,7 +588,7 @@ if id_peaks then begin
     ;IDENTIFY PEAKS IN STELLAR MAP
     if loglevels then begin
 	    maxval=max(alog10(peakidstar),/nan) ;maximum value
-	    maxlevel=(fix(maxval/logspacing_s)-1)*logspacing_s ;level below maximum value
+	    maxlevel=(floor(maxval/logspacing_s)-1)*logspacing_s ;level below maximum value
         levels=10.^(maxlevel-logrange_s+dindgen(nlevels_s)/(nlevels_s-1)*logrange_s) ;array with levels
     endif else begin
         maxval=max(peakidstar,/nan)
@@ -758,6 +755,8 @@ if calc_obs then begin
     totstar_star=dblarr(naperture,nmc) ;total SF flux in apertures centered on SF peaks
     totgas_gas=dblarr(naperture,nmc) ;total gas flux in apertures centered on gas peaks
     totstar_gas=dblarr(naperture,nmc) ;total SF flux in apertures centered on gas peaks
+    apertures_star_mc=dblarr(naperture,nmc)
+    apertures_gas_mc=dblarr(naperture,nmc)
     apertures_star=dblarr(naperture) ;mean aperture size centred on SF peaks for ith target aperture size
     apertures_gas=dblarr(naperture) ;mean aperture size centred on gas peaks for ith target aperture size
     meanapgas_star=dblarr(naperture) ;mean gas flux in apertures centered on SF peaks
@@ -854,6 +853,8 @@ if calc_obs then begin
             totstar_star(i,j)=max([0.,total(starflux(i,inclstar(usedstar)),/nan)]) ;total SF flux in apertures centered on SF peaks (must be > 0)
             totgas_gas(i,j)=max([0.,total(gasflux(i,inclgas(usedgas)),/nan)]) ;total gas flux in apertures centered on gas peaks (must be > 0)
             totstar_gas(i,j)=max([0.,total(starflux(i,inclgas(usedgas)),/nan)]) ;total SF flux in apertures centered on gas peaks (must be > 0)
+            apertures_star_mc(i,j)=apertures[i]*sqrt(mean(aperturearea_frac[i,inclstar(usedstar)])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
+            apertures_gas_mc(i,j)=apertures[i]*sqrt(mean(aperturearea_frac[i,inclgas(usedgas)])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
             if i eq peak_res then begin ;determine Monte Carlo betastar and betagas based on fractional timescale coverage of each phase projected onto list of peaks sorted by gas fraction-to-star fraction ratio
                 star_gascon=gasflux(i,inclstar(usedstar))/(gasfluxtotal/totalarea) ;excess gas flux around SF peak
                 star_starcon=starflux(i,inclstar(usedstar))/(starfluxtotal/totalarea) ;excess SF flux around SF peak
@@ -898,8 +899,8 @@ if calc_obs then begin
         endfor
         ;APERTURE AREAS
         if calc_ap_area then begin ;calculate aperture area
-            apertures_star[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclstar])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
-            apertures_gas[i]=apertures[i]*sqrt(mean(aperturearea_frac[i,inclgas])) ;mean aperture size centred on gas peaks for ith target aperture size (order of sqrt(mean) is intentional)
+            apertures_star[i]=mean(apertures_star_mc[i,*]) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
+            apertures_gas[i]=mean(apertures_gas_mc[i,*]) ;mean aperture size centred on gas peaks for ith target aperture size (order of sqrt(mean) is intentional)
         endif else begin ;use the area of user-defined aperture areas
             apertures_star[i] = apertures[i] ;replicate non-mask functionality for fitKL14
             apertures_gas[i] = apertures[i]  ;replicate non-mask functionality for fitKL14
@@ -926,9 +927,9 @@ if calc_obs then begin
         ;obtain relative error terms and covariance of numerator and denominator
         nexpstar(i)=nstarmc(i) ;the number of experiments that we are averaging over
         err_sens_star2(i)=((err_sensgas_star/meantotgas_star(i))^2.+(err_sensstar_star/meantotstar_star(i))^2.) ;relative error due to sensitivity
-        err_apgas_star2(i)=(err_apgas_star/meanapgas_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (gas)
-        err_apstar_star2(i)=(err_apstar_star/meanapstar_star(i))^2./nexpstar(i) ;relative error due to standard deviation of the aperture population (stars)
-        err_apcov_star2(i)=-2.*correlate(gasflux(i,inclstar),starflux(i,inclstar),/covariance)/meanapgas_star(i)/meanapstar_star(i)/nexpstar(i) ;covariance
+        err_apgas_star2(i)=(err_apgas_star/meantotgas_star(i))^2.*nexpstar(i) ;relative error due to standard deviation of the aperture population (gas)
+        err_apstar_star2(i)=(err_apstar_star/meantotstar_star(i))^2.*nexpstar(i) ;relative error due to standard deviation of the aperture population (stars)
+        err_apcov_star2(i)=-2.*correlate(gasflux(i,inclstar),starflux(i,inclstar),/covariance)/meantotgas_star(i)/meantotstar_star(i)*nexpstar(i) ;covariance
         ;get total error
         err_star(i)=sqrt(err_sens_star2(i)+err_apgas_star2(i)+err_apstar_star2(i)+err_apcov_star2(i))*fluxratio_star(i)
         err_star_log(i)=err_star(i)/fluxratio_star(i)/alog(10.) ;error in log space
@@ -953,9 +954,9 @@ if calc_obs then begin
         ;obtain relative error terms and covariance of numerator and denominator
         nexpgas(i)=ngasmc(i) ;the number of experiments that we are averaging over
         err_sens_gas2(i)=((err_sensgas_gas/meantotgas_gas(i))^2.+(err_sensstar_gas/meantotstar_gas(i))^2.) ;relative error due to sensitivity
-        err_apgas_gas2(i)=(err_apgas_gas/meanapgas_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (gas)
-        err_apstar_gas2(i)=(err_apstar_gas/meanapstar_gas(i))^2./nexpgas(i) ;relative error due to standard deviation of the aperture population (stars)
-        err_apcov_gas2(i)=-2.*correlate(gasflux(i,inclgas),starflux(i,inclgas),/covariance)/meanapgas_gas(i)/meanapstar_gas(i)/nexpgas(i) ;covariance
+        err_apgas_gas2(i)=(err_apgas_gas/meantotgas_gas(i))^2.*nexpgas(i) ;relative error due to standard deviation of the aperture population (gas)
+        err_apstar_gas2(i)=(err_apstar_gas/meantotstar_gas(i))^2.*nexpgas(i) ;relative error due to standard deviation of the aperture population (stars)
+        err_apcov_gas2(i)=-2.*correlate(gasflux(i,inclgas),starflux(i,inclgas),/covariance)/meantotgas_gas(i)/meantotstar_gas(i)*nexpgas(i) ;covariance
         ;get total error
         err_gas(i)=sqrt(err_sens_gas2(i)+err_apgas_gas2(i)+err_apstar_gas2(i)+err_apcov_gas2(i))*fluxratio_gas(i)
         err_gas_log(i)=err_gas(i)/fluxratio_gas(i)/alog(10.) ;error in log space
@@ -966,10 +967,10 @@ if calc_obs then begin
     corrstar_star=dblarr(naperture,naperture)
     for i=peak_res,max_res do begin
         for j=i,max_res do begin
-            corrgas_gas(i,j)=meanapgas_gas(i)/meanapgas_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
-            corrstar_gas(i,j)=meanapstar_gas(i)/meanapstar_gas(j)*apertures_gas(i)^2./apertures_gas(j)^2.
-            corrgas_star(i,j)=meanapgas_star(i)/meanapgas_star(j)*apertures_star(i)^2./apertures_star(j)^2.
-            corrstar_star(i,j)=meanapstar_star(i)/meanapstar_star(j)*apertures_star(i)^2./apertures_star(j)^2.
+            corrgas_gas(i,j)=meantotgas_gas(i)/meantotgas_gas(j)*ngasmc(j)/ngasmc(i)*apertures_gas(i)^2./apertures_gas(j)^2.
+            corrstar_gas(i,j)=meantotstar_gas(i)/meantotstar_gas(j)*ngasmc(j)/ngasmc(i)*apertures_gas(i)^2./apertures_gas(j)^2.
+            corrgas_star(i,j)=meantotgas_star(i)/meantotgas_star(j)*nstarmc(j)/nstarmc(i)*apertures_star(i)^2./apertures_star(j)^2.
+            corrstar_star(i,j)=meantotstar_star(i)/meantotstar_star(j)*nstarmc(j)/nstarmc(i)*apertures_star(i)^2./apertures_star(j)^2.
             corrgas_gas(j,i)=corrgas_gas(i,j)
             corrstar_gas(j,i)=corrstar_gas(i,j)
             corrgas_star(j,i)=corrgas_star(i,j)
