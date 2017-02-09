@@ -50,19 +50,18 @@ function f_etaavg,esf ;Time-integrated mass loading factor
     return,etaavg
 end
 
-function f_chie,tover,esf,vfb,psi ;Feedback energy efficiency
+function f_chie,tover,esf,vfb,psie ;Feedback energy efficiency
     COMMON numbers
     COMMON astrconst
-    chie=max([(1.-esf)*(vfb*kms)^2./(2.*esf*(tover*myr)*psi),tiny])
+    chie=max([(1.-esf)*(vfb*kms)^2./(2.*esf*(tover*myr)*psie),tiny])
     return,chie
 end
 
-function f_chip,tover,surfgas,esf,vfb,psi,phitrap,kappa0 ;Feedback momentum efficiency
+function f_chip,tover,esf,vfb,psip ;Feedback momentum efficiency
     COMMON numbers
     COMMON physconst
     COMMON astrconst
-    taueff=kappa0^2.*esf*(surfgas*msun/pc^2.)^2.*psi/(4.*sigmaboltz) ;J s^-1 m^-2 K^-4
-    chip=max([(1.-esf)*(vfb*kms)*clight/((1.+taueff)*esf*(tover*myr)*psi),tiny])
+    chip=max([(1.-esf)*(vfb*kms)/(esf*(tover*myr)*psip),tiny])
     return,chip
 end
 
@@ -70,7 +69,7 @@ function f_getdvar,var ;Note: input must be positive and real
     COMMON numbers
     nvar=n_elements(var)
     dvar=dblarr(nvar)
-    for i=0,nvar-1 do begin
+    for i=0L,nvar-1 do begin
         if i eq 0 then dvar(i)=min([2.*var(i),var(i+1)-var(i)]) ;make sure that var-0.5*dvar cannot be negative
         if i eq nvar-1 then dvar(i)=var(i)-var(i-1)
         if i gt 0 and i lt nvar-1 then dvar(i)=.5*(var(i+1)-var(i-1))
@@ -97,7 +96,7 @@ function f_createpdf,array,darray,cumpdf,nnew
             right=newarray+(maxval-minval)/(2.*nnew) ;right bin edge
         endelse
         newdarray=right-left
-        for i=0,nnew-1 do begin
+        for i=0L,nnew-1 do begin
             if left(i) le min(array) then begin
                 minlimit=min(where(array gt min(array),nmin))
                 if nmin eq 0 then interpolmin=0 else interpolmin=minlimit ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once 
@@ -119,15 +118,59 @@ function f_createpdf,array,darray,cumpdf,nnew
     endif else begin
         newarray=dblarr(nnew)
         newdarray=dblarr(nnew)+tiny
-        for i=0,nnew-1 do newarray(i)=array(0)+(i-nnew)/2*tiny
+        for i=0L,nnew-1 do newarray(i)=array(0)+(i-nnew)/2*tiny
         pdf(*)=(nnew*tiny)^(-1.)
     endelse
     if finite(total(pdf)) eq 0 then stop
     return,[[newarray],[newdarray],[pdf]]
 end
 
+function f_writecorr,matrix,complete,galaxy,outputdir
+    openw,lun,outputdir+galaxy+'_correlation_matrix.dat',/get_lun
+    printf,lun,'# 2D correlation coefficient matrix between all constrained quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
+    printf,lun,'# This symmetric array lists the correlation coefficients for quantities that are, from left to right AND from top to bottom, in the order:'
+    if complete then begin
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+    endif else begin
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+    endelse
+    printf,lun,''
+    n=n_elements(matrix(0,*))
+    nstr=f_string(n-1,0)
+    for i=0L,n-1 do begin
+        printf,lun,format='(f12.5,'+nstr+'(3x,f12.5))',reform(matrix(i,*))
+    endfor
+    close,lun
+    free_lun,lun
+    report='         2D correlation coefficient matrix written'
+    return,report
+end
+
+function f_writecov,matrix,complete,galaxy,outputdir
+    openw,lun,outputdir+galaxy+'_covariance_matrix.dat',/get_lun
+    printf,lun,'# 2D covariance matrix between all constrained quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
+    printf,lun,'# This symmetric array lists the covariances for quantities that are, from left to right AND from top to bottom, in the order:'
+    if complete then begin
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+    endif else begin
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+    endelse
+    printf,lun,''
+    n=n_elements(matrix(0,*))
+    nstr=f_string(n-1,0)
+    for i=0L,n-1 do begin
+        printf,lun,format='(f12.5,'+nstr+'(3x,f12.5))',reform(matrix(i,*))
+    endfor
+    close,lun
+    free_lun,lun
+    report='         2D covariance matrix written'
+    return,report
+end
+
 function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
-                    tstar_incl,surfcontrasts,surfcontrastg,psi,phitrap,kappa0,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units
+                    tstar_incl,surfcontrasts,surfcontrastg,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units
     
     if map_units eq 1 then complete=1 else complete=0
     
@@ -143,50 +186,27 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     vfb=f_vfb(tover,lambda)
     if complete then begin
         tdepl=surfgas/surfsfr/1.d9
-        zetastar=f_zeta(surfcontrasts,ttotal,tstar,peak_prof)
-        zetagas=f_zeta(surfcontrastg,ttotal,tgas,peak_prof)
-        rpeakstar=f_rpeak(zetastar,lambda)
-        rpeakgas=f_rpeak(zetagas,lambda)
         esf=f_esf(tgas,tdepl,fcl,fgmc)
         mdotsf=f_mdotsf(tgas,lambda,surfgas,fgmc,esf)
         mdotfb=f_mdotfb(tover,lambda,surfgas,fgmc,esf)
         etainst=f_etainst(tgas,tover,esf)
         etaavg=f_etaavg(esf)
-        chie=f_chie(tover,esf,vfb,psi)
-        chip=f_chip(tover,surfgas,esf,vfb,psi,phitrap,kappa0)
+        chie=f_chie(tover,esf,vfb,psie)
+        chip=f_chip(tover,esf,vfb,psip)
     endif
     
     restore,filename=arrdir+'probnorm.sav'
+    restore,filename=arrdir+'probtgastover.sav'
     restore,filename=arrdir+'probtgas.sav'
-    restore,filename=arrdir+'probtover.sav'
-    restore,filename=arrdir+'problambda.sav'
     restore,filename=arrdir+'tgasarr.sav'
     restore,filename=arrdir+'toverarr.sav'
     restore,filename=arrdir+'lambdaarr.sav'
     restore,filename=arrdir+'dtgas.sav'
     restore,filename=arrdir+'dtover.sav'
     restore,filename=arrdir+'dtlambda.sav'
-    restore,filename=arrdir+'tgasarr3d.sav'
-    restore,filename=arrdir+'toverarr3d.sav'
-    restore,filename=arrdir+'lambdaarr3d.sav'
-    restore,filename=arrdir+'dtgasarr.sav'
-    restore,filename=arrdir+'dtoverarr.sav'
-    restore,filename=arrdir+'dtlambdaarr.sav'
-    
-    probtgas3d=probnorm
-    probtover3d=transpose(probnorm,[1,2,0])
-    problambda3d=transpose(probnorm,[2,0,1])
-    tgasarr3d=tgasarr3d
-    toverarr3d=transpose(toverarr3d,[1,2,0])
-    lambdaarr3d=transpose(lambdaarr3d,[2,0,1])
-    
-    ;get cumulative PDFs for use as generation functions
-    probtgascum3d=total(probnorm*dtgasarr*dtoverarr*dlambdaarr,/cumulative)
-    probtovercum3d=total(probtover3d*transpose(dtgasarr,[1,2,0])*transpose(dtoverarr,[1,2,0])*transpose(dlambdaarr,[1,2,0]),/cumulative)
-    problambdacum3d=total(problambda3d*transpose(dtgasarr,[2,0,1])*transpose(dtoverarr,[2,0,1])*transpose(dlambdaarr,[2,0,1]),/cumulative)
+        
+    ;get cumulative PDF for use as 1D generation function
     probtgascum=total(probtgas*dtgas,/cumulative)
-    probtovercum=total(probtover*dtover,/cumulative)
-    problambdacum=total(problambda*dlambda,/cumulative)
     
     ;create Monte Carlo arrays
     tgasmc=dblarr(nphysmc)
@@ -218,7 +238,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chipmc=dblarr(nphysmc)+chip
     endif
     
-    nrnd=10*nphysmc
+    nrnd=5*nphysmc
     randomarr=randomu(systime(1),nrnd)
     gaussarr=randomn(systime(1),nrnd)
     irnd=long(0)
@@ -228,9 +248,27 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         tstarisomc(i)=tstariso+gaussarr(igauss)*((gaussarr(igauss) lt 0.)*tstariso_rerrmin+(gaussarr(igauss) gt 0.)*tstariso_rerrmax)*tstariso
         xi=tstarisomc(i)/tstariso
         igauss+=1
-        tgasmc(i)=10.^interpol(alog10(tgasarr3d),probtgascum3d,randomarr(irnd))*xi
-        tovermc(i)=10.^interpol(alog10(toverarr3d),probtovercum3d,randomarr(irnd))*xi
-        lambdamc(i)=10.^interpol(alog10(lambdaarr3d),problambdacum3d,randomarr(irnd))
+        tgasmc(i)=10.^interpol(alog10(tgasarr),probtgascum,randomarr(irnd))*xi
+        i1=max(where(tgasarr le tgasmc(i),ct))
+        if ct eq 0 then i1=0
+        i2=i1+1
+        frac12=alog10(tgasmc(i)/tgasarr(i1))/alog10(tgasarr(i2)/tgasarr(i1))
+        probtovertemp=probtgastover(i1,*)+frac12*(probtgastover(i2,*)-probtgastover(i1,*))
+        probtovercumtemp=total(probtovertemp*dtover,/cumulative)
+        probtovercumtemp=probtovercumtemp/max(probtovercumtemp)
+        irnd+=1
+        tovermc(i)=10.^interpol(alog10(toverarr),probtovercumtemp,randomarr(irnd))*xi
+        i3=max(where(toverarr le tovermc(i),ct))
+        if ct eq 0 then i3=0
+        i4=i3+1
+        frac34=alog10(tovermc(i)/toverarr(i3))/alog10(toverarr(i4)/toverarr(i3))
+        problambdatemp1=probnorm(i1,i3,*)+frac34*(probnorm(i1,i4,*)-probnorm(i1,i3,*))
+        problambdatemp2=probnorm(i2,i3,*)+frac34*(probnorm(i2,i4,*)-probnorm(i2,i3,*))
+        problambdatemp=problambdatemp1+frac12*(problambdatemp2-problambdatemp1)
+        problambdacumtemp=total(problambdatemp*dlambda,/cumulative)
+        problambdacumtemp=problambdacumtemp/max(problambdacumtemp)
+        irnd+=1
+        lambdamc(i)=10.^interpol(alog10(lambdaarr),problambdacumtemp,randomarr(irnd))
         irnd+=1
         if complete then begin
             surfsfrmc(i)=surfsfr+gaussarr(igauss)*surfsfr_err
@@ -255,12 +293,35 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             mdotfbmc(i)=f_mdotfb(tovermc(i),lambdamc(i),surfgasmc(i),fgmc,esfmc(i))
             etainstmc(i)=f_etainst(tgasmc(i),tovermc(i),esfmc(i))
             etaavgmc(i)=f_etaavg(esfmc(i))
-            chiemc(i)=f_chie(tovermc(i),esfmc(i),vfbmc(i),psi)
-            chipmc(i)=f_chip(tovermc(i),surfgasmc(i),esfmc(i),vfbmc(i),psi,phitrap,kappa0)
+            chiemc(i)=f_chie(tovermc(i),esfmc(i),vfbmc(i),psie)
+            chipmc(i)=f_chip(tovermc(i),esfmc(i),vfbmc(i),psip)
         endif
         
         progress,'     ==> derived quantity error propagation progress',i,nphysmc-1
     endfor
+    
+    print,'     ==> calculating correlation and covariance matrices'
+    if complete then begin
+        quantmc=[[tgasmc],[tovermc],[lambdamc], $
+                 [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
+                 [rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
+                 [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chipmc]]
+    endif else begin
+        quantmc=[[tgasmc],[tovermc],[lambdamc], $
+                 [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
+                 [rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc]]
+    endelse
+    nquant=n_elements(quantmc(0,*))
+    corrquant=dblarr(nquant,nquant)
+    covquant=dblarr(nquant,nquant)
+    for i=0L,nquant-1 do begin
+        for j=0L,nquant-1 do begin
+            corrquant(i,j)=correlate(quantmc(*,i),quantmc(*,j))
+            covquant(i,j)=correlate(quantmc(*,i),quantmc(*,j),/covariance)
+        endfor
+    endfor
+    report=f_writecorr(corrquant,complete,galaxy,outputdir)
+    report=f_writecov(covquant,complete,galaxy,outputdir)
     
     ;sort all arrays
     tgasmc=tgasmc(sort(tgasmc))
