@@ -120,9 +120,8 @@ convgas         2.30794   # Log of multiplication factor to convert the pixel va
 convgas_rerr    0.        # Relative error (sigma_x/x) of convgas
 convstar3       0.        # Log of multiplication factor to convert the pixel value in starfile3 to a SFR in Msun/yr
 convstar3_rerr  0.        # Relative error (sigma_x/x) of convstar3
-lighttomass     0.3       # Bolometric light-to-mass ratio of a young stellar population in m^2 s^-3 (standard is 0.3, corresponding to 3000 cm^2 s^-3 in cgs and 1500 Lsun/Msun)
-photontrap      0.2       # Photon trapping fraction of radiative feedback
-kappa0         -4.61979   # Log of the Rosseland-mean opacity proportionality constant
+lighttomass     0.002     # Light-to-mass ratio of a desired feedback mechanism in m^2 s^-3 (default 0.002 is SNe)
+momratetomass   5.e-10    # Momentum output rate per unit mass of a desired feedback mechanism in m s^-2 (default 5.e-10 is SNe+winds)
 
 
 ################################################
