@@ -7,7 +7,7 @@ function f_string,numorig,ndec ;converts any real number to string with up to fo
     arraylen=n_elements(numorig)
     num=fltarr(arraylen)
     numstr=strarr(arraylen)
-    for i=0,arraylen-1 do begin
+    for i=0L,arraylen-1 do begin
         num(i)=float(10.^(-ndec)*round(10.^ndec*numorig(i)))
         sign=num(i) ge 0.
         lsign=abs(num(i)) ge 1.
@@ -45,7 +45,7 @@ function f_fluxratiostar,tgas,tstar,tover,laps,lambda,beta_gas,surfcontrasts,sur
     surfratios=dblarr(nl)
     surfratiog=dblarr(nl)
     rpeak=rpeaks
-    for i=0,nl-1 do begin
+    for i=0L,nl-1 do begin
         if peak_prof le 1 then begin
             if rpeaks lt 0.5*laps(i) then surfratios(i)=ttotal/tstar*(lambda/laps(i))^2. else surfratios(i)=surfcontrasts
             if rpeakg lt 0.5*laps(i) then surfratiog(i)=ttotal/tgas*(lambda/laps(i))^2. else surfratiog(i)=surfcontrastg
@@ -74,7 +74,7 @@ function f_fluxratiogas,tgas,tstar,tover,lapg,lambda,beta_star,surfcontrasts,sur
     surfratios=dblarr(nl)
     surfratiog=dblarr(nl)
     rpeak=rpeakg
-    for i=0,nl-1 do begin
+    for i=0L,nl-1 do begin
         if peak_prof le 1 then begin
             if rpeaks lt 0.5*lapg(i) then surfratios(i)=ttotal/tstar*(lambda/lapg(i))^2. else surfratios(i)=surfcontrasts
             if rpeakg lt 0.5*lapg(i) then surfratiog(i)=ttotal/tgas*(lambda/lapg(i))^2. else surfratiog(i)=surfcontrastg
@@ -104,7 +104,7 @@ function f_pdftovalues,variable,dvariable,cumpdf,refvalue ;convert PDF to refval
     nvar=n_elements(variable)
     pdf=dblarr(nvar)
     pdf(0)=cumpdf(0)/dvariable(0)
-    for i=1,nvar-1 do pdf(i)=(cumpdf(i)-cumpdf(i-1))/dvariable(i)
+    for i=1L,nvar-1 do pdf(i)=(cumpdf(i)-cumpdf(i-1))/dvariable(i)
     evalue=total(variable*pdf*dvariable)
     minperc=interpol(variable,cumpdf,errminfrac)
     maxperc=interpol(variable,cumpdf,errmaxfrac)
@@ -127,7 +127,7 @@ function f_writepdf,array,darray,probarray,galaxy,outputdir,varstring,commentstr
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(array)
-    for i=0,n-1 do begin
+    for i=0L,n-1 do begin
         ar=array(i)
         dar=darray(i)
         pdf=probarray(i)
@@ -146,7 +146,7 @@ function f_writetf_model,xarray,yarraystar,yarraygas,galaxy,outputdir,commentstr
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(xarray)
-    for i=0,n-1 do begin
+    for i=0L,n-1 do begin
         v1=xarray(i)
         v2=yarraystar(i)
         v3=yarraygas(i)
@@ -165,7 +165,7 @@ function f_writetf_obs,xarraystar,xarraygas,yarraystar,yarraygas,errbarstar,errb
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(xarraystar)
-    for i=0,n-1 do begin
+    for i=0L,n-1 do begin
         v1=xarraystar(i)
         v2=xarraygas(i)
         v3=yarraystar(i)
@@ -189,7 +189,7 @@ function f_writebetastar,farray,betaarray,galaxy,outputdir,commentstring ;write 
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(farray)
-    for i=0,n-1 do begin
+    for i=0L,n-1 do begin
         v1=farray(i)
         v2=betaarray(i)
         printf,lun,format='(f12.5,3x,f12.5)',v1,v2
@@ -207,7 +207,7 @@ function f_writebetagas,farray,betaarray,galaxy,outputdir,commentstring ;write t
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(farray)
-    for i=0,n-1 do begin
+    for i=0L,n-1 do begin
         v1=farray(i)
         v2=betaarray(i)
         printf,lun,format='(f12.5,3x,f12.5)',v1,v2
@@ -324,18 +324,18 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         fluxratio_star_th=dblarr(ntry,ntry,ntry,napertures)
         fluxratio_gas_th=dblarr(ntry,ntry,ntry,napertures)
         timebefore=systime(1)
-        for i=0,ntry-1 do begin
+        for i=0L,ntry-1 do begin
             tgasarr3d(i,*,*)=tgasarr(i)
             toverarr3d(*,i,*)=toverarr(i)
             lambdaarr3d(*,*,i)=lambdaarr(i)
             dtgasarr(i,*,*)=dtgas(i)
             dtoverarr(*,i,*)=dtover(i)
             dlambdaarr(*,*,i)=dlambda(i)
-            for j=0,ntry-1 do begin
+            for j=0L,ntry-1 do begin
                 if tstar_incl eq 0 then tstaruse=tstariso+toverarr(j) else tstaruse=tstariso
                 beta_star_use=interpol(beta_star,fstarover,toverarr(j)/tstaruse)
                 beta_gas_use=interpol(beta_gas,fgasover,toverarr(j)/tgasarr(i))
-                for k=0,ntry-1 do begin
+                for k=0L,ntry-1 do begin
                     if toverarr(j) le min(tgasarr(i)) then begin
                         fluxratio_star_th(i,j,k,*)=f_fluxratiostar(tgasarr(i),tstaruse,toverarr(j),apertures_star,lambdaarr(k),beta_gas_use,surfcontrasts,surfcontrastg,peak_prof)
                         fluxratio_gas_th(i,j,k,*)=f_fluxratiogas(tgasarr(i),tstaruse,toverarr(j),apertures_gas,lambdaarr(k),beta_star_use,surfcontrasts,surfcontrastg,peak_prof)
@@ -365,11 +365,11 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         probtgastover=dblarr(ntry,ntry)
         probtgaslambda=dblarr(ntry,ntry)
         probtoverlambda=dblarr(ntry,ntry)
-        for i=0,ntry-1 do begin
+        for i=0L,ntry-1 do begin
             probtgas(i)=total(probnorm(i,*,*)*dtoverarr(i,*,*)*dlambdaarr(i,*,*))
             probtover(i)=total(probnorm(*,i,*)*dtgasarr(*,i,*)*dlambdaarr(*,i,*))
             problambda(i)=total(probnorm(*,*,i)*dtgasarr(*,*,i)*dtoverarr(*,*,i))
-            for j=0,ntry-1 do begin
+            for j=0L,ntry-1 do begin
                 probtgastover(i,j)=total(probnorm(i,j,*)*dlambdaarr(i,j,*))
                 probtgaslambda(i,j)=total(probnorm(i,*,j)*dtoverarr(i,*,j))
                 probtoverlambda(i,j)=total(probnorm(*,i,j)*dtgasarr(*,i,j))
@@ -449,9 +449,9 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             iredchi=dblarr(ntry)
             jredchi=dblarr(ntry)
             kredchi=dblarr(ntry)
-            for i=0,ntry-1 do iredchi(i)=min(redchi2(i,*,*))
-            for j=0,ntry-1 do jredchi(j)=min(redchi2(*,j,*))
-            for k=0,ntry-1 do kredchi(k)=min(redchi2(*,*,k))
+            for i=0L,ntry-1 do iredchi(i)=min(redchi2(i,*,*))
+            for j=0L,ntry-1 do jredchi(j)=min(redchi2(*,j,*))
+            for k=0L,ntry-1 do kredchi(k)=min(redchi2(*,*,k))
             imin=max([0,min(where(iredchi le minchi2+deltachi))-1])
             imax=min([long(ntry-1),max(where(iredchi le minchi2+deltachi))+1])
             jmin=max([0,min(where(jredchi le minchi2+deltachi))-1])
@@ -505,7 +505,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         plot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1
         oplot,r,fg,thick=5
         oplot,r,fs,thick=5
-        for i=0,ntry-1,fix(ntry/2.) do begin
+        for i=0L,ntry-1,fix(ntry/2.) do begin
             beta_gas_use=interpol(beta_gas,fgasover,toverarr(jbest)/tgasarr(i))
             fg=f_fluxratiogas(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_star_best,surfcontrasts,surfcontrastg,peak_prof)
             fs=f_fluxratiostar(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_gas_use,surfcontrasts,surfcontrastg,peak_prof)
@@ -608,7 +608,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             nc=1001
             contours=dindgen(nc)/(nc-1.)*maxprob
             fracarr=dblarr(nc)
-            for i=0,nc-1 do begin
+            for i=0L,nc-1 do begin
                 percentile=where(probtgastover ge contours(i))
                 dtgasarr2d=reform(dtgasarr(*,*,0))
                 dtoverarr2d=reform(dtoverarr(*,*,0))
@@ -652,7 +652,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             nc=1001
             contours=dindgen(nc)/(nc-1.)*maxprob
             fracarr=dblarr(nc)
-            for i=0,nc-1 do begin
+            for i=0L,nc-1 do begin
                 percentile=where(probtgaslambda ge contours(i))
                 dtgasarr2d=reform(dtgasarr(*,0,*))
                 dlambdaarr2d=reform(dlambdaarr(*,0,*))
@@ -696,7 +696,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             nc=1001
             contours=dindgen(nc)/(nc-1.)*maxprob
             fracarr=dblarr(nc)
-            for i=0,nc-1 do begin
+            for i=0L,nc-1 do begin
                 percentile=where(probtoverlambda ge contours(i))
                 dtoverarr2d=reform(dtoverarr(0,*,*))
                 dlambdaarr2d=reform(dlambdaarr(0,*,*))
