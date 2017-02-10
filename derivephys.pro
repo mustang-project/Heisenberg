@@ -251,6 +251,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         tgasmc(i)=10.^interpol(alog10(tgasarr),probtgascum,randomarr(irnd))*xi
         i1=max(where(tgasarr le tgasmc(i),ct))
         if ct eq 0 then i1=0
+        if i1 eq ntry-1 then i1=ntry-2
         i2=i1+1
         frac12=alog10(tgasmc(i)/tgasarr(i1))/alog10(tgasarr(i2)/tgasarr(i1))
         probtovertemp=probtgastover(i1,*)+frac12*(probtgastover(i2,*)-probtgastover(i1,*))
@@ -260,6 +261,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         tovermc(i)=10.^interpol(alog10(toverarr),probtovercumtemp,randomarr(irnd))*xi
         i3=max(where(toverarr le tovermc(i),ct))
         if ct eq 0 then i3=0
+        if i3 eq ntry-1 then i3=ntry-2
         i4=i3+1
         frac34=alog10(tovermc(i)/toverarr(i3))/alog10(toverarr(i4)/toverarr(i3))
         problambdatemp1=probnorm(i1,i3,*)+frac34*(probnorm(i1,i4,*)-probnorm(i1,i3,*))
