@@ -238,14 +238,15 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chipmc=dblarr(nphysmc)+chip
     endif
     
-    nrnd=5*nphysmc
+    nrnd=3*nphysmc
     randomarr=randomu(systime(1),nrnd)
     gaussarr=randomn(systime(1),nrnd)
     irnd=long(0)
     igauss=long(0)
     
+    tstariso_rerr=0.5*(tstariso_rerrmin+tstariso_rerrmax)
     for i=0L,nphysmc-1 do begin ;do Monte Carlo error propagation
-        tstarisomc(i)=tstariso+gaussarr(igauss)*((gaussarr(igauss) lt 0.)*tstariso_rerrmin+(gaussarr(igauss) gt 0.)*tstariso_rerrmax)*tstariso
+        tstarisomc(i)=tstariso+gaussarr(igauss)*tstariso_rerr*tstariso
         xi=tstarisomc(i)/tstariso
         igauss+=1
         tgasmc(i)=10.^interpol(alog10(tgasarr),probtgascum,randomarr(irnd))*xi
@@ -302,7 +303,6 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         progress,'     ==> derived quantity error propagation progress',i,nphysmc-1
     endfor
     
-    print,'     ==> calculating correlation and covariance matrices'
     if complete then begin
         quantmc=[[tgasmc],[tovermc],[lambdamc], $
                  [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
@@ -321,6 +321,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             corrquant(i,j)=correlate(quantmc(*,i),quantmc(*,j))
             covquant(i,j)=correlate(quantmc(*,i),quantmc(*,j),/covariance)
         endfor
+        progress,'     ==> correlation and covariance matrix progress',i,nquant-1
     endfor
     report=f_writecorr(corrquant,complete,galaxy,outputdir)
     report=f_writecov(covquant,complete,galaxy,outputdir)
@@ -335,6 +336,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         surfgasmc=surfgasmc(sort(surfgasmc))
     endif
     
+    print,'     ==> calculating derived quantity PDFs and uncertainties'
     tstarmc=tstarmc(sort(tstarmc))
     dtstarmc=f_getdvar(tstarmc)
     ttotalmc=ttotalmc(sort(ttotalmc))
@@ -429,7 +431,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     endif
             
     ;plot PDFs and write tables
-    print,'     ==> plotting probability distribution functions and writing them to output directory'
+    print,'     ==> plotting PDFs and writing them to output directory'
     dummy=f_createpdf(tstarmc,dtstarmc,cumdistr,ntry)
     tstararr=dummy(*,0)
     dtstar=dummy(*,1)
