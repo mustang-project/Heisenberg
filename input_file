@@ -71,7 +71,7 @@ calc_ap_area    1         # Calculate the area of apertures used based on number
 tstar_incl      0         # [0, DEFAULT] Reference time-scale tstariso does not include the overlap phase (tstar=tstariso+tover); [1] tstariso includes the overlap phase (tstar=tstariso)
 peak_prof       2         # [0] Model independent regions as points; [1] Model independent regions as constant-surface density discs; [2, DEFAULT] Model independent regions as two-dimensional Gaussians
 map_units       1         # [0] Unknown, do not calculate derived quantities; [1, DEFAULT] star=SFR and gas=gas; [2] star=gas1 and gas=gas2; [3] star=SFR1 and gas=SFR2
-use_X11         0         # [0] Not allowed to create X11 windows; [1] Allowed to create X11 windows
+use_X11         1         # [0] Not allowed to create X11 windows; [1] Allowed to create X11 windows
 
 
 # INPUT PARAMETERS 1 (basic map analysis)
@@ -84,21 +84,21 @@ minradius       0.        # Minimum radius for analysis in pc
 maxradius       10000.    # Maximum radius for analysis in pc
 Fs1_Fs2_min     15.       # Minimum primary-to-secondary star formation tracer flux ratio for including pixels (only if use_star3=1)
 max_sample      10        # Maximum number of pixels per map resolution FWHM
-astr_tolerance  2.5e-8    # allowable tolerance in decimal degrees between astrometric position of image pixels of different images (e.g. 0.9" = 2.5e-4 decimal degrees)
+astr_tolerance  1.e-6    # allowable tolerance in decimal degrees between astrometric position of image pixels of different images (e.g. 0.9" = 2.5e-4 decimal degrees)
 nbins           20        # Number of bins used during sensitivity limit calculation to sample the intensity PDFs and fit Gaussians
 # INPUT PARAMETERS 2 (apertures)
 lapmin          25.       # Minimum aperture size (i.e. diameter) in pc to create smoothened maps for
 lapmax          6400.     # Maximum aperture size (i.e. diameter) in pc to create smoothened maps for
 naperture       9         # Number of aperture sizes
-peak_res        2         # Minimum aperture size used in fitting the KL14 principle model, also index of aperture size at which peaks are identified (start counting at 0) - is set to map resolution if originally chosen to be smaller
+peak_res        1         # Minimum aperture size used in fitting the KL14 principle model, also index of aperture size at which peaks are identified (start counting at 0) - is set to map resolution if originally chosen to be smaller
 max_res         8         # Maximum aperture size used in fitting the KL14 principle model, also index of aperture size at which fluxes best reflect galactic averages (start counting at 0)
 # INPUT PARAMETERS 3 (peak identification)
 npixmin         20        # Minimum number of pixels for a valid peak (use npixmin=1 to allow points)
 nsigma          5         # Multiple of the sensitivity limit needed for a valid peak
-logrange_s      2.5       # Logarithmic range covered by flux contour levels for stellar peak identification, counting down from stellar flux maximum
-logspacing_s    0.25      # Logarithmic interval between flux contour levels for stellar peak identification
-logrange_g      0.7       # Logarithmic range covered by flux contour levels for gas peak identification, counting down from gas flux maximum
-logspacing_g    0.1       # Logarithmic interval between flux contour levels for gas peak identification
+logrange_s      2.        # Logarithmic range covered by flux contour levels for stellar peak identification, counting down from stellar flux maximum
+logspacing_s    0.5       # Logarithmic interval between flux contour levels for stellar peak identification
+logrange_g      2.        # Logarithmic range covered by flux contour levels for gas peak identification, counting down from gas flux maximum
+logspacing_g    0.5       # Logarithmic interval between flux contour levels for gas peak identification
 nlinlevel_s     11        # Number of flux contour levels for stellar peak identification between zero and stellar flux maximum (only if loglevels=0)
 nlinlevel_g     11        # Number of flux contour levels for gas peak identification between zero and gas flux maximum (only if loglevels=0)
 # INPUT PARAMETERS 4 (timeline)
@@ -106,13 +106,13 @@ tstariso        1.        # Reference time-scale spanned by star formation trace
 tstariso_errmin 0.        # Downward standard error of the reference time-scale in Myr
 tstariso_errmax 0.        # Upward standard error of the reference time-scale in Myr
 tgasmini        0.1       # Minimum value of tgas considered during fitting process in Myr
-tgasmaxi        5000.     # Maximum value of tgas considered during fitting process in Myr
+tgasmaxi        1000.     # Maximum value of tgas considered during fitting process in Myr
 tovermini       0.01      # Minimum value of tover considered during fitting process in Myr
 # INPUT PARAMETERS 5 (fitting)
 nmc             1000      # Number of Monte-Carlo peak drawing experiments to be executed and averaged over during fitting process
 ndepth          4         # Maximum number of free parameter array refinement loops for obtaining best-fitting value
 ntry            101       # Size of each free parameter array to obtain the best-fitting value
-nphysmc         100000    # Number of Monte-Carlo experiments for error propagation of derived physical quantities
+nphysmc         1000000   # Number of Monte-Carlo experiments for error propagation of derived physical quantities
 # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities)
 convstar       -3.69206   # Log of multiplication factor to convert the pixel value in starfile to a SFR in Msun/yr (if maptypes=1 or maptypes=3) or to a gas mass in Msun (if maptypes=2)
 convstar_rerr   0.        # Relative error (sigma_x/x) of convstar
