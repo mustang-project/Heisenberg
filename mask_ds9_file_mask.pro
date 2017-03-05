@@ -112,41 +112,23 @@ pro mask_ds9_file_mask, image, image_head, ds9_filepath, ds9_mask, negative=nega
         cmode = 'image' ; switch mode ; currently does nothing
         continue ; no need to do anything else so continue
       endif else if (strmatch(scolon_def, 'fk4', /fold_case) || strmatch(scolon_def, 'B1950', /fold_case) ) then begin ; FK4, B1950 # sky coordinate systems
-        print, " The ds9 region file contains fk4/B1950 co-ordinate specifications. Only IMAGE co-ordinates are supported. Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."
-        print, " quitting..."
-        stop
+        f_error,["The ds9 region file contains fk4/B1950 co-ordinate specifications.","Only IMAGE co-ordinates are supported.","Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."]
       endif else if (strmatch(scolon_def ,'fk5', /fold_case) || strmatch(scolon_def ,'J2000' , /fold_case)) then begin       ; FK5, J2000 # sky coordinate systems
         if (image_equinox eq 2000) then cmode = 'wcs' else begin
-          print, " The ds9 region file contains definitions with an fk5/J2000 equinox, but the image header is not in this format. This cannot be handled by the interpreter. The line in this format is:"
-          print, linevar
-          print, " quitting..."
-          stop
+          f_error,["The ds9 region file contains definitions with an fk5/J2000 equinox, but the image header is not in this format.","This cannot be handled by the interpreter.","The line in this format is:",linevar]
         endelse
       endif else if (strmatch(scolon_def ,'IRCS', /fold_case)) then begin ; ICRS # currently same as J2000
-        print, " The ds9 region file contains IRCS co-ordinate specifications. Only IMAGE co-ordinates are supported. Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."
-        print, " quitting..."
-        stop
+        f_error,["The ds9 region file contains IRCS co-ordinate specifications.","Only IMAGE co-ordinates are supported.","Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."]
       endif else if (strmatch(scolon_def ,'GALACTIC', /fold_case)) then begin ; GALACTIC # sky coordinate systems
-        print, " The ds9 region file contains GALACTIC co-ordinate specifications. Only IMAGE co-ordinates are supported. Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."
-        print, " quitting..."
-        stop
+        f_error,["The ds9 region file contains GALACTIC co-ordinate specifications.","Only IMAGE co-ordinates are supported.","Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."]
       endif else if (strmatch(scolon_def ,'ECLIPTIC', /fold_case)) then begin ; ECLIPTIC  # sky coordinate systems
-        print, " The ds9 region file contains ECLIPTIC co-ordinate specifications. Only IMAGE co-ordinates are supported. Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."
-        print, " quitting..."
-        stop
+        f_error,["The ds9 region file contains ECLIPTIC co-ordinate specifications.","Only IMAGE co-ordinates are supported.","Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."]
       endif else if (strmatch(scolon_def ,'LINEAR', /fold_case)) then begin ; LINEAR # linear wcs as defined in file
-        print, " The ds9 region file contains LINEAR co-ordinate specifications. Only IMAGE co-ordinates are supported. Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."
-        print, " quitting..."
-        stop
+        f_error,["The ds9 region file contains LINEAR co-ordinate specifications.","Only IMAGE co-ordinates are supported.","Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."]
       endif else if (strmatch(scolon_def ,'AMPLIFIER', /fold_case) || strmatch(scolon_def ,'DETECTOR' , /fold_case)) then begin       ; AMPLIFIER # mosaic coords of original file using ATM/ATV ; DETECTOR  # mosaic coords of original file usingDTM/DTV
-        print, " The ds9 region file contains definitions a mosaic world coordinate system (either DETECTOR or AMPLIFIER). Mosiaic images are not currently supported by the interpreter. The line in this format is:"
-        print, linevar
-        print, " quitting..."
-        stop
+        f_error,["The ds9 region file contains definitions a mosaic world coordinate system (either DETECTOR or AMPLIFIER).","Mosaic images are not currently supported by the interpreter.","The line in this format is:",linevar]
       endif else if (strmatch(scolon_def ,'PHYSICAL', /fold_case)) then begin   ; PHYSICAL  # pixel coords of original file using LTM/LTV
-        print, " The ds9 region file contains PHYSICAL co-ordinate specifications. Only IMAGE co-ordinates are supported. Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."
-        print, " quitting..."
-        stop
+        f_error,["The ds9 region file contains PHYSICAL co-ordinate specifications.","Only IMAGE co-ordinates are supported.","Please manually convert in ds9, use the supplied script 'mask_ds9_file_convert' or the /convert keyword in mask_tool to convert the region file to image co-ordinates."]
       endif
 
       ;***************************************
@@ -168,11 +150,7 @@ pro mask_ds9_file_mask, image, image_head, ds9_filepath, ds9_mask, negative=nega
                                              image_xcents, image_ycents)
           mask_list = where(ellipse_test eq 1, mask_count) ; mask within circle (including edge of circle)
           if mask_count gt 0 then ds9_mask[mask_list] = mask_val
-        endif else begin
-          print, " Elliptical annuli are not currently supported by the interpreter"
-          print, " quitting..."
-          print, stop
-        endelse
+        endif else f_error,"Elliptical annuli are not currently supported by the interpreter"
       endif else if (strmatch(line_split[0],'box', /fold_case)) then begin  ; region format: box x y width height angle
         if n_elements(line_split) eq 6 then begin
           box_angle = float(line_split[5])*!dtor
@@ -183,11 +161,7 @@ pro mask_ds9_file_mask, image, image_head, ds9_filepath, ds9_mask, negative=nega
           mask_list = where(cpcentmask gt 0, mask_count)       ; mask interior and boundary points. Set null to allow a polygon that masks nothing. E.g. one defined exterior to the image region
           if mask_count gt 0 then ds9_mask[mask_list] = mask_val
           obj_destroy, poly_roi ; destroy object to prevent memory leakage is versions of IDL pre-8.0
-        endif else begin
-          print, " Box annuli are not currently supported by the interpreter"
-          print, " quitting..."
-          print, stop
-        endelse
+        endif else f_error,"Box annuli are not currently supported by the interpreter"
       endif else if (strmatch(line_split[0],'polygon', /fold_case)) then begin  ; add in other region formats
         if cmode eq 'image' then begin
           poly_xx = float(line_split[1:*:2]) ; obtain all elements of line_split with odd subscripts and convert from string to float
@@ -196,11 +170,7 @@ pro mask_ds9_file_mask, image, image_head, ds9_filepath, ds9_mask, negative=nega
           ra  = ten(line_split[1:*:2])*15
           dec = ten(line_split[2:*:2])
           adxy, image_head, ra, dec, poly_xx, poly_yy
-        endif else begin
-          print, " Image co-ordinate mode is not specified"
-          print, " quitting..."
-          stop
-        endelse
+        endif else f_error,"Image co-ordinate mode is not specified"
         if (n_elements(poly_xx) gt 2) then begin ; ensure region defined is not a line as this would create spurious masking.
           poly_roi = obj_new('IDLanROI', poly_xx, poly_yy) ; create polynomial Region Of Interest object
           cpcentmask = poly_roi->containspoints(image_xcents,image_ycents)  ; returns these values: 0 = Exterior. The point lies strictly out of bounds of the ROI; 1 = Interior. The point lies strictly inside the bounds of the ROI, 2 = On edge. The point lies on an edge of the ROI boundary, 3 = On vertex. The point matches a vertex of the ROI
@@ -211,20 +181,11 @@ pro mask_ds9_file_mask, image, image_head, ds9_filepath, ds9_mask, negative=nega
       endif else if (strmatch(line_split[0],'point', /fold_case) || strmatch(line_split[0],'line', /fold_case)  || strmatch(line_split[0],'vector', /fold_case) || strmatch(line_split[0],'text', /fold_case) || strmatch(line_split[0],'ruler', /fold_case)  || strmatch(line_split[0],'compass', /fold_case) || strmatch(line_split[0],'projection', /fold_case)) then begin
         continue ; lines, compasses, text etc. are not masked regions
       endif else if (strmatch(line_split[0],'annulus', /fold_case)) then begin
-        print, ' An annulus region is defined. This type of region is not yet handled by the interpreter. The line is:'
-        print, linevar
-        print, " quitting..."
-        stop
+        f_error,['An annulus region is defined. This type of region is not yet handled by the interpreter. The line is:',linevar]
       endif else if (strmatch(line_split[0],'panda', /fold_case) || strmatch(line_split[0],'epanda', /fold_case) || strmatch(line_split[0],'bpanda', /fold_case)) then begin
-        print, ' A panda, epanda or bpanda region is defined. This type of region is not yet handled by the interpreter. The line is:'
-        print, linevar
-        print, " quitting..."
-        stop
+        f_error,['A panda, epanda or bpanda region is defined. This type of region is not yet handled by the interpreter. The line is:',linevar]
       endif else begin
-        print, " error: something has gone wrong! A line in the ds9 region file has not been correctly interpreted. The line is:"
-        print, linevar
-        print, " quitting..."
-        stop
+        f_error,["Something has gone wrong! A line in the ds9 region file has not been correctly interpreted. The line is:",linevar]
       endelse
     endfor ; end semi-colon loop
   endwhile  ; end loop over file lines

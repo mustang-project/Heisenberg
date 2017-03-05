@@ -13,6 +13,7 @@ function peaks2d,map,levels=levels,log=log,fluxweight=fluxweight,npixmin=npixmin
     clstats2d,file=map,log=log,/silent,fluxweight=fluxweight
     file=map+'_peaks.dat'
     nlines=min(file_lines(file)-8)
+    if nlines le 2 then f_error,'insufficient number of peaks identified ('+f_string(nlines,0)+')' ;analysis fundamentally does not work if number of peaks is 2 or less
     n=dblarr(nlines)
     x=dblarr(nlines)
     y=dblarr(nlines)

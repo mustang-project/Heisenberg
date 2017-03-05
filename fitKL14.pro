@@ -279,11 +279,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
 
     COMMON numbers
 
-    if n_elements(apertures_star) ne n_elements(apertures_gas) then begin ;ensure that there are the same number of star and gas apertures
-        print,' error: apertures_star and apertures_gas must have the same number of elements'
-        print,' quitting...'
-        stop
-    endif
+    if n_elements(apertures_star) ne n_elements(apertures_gas) then f_error,'apertures_star and apertures_gas must have the same number of elements'
     napertures=n_elements(apertures_star)
 
     use=where(finite(alog10(fluxratio_star(0:napertures-1))) and finite(alog10(fluxratio_gas(0:napertures-1))))

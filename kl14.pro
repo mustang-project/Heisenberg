@@ -45,6 +45,7 @@
 .com strnumber
 .com astrometry_equal
 .com mask_inside_circle.com mask_inside_ellipse.com mask_ds9_box_vertices.com mask_ds9_file_convert.com mask_ds9_file_mask.com mask_tool.pro
+.com f_error.pro
 
 
 if keyword_set(COMMAND_LINE_ARGS()) then inputfile=COMMAND_LINE_ARGS() $

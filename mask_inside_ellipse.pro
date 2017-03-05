@@ -25,11 +25,7 @@ function mask_inside_ellipse, ellipse_x, ellipse_y, ellipse_maj, ellipse_min, el
 ;----------------------------------------------------------------------------------------
   compile_opt idl2 ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults
 
-  if array_equal(size(test_x),size(test_y)) ne 1 then begin
-    print, " inside_ellipse error: test_x and test_y must have the same dimensions"
-    print, " quitting..."
-    stop
-  endif
+  if array_equal(size(test_x),size(test_y)) ne 1 then f_error,"inside_ellipse error: test_x and test_y must have the same dimensions"
 
   test_dist =((((cos(ellipse_ang) * (test_x -ellipse_x)) + (sin(ellipse_ang) * (test_y -ellipse_y)))^2)/(ellipse_maj*ellipse_maj)) + $
              ((((sin(ellipse_ang) * (test_x -ellipse_x)) - (cos(ellipse_ang) * (test_y -ellipse_y)))^2)/(ellipse_min*ellipse_min))
