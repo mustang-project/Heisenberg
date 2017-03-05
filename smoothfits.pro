@@ -59,9 +59,8 @@ endif
             if ct eq 0 then stop
             if ~tophat then begin
                 psf_fwhm  = sqrt(res_as^2-(beam*3600.)^2) / 3600. / cdelt ; pixel units
-                psf_width = floor(5.*psf_fwhm)
-                psf_width = ceil((2.*psf_width+1)/2.)
-                psf_width = psf_width < sxpar(hdr,'NAXIS1') ; NAXIS(psf)<=NAXIS(map)
+                psf_width = floor(5.*psf_fwhm) < sxpar(hdr,'NAXIS1') < sxpar(hdr,'NAXIS2') ; NAXIS(psf)<=NAXIS(map)
+                psf_width = 2.*ceil(psf_width/2.)-1. > 0. ;ensure odd number of pixels
                 psf = psf_gaussian(npixel=psf_width, fwhm=[psf_fwhm,psf_fwhm], /normal) ;Gaussian kernel
             endif else psf = psf_tophat(res_as/3600./cdelt) ;tophat kernel
     

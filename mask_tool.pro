@@ -97,12 +97,7 @@ pro mask_tool, image_input, image_hdr $ ; image variables
     mask = image
     mask[*] = 1.0 ; no masks so create mask of which every element is 1.0 (i.e unmasked)
 
-  endif else begin
-      print, ' error: neither a positive or negative ds9 mask filepath has been supplied -- you must supply one or both or set the keyword run_without_masks=1 to allow code to run without masks'
-      print, ' quitting...'
-      stop
-
-  endelse
+  endif else f_error,['Neither a positive nor a negative ds9 mask filepath has been supplied','You must supply one or both or set the keyword run_without_masks=1 to allow code to run without masks']
 
   ; ***********************************
   ; 3) Output
