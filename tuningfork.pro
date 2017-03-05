@@ -106,18 +106,8 @@ expected_params6=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3
 expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6] ;variable names of expected input parameters (all)
 expected_vars=[expected_flags,expected_filenames,expected_masknames,expected_params] ;names of all expected variables
 nvars=n_elements(expected_vars) ;number of expected variables
-for i=0,nvars-1 do begin ;verify input reading
-    if n_elements(scope_varfetch(expected_vars(i))) eq 0 then begin
-        print,' error: variable '+expected_vars(i)+' not present in input.dat'
-        print,' quitting...'
-        stop
-    endif
-endfor
-if peak_prof eq 0 and npixmin gt 1 then begin
-    print,' error: peak_prof=0 (points), but minimum number of pixels npixmin>1; please set npixmin=1 or peak_prof>0'
-    print,' quitting...'
-    stop
-endif
+for i=0,nvars-1 do if n_elements(scope_varfetch(expected_vars(i))) eq 0 then f_error,'variable '+expected_vars(i)+' not present in input file' ;verify input reading
+if peak_prof eq 0 and npixmin gt 1 then f_error,['peak_prof=0 (points), but minimum number of pixels npixmin>1','Please set npixmin=1 or peak_prof>0']
 
 if use_X11 then begin ;set window properties
     window_plot='x'
@@ -337,11 +327,7 @@ endif else centre=centre_orig
 cdelt=abs(sxpar(starmaphdr,'CDELT1',count=ct))
 if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
 pixtopc=distance*tan(!dtor*cdelt)/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
-if sqrt(2.)*pixtopc gt apertures(naperture-2) then begin
-    print, ' error: less than 2 aperture sizes exceed inclination-corrected pixel diagonal'
-    print, ' quitting...'
-    stop
-endif
+if sqrt(2.)*pixtopc gt apertures(naperture-2) then f_error,'less than 2 aperture sizes exceed inclination-corrected pixel diagonal'
 if sqrt(2.)*pixtopc gt apertures(peak_res) then begin
     print, ' WARNING: minimum aperture size ('+f_string(lap_min,0)+' pc) is smaller than inclination-corrected pixel diagonal ('+f_string(sqrt(2.)*pixtopc,1)+' pc)'
     peak_res=min(where(apertures gt sqrt(2.)*pixtopc)) ;ensure that the smallest aperture size exceeds the pixel size
@@ -439,11 +425,7 @@ if regrid then begin
         maskmaphdr = starmaphdr ;use the starmap header
         writefits, maskfiletot, mask_arr, maskmaphdr ;save a fits image of synchronised mask to maskeddir, which is needed to create smoothmask and work out the area of the mask
 
-    endif else begin
-        print, ' error: for masks to be propogated between images, all images must share the same astrometry; set regrid=1 in the parameter file to regrid images'
-        print, ' quitting...'
-        stop
-    endelse
+    endif else f_error,['for masks to be propogated between images, all images must share the same astrometry','set regrid=1 in the parameter file to regrid images']
 endif
 if map_units eq 1 then begin
     sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
@@ -502,12 +484,7 @@ endif else begin
         ;check if target directory exists
         dir=rundir+'res_'+res(i)+'pc'+path_sep()
         dummy=file_search(dir,count=ct)
-        if ct eq 0 then begin
-            print,' error: data directory not present for '+res(i)+' pc resolution'
-            print,' first run with smoothen keyword enabled'
-            print,' quitting...'
-            stop
-        endif
+        if ct eq 0 then f_error,['data directory not present for '+res(i)+' pc resolution','first run with smoothen keyword enabled']
         smoothstar(i,*,*)=readfits(rundir+'res_'+res(i)+'pc'+path_sep()+starfile,hdr,/silent)
         if use_star3 then smoothstar3(i,*,*)=readfits(rundir+'res_'+res(i)+'pc'+path_sep()+starfile3,hdr,/silent)
         smoothgas(i,*,*)=readfits(rundir+'res_'+res(i)+'pc'+path_sep()+gasfile,hdr,/silent)
@@ -630,12 +607,6 @@ if id_peaks then begin
     npeaks=sz(1) ;total number of all peaks
     nstarpeaks=sz_s(1) ;total number of stellar peaks
     ngaspeaks=sz_g(1) ;total number of gas peaks
-    if npeaks ne nstarpeaks+ngaspeaks then begin
-        print,' error: total number of peaks does not match the sum of the numbers of gas and stellar peaks'
-        print,' this is an unknown bug, please contact the developers'
-        print,' quitting...'
-        stop
-    endif
 
     includepeak=mask_arr(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
     inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval

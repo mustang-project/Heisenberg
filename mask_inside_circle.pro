@@ -18,11 +18,7 @@ function mask_inside_circle, circ_x, circ_y, circ_r, test_x, test_y, no_edge_poi
 ; ***                  the circle's perimiter. The normal behaviour is to return 1 for
 ; ***                  these points.
 ;----------------------------------------------------------------------------------------
-  if array_equal(size(test_x),size(test_y)) ne 1 then begin
-    print, " inside_circle error: test_x and test_y must have the same dimensions"
-    print, " quitting..."
-    stop
-  endif
+  if array_equal(size(test_x),size(test_y)) ne 1 then f_error,"inside_circle error: test_x and test_y must have the same dimensions"
 
   test_r = sqrt( (test_x - circ_x)^2 + (test_y - circ_y)^2)
 
