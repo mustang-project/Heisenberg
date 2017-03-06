@@ -84,7 +84,7 @@ function f_createpdf,array,darray,cumpdf,nnew,string
     norig=n_elements(array) ;originial number of elements
     if ct lt norig then begin
         print, ' WARNING: Infinity or NaN detected in Monte-Carlo error propagation of '+string+', removing...' ;notify user
-        nupdate=norig-ct ;updated number of elements
+        nupdate=ct ;updated number of elements
         array=array(fin) ;keep finite part
         cumpdf=cumpdf(0:nupdate-1)/cumpdf(nupdate-1) ;recap cumulative PDF at unity
         darray(nupdate-1)=array(nupdate-1)-array(nupdate-2) ;update bin width for new largest element
