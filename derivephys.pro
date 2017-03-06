@@ -80,18 +80,17 @@ end
 
 function f_createpdf,array,darray,cumpdf,nnew,string
     COMMON numbers
-    non_finite=where(~finite(array),ct) ;check for any infinities or NaNs (appear at the end of array due to sorting)
-    if ct gt 0 then begin
+    fin=where(finite(array),ct) ;check for any infinities or NaNs (appear at the end of array due to sorting)
+    norig=n_elements(array) ;originial number of elements
+    if ct lt norig then begin
         print, ' WARNING: Infinity or NaN detected in Monte-Carlo error propagation of '+string+', removing...' ;notify user
-        norig=n_elements(array) ;originial number of elements
         nupdate=norig-ct ;updated number of elements
-        array=array(~non_finite) ;keep finite part
+        array=array(fin) ;keep finite part
         cumpdf=cumpdf(0:nupdate-1)/cumpdf(nupdate-1) ;recap cumulative PDF at unity
         darray(nupdate-1)=array(nupdate-1)-array(nupdate-2) ;update bin width for new largest element
-    endif
-    norig=n_elements(array)
+    endif else nupdate=norig
     minval=min(array)-.5*darray(0) ;assume linearly-symmetric bins as input
-    maxval=max(array)+.5*darray(norig-1) ;assume linearly-symmetric bins as input
+    maxval=max(array)+.5*darray(nupdate-1) ;assume linearly-symmetric bins as input
     pdf=dblarr(nnew)
     if minval le 0. then logrange=0 else logrange=1
     if minval ne maxval then begin
