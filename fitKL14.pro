@@ -285,7 +285,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
     use=where(finite(alog10(fluxratio_star(0:napertures-1))) and finite(alog10(fluxratio_gas(0:napertures-1))))
     nvar=3
     nfit=total(nfitstar(use))+total(nfitgas(use))
-    ndeg=nfit-nvar-1.
+    ndeg=nfit-nvar
     weights=[nfitstar(use),nfitgas(use)]
     weights/=mean(weights)
 
