@@ -78,19 +78,11 @@ function f_getdvar,var ;Note: input must be positive and real
     return,dvar
 end
 
-function f_createpdf,array,darray,cumpdf,nnew,string
+function f_createpdf,array,darray,cumpdf,nnew
     COMMON numbers
-    fin=where(finite(array),ct) ;check for any infinities or NaNs (appear at the end of array due to sorting)
     norig=n_elements(array) ;originial number of elements
-    if ct lt norig then begin
-        print, ' WARNING: Infinity or NaN detected in Monte-Carlo error propagation of '+string+', removing...' ;notify user
-        nupdate=ct ;updated number of elements
-        array=array(fin) ;keep finite part
-        cumpdf=cumpdf(0:nupdate-1)/cumpdf(nupdate-1) ;recap cumulative PDF at unity
-        darray(nupdate-1)=array(nupdate-1)-array(nupdate-2) ;update bin width for new largest element
-    endif else nupdate=norig
     minval=min(array)-.5*darray(0) ;assume linearly-symmetric bins as input
-    maxval=max(array)+.5*darray(nupdate-1) ;assume linearly-symmetric bins as input
+    maxval=max(array)+.5*darray(norig-1) ;assume linearly-symmetric bins as input
     pdf=dblarr(nnew)
     if minval le 0. then logrange=0 else logrange=1
     if minval ne maxval then begin
@@ -246,7 +238,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chipmc=dblarr(nphysmc)+chip
     endif
     
-    nrnd=3*nphysmc
+    nredo=0
+    nredomax=floor(nphysmc/3.)
+    nrnd=3*(nphysmc+nredomax)
     randomarr=randomu(systime(1),nrnd)
     gaussarr=randomn(systime(1),nrnd)
     irnd=long(0)
@@ -254,6 +248,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     
     tstariso_rerr=0.5*(tstariso_rerrmin+tstariso_rerrmax)
     for i=0L,nphysmc-1 do begin ;do Monte Carlo error propagation
+        redo=0
         tstarisomc(i)=tstariso+gaussarr(igauss)*tstariso_rerr*tstariso
         xi=tstarisomc(i)/tstariso
         igauss+=1
@@ -297,6 +292,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         rpeakstarmc(i)=f_rpeak(zetastarmc(i),lambdamc(i))
         rpeakgasmc(i)=f_rpeak(zetagasmc(i),lambdamc(i))
         vfbmc(i)=f_vfb(tovermc(i),lambdamc(i))
+        if min(finite([tstarisomc(i),tgasmc(i),tovermc(i),lambdamc(i),tstarmc(i),ttotalmc(i),betastarmc(i),betagasmc(i),rpeakstarmc(i),rpeakgasmc(i),zetastarmc(i),zetagasmc(i),vfbmc(i)])) eq 0 then redo=1
         if complete then begin
             tdeplmc(i)=surfgasmc(i)/surfsfrmc(i)/1.d9
             esfmc(i)=f_esf(tgasmc(i),tdeplmc(i),fcl,fgmc)
@@ -306,6 +302,13 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             etaavgmc(i)=f_etaavg(esfmc(i))
             chiemc(i)=f_chie(tovermc(i),esfmc(i),vfbmc(i),psie)
             chipmc(i)=f_chip(tovermc(i),esfmc(i),vfbmc(i),psip)
+        if min(finite([surfsfrmc(i),surfgasmc(i),tdeplmc(i),esfmc(i),mdotsfmc(i),mdotfbmc(i),etainstmc(i),etaavgmc(i),chiemc(i),chipmc(i)])) eq 0 then redo=1
+        endif
+        
+        if redo eq 1 then begin ;if any Infinity or NaN has been found, redo draw
+            i=i-1
+            nredo+=1
+            if nredo eq nredomax then f_error,['too many Infinity or NaN values encountered in Monte-Carlo error propagation','chi^2 landscape is too sparsely sampled to converge, please verify quality of best fit']
         endif
         
         progress,'     ==> derived quantity error propagation progress',i,nphysmc-1
@@ -440,104 +443,104 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             
     ;plot PDFs and write tables
     print,'     ==> plotting PDFs and writing them to output directory'
-    dummy=f_createpdf(tstarmc,dtstarmc,cumdistr,ntry,'tstar')
+    dummy=f_createpdf(tstarmc,dtstarmc,cumdistr,ntry)
     tstararr=dummy(*,0)
     dtstar=dummy(*,1)
     probtstar=dummy(*,2)
     report=f_plotdistr(tstararr,dtstar,probtstar,tstar,tstar_errmin,tstar_errmax,galaxy,figdir,'tstar','!8t!6!Dstar!N','!6Myr',0)
     report=f_writepdf(alog10(tstararr),alog10(dtstar),alog10(probtstar),galaxy,outputdir,'tstar','# log10(tstar[Myr]), log10(dtstar[Myr]), log10(PDF[Myr^-1])')
-    dummy=f_createpdf(ttotalmc,dttotalmc,cumdistr,ntry,'ttotal')
+    dummy=f_createpdf(ttotalmc,dttotalmc,cumdistr,ntry)
     ttotalarr=dummy(*,0)
     dttotal=dummy(*,1)
     probttotal=dummy(*,2)
     report=f_plotdistr(ttotalarr,dttotal,probttotal,ttotal,ttotal_errmin,ttotal_errmax,galaxy,figdir,'ttotal','!7s!6','!6Myr',0)
     report=f_writepdf(alog10(ttotalarr),alog10(dttotal),alog10(probttotal),galaxy,outputdir,'ttotal','# log10(ttotal[Myr]), log10(dttotal[Myr]), log10(PDF[Myr^-1])')
-    dummy=f_createpdf(betastarmc,dbetastarmc,cumdistr,ntry,'betastar')
+    dummy=f_createpdf(betastarmc,dbetastarmc,cumdistr,ntry)
     betastararr=dummy(*,0)
     dbetastar=dummy(*,1)
     probbetastar=dummy(*,2)
     report=f_plotdistr(betastararr,dbetastar,probbetastar,betastar,betastar_errmin,betastar_errmax,galaxy,figdir,'betastar','!7b!6!Dstar!N','',0)
     report=f_writepdf(alog10(betastararr),alog10(dbetastar),alog10(probbetastar),galaxy,outputdir,'betastar','# log10(betastar), log10(dbetastar), log10(PDF)')
-    dummy=f_createpdf(betagasmc,dbetagasmc,cumdistr,ntry,'betagas')
+    dummy=f_createpdf(betagasmc,dbetagasmc,cumdistr,ntry)
     betagasarr=dummy(*,0)
     dbetagas=dummy(*,1)
     probbetagas=dummy(*,2)
     report=f_plotdistr(betagasarr,dbetagas,probbetagas,betagas,betagas_errmin,betagas_errmax,galaxy,figdir,'betagas','!7b!6!Dgas!N','',0)
     report=f_writepdf(alog10(betagasarr),alog10(dbetagas),alog10(probbetagas),galaxy,outputdir,'betagas','# log10(betagas), log10(dbetagas), log10(PDF)')
-    dummy=f_createpdf(zetastarmc,dzetastarmc,cumdistr,ntry,'zetastar')
+    dummy=f_createpdf(zetastarmc,dzetastarmc,cumdistr,ntry)
     zetastararr=dummy(*,0)
     dzetastar=dummy(*,1)
     probzetastar=dummy(*,2)
     report=f_plotdistr(zetastararr,dzetastar,probzetastar,zetastar,zetastar_errmin,zetastar_errmax,galaxy,figdir,'zetastar','!7f!6!Dstar!N','',0)
     report=f_writepdf(alog10(zetastararr),alog10(dzetastar),alog10(probzetastar),galaxy,outputdir,'zetastar','# log10(zetastar), log10(dzetastar), log10(PDF)')
-    dummy=f_createpdf(zetagasmc,dzetagasmc,cumdistr,ntry,'zetagas')
+    dummy=f_createpdf(zetagasmc,dzetagasmc,cumdistr,ntry)
     zetagasarr=dummy(*,0)
     dzetagas=dummy(*,1)
     probzetagas=dummy(*,2)
     report=f_plotdistr(zetagasarr,dzetagas,probzetagas,zetagas,zetagas_errmin,zetagas_errmax,galaxy,figdir,'zetagas','!7f!6!Dgas!N','',0)
     report=f_writepdf(alog10(zetagasarr),alog10(dzetagas),alog10(probzetagas),galaxy,outputdir,'zetagas','# log10(zetagas), log10(dzetagas), log10(PDF)')
-    dummy=f_createpdf(rpeakstarmc,drpeakstarmc,cumdistr,ntry,'rpeakstar')
+    dummy=f_createpdf(rpeakstarmc,drpeakstarmc,cumdistr,ntry)
     rpeakstararr=dummy(*,0)
     drpeakstar=dummy(*,1)
     probrpeakstar=dummy(*,2)
     report=f_plotdistr(rpeakstararr,drpeakstar,probrpeakstar,rpeakstar,rpeakstar_errmin,rpeakstar_errmax,galaxy,figdir,'rpeakstar','!8r!6!Dstar!N','!6pc',0)
     report=f_writepdf(alog10(rpeakstararr),alog10(drpeakstar),alog10(probrpeakstar),galaxy,outputdir,'rpeakstar','# log10(rpeakstar[pc]), log10(drpeakstar[pc]), log10(PDF[pc^-1])')
-    dummy=f_createpdf(rpeakgasmc,drpeakgasmc,cumdistr,ntry,'rpeakgas')
+    dummy=f_createpdf(rpeakgasmc,drpeakgasmc,cumdistr,ntry)
     rpeakgasarr=dummy(*,0)
     drpeakgas=dummy(*,1)
     probrpeakgas=dummy(*,2)
     report=f_plotdistr(rpeakgasarr,drpeakgas,probrpeakgas,rpeakgas,rpeakgas_errmin,rpeakgas_errmax,galaxy,figdir,'rpeakgas','!8r!6!Dgas!N','!6pc',0)
     report=f_writepdf(alog10(rpeakgasarr),alog10(drpeakgas),alog10(probrpeakgas),galaxy,outputdir,'rpeakgas','# log10(rpeakgas[pc]), log10(drpeakgas[pc]), log10(PDF[pc^-1])')
-    dummy=f_createpdf(vfbmc,dvfbmc,cumdistr,ntry,'vfb')
+    dummy=f_createpdf(vfbmc,dvfbmc,cumdistr,ntry)
     vfbarr=dummy(*,0)
     dvfb=dummy(*,1)
     probvfb=dummy(*,2)
     report=f_plotdistr(vfbarr,dvfb,probvfb,vfb,vfb_errmin,vfb_errmax,galaxy,figdir,'vfb','!8v!6!Dfb!N','!6km s!U-1!N',0)
     report=f_writepdf(alog10(vfbarr),alog10(dvfb),alog10(probvfb),galaxy,outputdir,'vfb','# log10(vfb[km s^-1]), log10(dvfb[km s^-1]), log10(PDF[km^-1 s])')
     if complete then begin
-        dummy=f_createpdf(tdeplmc,dtdeplmc,cumdistr,ntry,'tdepl')
+        dummy=f_createpdf(tdeplmc,dtdeplmc,cumdistr,ntry)
         tdeplarr=dummy(*,0)
         dtdepl=dummy(*,1)
         probtdepl=dummy(*,2)
         report=f_plotdistr(tdeplarr,dtdepl,probtdepl,tdepl,tdepl_errmin,tdepl_errmax,galaxy,figdir,'tdepl','!8t!6!Ddepl!N','!6Gyr',0)
         report=f_writepdf(alog10(tdeplarr),alog10(dtdepl),alog10(probtdepl),galaxy,outputdir,'tdepl','# log10(tdepl[Gyr]), log10(dtdepl[Gyr]), log10(PDF[Gyr^-1])')
-        dummy=f_createpdf(esfmc,desfmc,cumdistr,ntry,'esf')
+        dummy=f_createpdf(esfmc,desfmc,cumdistr,ntry)
         esfarr=dummy(*,0)
         desf=dummy(*,1)
         probesf=dummy(*,2)
         report=f_plotdistr(esfarr,desf,probesf,esf,esf_errmin,esf_errmax,galaxy,figdir,'esf','!7e!6!Dsf!N','',0)
         report=f_writepdf(alog10(esfarr),alog10(desf),alog10(probesf),galaxy,outputdir,'esf','# log10(esf), log10(desf), log10(PDF)')
-        dummy=f_createpdf(mdotsfmc,dmdotsfmc,cumdistr,ntry,'mdotsf')
+        dummy=f_createpdf(mdotsfmc,dmdotsfmc,cumdistr,ntry)
         mdotsfarr=dummy(*,0)
         dmdotsf=dummy(*,1)
         probmdotsf=dummy(*,2)
         report=f_plotdistr(mdotsfarr,dmdotsf,probmdotsf,mdotsf,mdotsf_errmin,mdotsf_errmax,galaxy,figdir,'mdotsf','!6(d!8M!6/d!8t!6)!Dsf!N','!6M!D!9n!6!N yr!U-1!N',0)
         report=f_writepdf(alog10(mdotsfarr),alog10(dmdotsf),alog10(probmdotsf),galaxy,outputdir,'mdotsf','# log10(mdotsf[Msun yr^-1]), log10(dmdotsf[Msun yr^-1]), log10(PDF[Msun^-1 yr])')
-        dummy=f_createpdf(mdotfbmc,dmdotfbmc,cumdistr,ntry,'mdotfb')
+        dummy=f_createpdf(mdotfbmc,dmdotfbmc,cumdistr,ntry)
         mdotfbarr=dummy(*,0)
         dmdotfb=dummy(*,1)
         probmdotfb=dummy(*,2)
         report=f_plotdistr(mdotfbarr,dmdotfb,probmdotfb,mdotfb,mdotfb_errmin,mdotfb_errmax,galaxy,figdir,'mdotfb','!6(d!8M!6/d!8t!6)!Dfb!N','!6M!D!9n!6!N yr!U-1!N',0)
         report=f_writepdf(alog10(mdotfbarr),alog10(dmdotfb),alog10(probmdotfb),galaxy,outputdir,'mdotfb','# log10(mdotfb[Msun yr^-1]), log10(dmdotfb[Msun yr^-1]), log10(PDF[Msun^-1 yr])')
-        dummy=f_createpdf(etainstmc,detainstmc,cumdistr,ntry,'etainst')
+        dummy=f_createpdf(etainstmc,detainstmc,cumdistr,ntry)
         etainstarr=dummy(*,0)
         detainst=dummy(*,1)
         probetainst=dummy(*,2)
         report=f_plotdistr(etainstarr,detainst,probetainst,etainst,etainst_errmin,etainst_errmax,galaxy,figdir,'etainst','!7g!6!Dfb!N','',0)
         report=f_writepdf(alog10(etainstarr),alog10(detainst),alog10(probetainst),galaxy,outputdir,'etainst','# log10(etainst), log10(detainst), log10(PDF)')
-        dummy=f_createpdf(etaavgmc,detaavgmc,cumdistr,ntry,'etaavg')
+        dummy=f_createpdf(etaavgmc,detaavgmc,cumdistr,ntry)
         etaavgarr=dummy(*,0)
         detaavg=dummy(*,1)
         probetaavg=dummy(*,2)
         report=f_plotdistr(etaavgarr,detaavg,probetaavg,etaavg,etaavg_errmin,etaavg_errmax,galaxy,figdir,'etaavg','!6<!7g!6!Dfb!N>','',0)
         report=f_writepdf(alog10(etaavgarr),alog10(detaavg),alog10(probetaavg),galaxy,outputdir,'etaavg','# log10(etaavg), log10(detaavg), log10(PDF)')
-        dummy=f_createpdf(chiemc,dchiemc,cumdistr,ntry,'chie')
+        dummy=f_createpdf(chiemc,dchiemc,cumdistr,ntry)
         chiearr=dummy(*,0)
         dchie=dummy(*,1)
         probchie=dummy(*,2)
         report=f_plotdistr(chiearr,dchie,probchie,chie,chie_errmin,chie_errmax,galaxy,figdir,'chie','!7v!6!Dfb,!8E!6!N','',0)
         report=f_writepdf(alog10(chiearr),alog10(dchie),alog10(probchie),galaxy,outputdir,'chie','# log10(chie), log10(dchie), log10(PDF)')
-        dummy=f_createpdf(chipmc,dchipmc,cumdistr,ntry,'chip')
+        dummy=f_createpdf(chipmc,dchipmc,cumdistr,ntry)
         chiparr=dummy(*,0)
         dchip=dummy(*,1)
         probchip=dummy(*,2)
