@@ -302,7 +302,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             etaavgmc(i)=f_etaavg(esfmc(i))
             chiemc(i)=f_chie(tovermc(i),esfmc(i),vfbmc(i),psie)
             chipmc(i)=f_chip(tovermc(i),esfmc(i),vfbmc(i),psip)
-        if min(finite([surfsfrmc(i),surfgasmc(i),tdeplmc(i),esfmc(i),mdotsfmc(i),mdotfbmc(i),etainstmc(i),etaavgmc(i),chiemc(i),chipmc(i)])) eq 0 then redo=1
+            if min(finite([surfsfrmc(i),surfgasmc(i),tdeplmc(i),esfmc(i),mdotsfmc(i),mdotfbmc(i),etainstmc(i),etaavgmc(i),chiemc(i),chipmc(i)])) eq 0 then redo=1
         endif
         
         if redo eq 1 then begin ;if any Infinity or NaN has been found, redo draw
