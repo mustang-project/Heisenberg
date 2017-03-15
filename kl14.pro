@@ -31,9 +31,7 @@
  yr = 86400.*365.25           ; sidereal year		[s]
  myr = 1.d6*yr
  kms = 1.d3
-                                ; compile programs
-
-
+                                ; compile programs                               
 .com derivefunc
 .com clfind2d
 .com clplot2d
@@ -61,5 +59,3 @@ if keyword_set(COMMAND_LINE_ARGS()) then inputfile=COMMAND_LINE_ARGS() $
                                     else read,' please specify the full/absolute path of the input file (enter 0 to stop autorun): ',inputfile
 
 .run tuningfork
-
-;exit
