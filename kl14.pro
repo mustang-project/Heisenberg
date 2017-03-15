@@ -32,20 +32,27 @@
  myr = 1.d6*yr
  kms = 1.d3
                                 ; compile programs
+
+
+.com derivefunc
 .com clfind2d
 .com clplot2d
 .com clstats2d
 .com smoothfits
 .com peaks2d
 .com fitKL14
-.com derivefunc
 .com derivephys
 .com plotfits
 .com plotfits_files
 .com strsplit
 .com strnumber
 .com astrometry_equal
-.com mask_inside_circle.com mask_inside_ellipse.com mask_ds9_box_vertices.com mask_ds9_file_convert.com mask_ds9_file_mask.com mask_tool.pro
+.com mask_inside_circle
+.com mask_inside_ellipse
+.com mask_ds9_box_vertices
+.com mask_ds9_file_convert
+.com mask_ds9_file_mask
+.com mask_tool.pro
 .com f_error.pro
 .com f_string.pro
 
@@ -55,3 +62,4 @@ if keyword_set(COMMAND_LINE_ARGS()) then inputfile=COMMAND_LINE_ARGS() $
 
 .run tuningfork
 
+;exit
