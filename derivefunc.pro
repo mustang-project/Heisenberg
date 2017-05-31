@@ -2,9 +2,10 @@
 
 function f_zeta,surfcontrast,ttot,tref,peak_prof ;Tracer peak concentration parameter
     COMMON numbers
+    if surfcontrast lt 1. then surfcontrast=1.
     if peak_prof eq 0 then zeta=tiny
-    if peak_prof eq 1 then zeta=sqrt(ttot/(surfcontrast*tref))
-    if peak_prof eq 2 then zeta=sqrt(ttot/(2.*surfcontrast*tref))
+    if peak_prof eq 1 then zeta=sqrt((ttot/tref)/(surfcontrast*(1.+ttot/tref)-1.))
+    if peak_prof eq 2 then zeta=sqrt((ttot/tref)/(2.*surfcontrast*(1.+ttot/tref)-2.))
     return,zeta
 end
 

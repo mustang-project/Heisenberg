@@ -615,6 +615,8 @@ if id_peaks then begin
     peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
     peakmeanradius=mean(peakradius(inclpeaks))
     lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
+    lambda_map_star=2.*sqrt(totalarea/nincludepeak_star/!pi) ;geometric lambda from map area assuming points are randomly distributed
+    lambda_map_gas=2.*sqrt(totalarea/nincludepeak_gas/!pi) ;geometric lambda from map area assuming points are randomly distributed
 endif
 
 
@@ -701,7 +703,7 @@ endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 if get_distances then begin
-    distances_all=fltarr(nincludepeak,nincludepeak) ;peak-peak distances (half-filled to avoid double counting)
+    distances_all=dblarr(nincludepeak,nincludepeak) ;peak-peak distances (half-filled to avoid double counting)
     for i=0,nincludepeak-1 do begin
         for j=i+1,nincludepeak-1 do begin ;avoid counting pairs twice
             ipeak1=inclpeaks(i)
@@ -762,8 +764,6 @@ if calc_obs then begin
     nusegasiso=dblarr(nmc,nincludepeak_gas+1) ;number of used isolated gas peaks in MC sample
     nstarmc=dblarr(naperture)
     ngasmc=dblarr(naperture)
-    nstarisomc=dblarr(nincludepeak_star+1)
-    ngasisomc=dblarr(nincludepeak_gas+1)
     fstarover=dindgen(nincludepeak_star+1)/double(nincludepeak_star)
     fgasover=dindgen(nincludepeak_gas+1)/double(nincludepeak_gas)
     betastarmc=dblarr(nmc,nincludepeak_star+1) ;betastar for each MC realisation and each possible value of tover
@@ -820,20 +820,18 @@ if calc_obs then begin
             usedgas=reform(usegas(j,0:nusegas(i,j)-1)) ;IDs of gas peaks used in this MC sample
             nusedgas=n_elements(usedgas) ;number of gas peaks used in this MC sample
             usedgascount=dindgen(nusedgas) ;array to count used gas peaks
-            totgas_star(i,j)=max([0.,total(gasflux(i,inclstar(usedstar)),/nan)]) ;total gas flux in apertures centered on SF peaks (must be > 0)
-            totstar_star(i,j)=max([0.,total(starflux(i,inclstar(usedstar)),/nan)]) ;total SF flux in apertures centered on SF peaks (must be > 0)
-            totgas_gas(i,j)=max([0.,total(gasflux(i,inclgas(usedgas)),/nan)]) ;total gas flux in apertures centered on gas peaks (must be > 0)
-            totstar_gas(i,j)=max([0.,total(starflux(i,inclgas(usedgas)),/nan)]) ;total SF flux in apertures centered on gas peaks (must be > 0)
+            totgas_star(i,j)=max([tiny,total(gasflux(i,inclstar(usedstar)),/nan)]) ;total gas flux in apertures centered on SF peaks (must be > 0)
+            totstar_star(i,j)=max([tiny,total(starflux(i,inclstar(usedstar)),/nan)]) ;total SF flux in apertures centered on SF peaks (must be > 0)
+            totgas_gas(i,j)=max([tiny,total(gasflux(i,inclgas(usedgas)),/nan)]) ;total gas flux in apertures centered on gas peaks (must be > 0)
+            totstar_gas(i,j)=max([tiny,total(starflux(i,inclgas(usedgas)),/nan)]) ;total SF flux in apertures centered on gas peaks (must be > 0)
             apertures_star_mc(i,j)=apertures[i]*sqrt(mean(aperturearea_frac[i,inclstar(usedstar)])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
             apertures_gas_mc(i,j)=apertures[i]*sqrt(mean(aperturearea_frac[i,inclgas(usedgas)])) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
             if i eq peak_res then begin ;determine Monte Carlo betastar and betagas based on fractional timescale coverage of each phase projected onto list of peaks sorted by gas fraction-to-star fraction ratio
-                star_gascon=gasflux(i,inclstar(usedstar))/(gasfluxtotal/totalarea) ;excess gas flux around SF peak
-                star_starcon=starflux(i,inclstar(usedstar))/(starfluxtotal/totalarea) ;excess SF flux around SF peak
-                starratio=reform(star_gascon/star_starcon) ;ratio of excess gas flux to excess SF flux around SF peak
-                sortstarratio=reverse(sort(starratio)) ;reverse-sort the above, i.e. in order of decreasing excess ratio and thus of increasing SF peak prominence relative to associated gas peak
+                starratio=reform(gasflux(i,inclstar(usedstar))/starflux(i,inclstar(usedstar))) ;ratio of gas flux to SF flux around SF peak
+                sortstarratio=reverse(sort(starratio)) ;reverse-sort the above, i.e. in order of decreasing ratio and thus of increasing SF peak prominence relative to associated gas peak
                 nstarover=fstarover*nusedstar ;number of SF peaks in overlap
-                kminstar=min(where(nstarover gt 0)) ;avoid case of no overlap
-                kmaxstar=max(where(nstarover lt nusedstar)) ;avoid case of all overlap
+                kminstar=min(where(nstarover gt 1)) ;avoid case of no overlap
+                kmaxstar=max(where(nstarover lt nusedstar-1)) ;avoid case of all overlap
                 for k=kminstar,kmaxstar do begin
                     star_critcon=interpol(starratio(sortstarratio),usedstarcount,nstarover(k)) ;critical difference in contrast with respect to background between gas and SF emission to call it an isolated SF peak
                     i_stariso=where(starratio le star_critcon,nusestarisotemp) ;IDs of isolated SF peaks
@@ -844,15 +842,13 @@ if calc_obs then begin
                         betastarmc(j,k)=mean(starflux(i,inclstar(usedstar(i_starover))))/mean(starflux(i,inclstar(usedstar(i_stariso)))) ;define betastar as ratio between mean overlapping and isolated SF peak fluxes
                     endif else betastarmc(j,k)=1. ;if no isolated SF peaks exist or all SF peaks are isolated, set betastar=1
                 endfor
-                if kminstar gt 0 then betastarmc(j,0:kminstar-1)=betastarmc(j,kminstar) ;extrapolate beta for no overlap case(s)
-                if kmaxstar lt nusedstar then betastarmc(j,kmaxstar+1:nusedstar)=betastarmc(j,kmaxstar) ;extrapolate beta for all overlap case(s)
-                gas_gascon=gasflux(i,inclgas(usedgas))/(gasfluxtotal/totalarea) ;excess gas flux around gas peak
-                gas_starcon=starflux(i,inclgas(usedgas))/(starfluxtotal/totalarea) ;excess SF flux around gas peak
-                gasratio=reform(gas_starcon/gas_gascon) ;ratio of excess SF flux to excess gas flux around gas peak
-                sortgasratio=reverse(sort(gasratio)) ;reverse-sort the above, i.e. in order of decreasing excess ratio and thus of increasing gas peak prominence relative to associated SF peak
+                if kminstar gt 0 then betastarmc(j,0:kminstar-1)=betastarmc(j,kminstar) ;extend beta for no overlap case(s)
+                if kmaxstar lt nusedstar then betastarmc(j,kmaxstar+1:nusedstar)=betastarmc(j,kmaxstar) ;extend beta for all overlap case(s)
+                gasratio=reform(starflux(i,inclgas(usedgas))/gasflux(i,inclgas(usedgas))) ;ratio of SF flux to excess gas flux around gas peak
+                sortgasratio=reverse(sort(gasratio)) ;reverse-sort the above, i.e. in order of decreasing ratio and thus of increasing gas peak prominence relative to associated SF peak
                 ngasover=fgasover*nusedgas ;number of gas peaks in overlap
-                kmingas=min(where(ngasover gt 0)) ;avoid case of no overlap
-                kmaxgas=max(where(ngasover lt nusedgas)) ;avoid case of all overlap
+                kmingas=min(where(ngasover gt 1)) ;avoid case of no overlap
+                kmaxgas=max(where(ngasover lt nusedgas-1)) ;avoid case of all overlap
                 for k=kmingas,kmaxgas do begin
                     gas_critcon=interpol(gasratio(sortgasratio),usedgascount,ngasover(k)) ;critical difference in contrast with respect to background between gas and SF emission to call it an isolated gas peak
                     i_gasiso=where(gasratio le gas_critcon,nusegasisotemp) ;IDs of isolated gas peaks
@@ -863,11 +859,12 @@ if calc_obs then begin
                         betagasmc(j,k)=mean(gasflux(i,inclgas(usedgas(i_gasover))))/mean(gasflux(i,inclgas(usedgas(i_gasiso)))) ;define betagas as ratio between mean overlapping and isolated gas peak fluxes
                     endif else betagasmc(j,k)=1. ;if no isolated gas peaks exist or all gas peaks are isolated, set betagas=1
                 endfor
-                if kmingas gt 0 then betagasmc(j,0:kmingas-1)=betagasmc(j,kmingas) ;extrapolate beta for no overlap case(s)
-                if kmaxgas lt nusedgas then betagasmc(j,kmaxgas+1:nusedgas)=betagasmc(j,kmaxgas) ;extrapolate beta for all overlap case(s)
+                if kmingas gt 0 then betagasmc(j,0:kmingas-1)=betagasmc(j,kmingas) ;extend beta for no overlap case(s)
+                if kmaxgas lt nusedgas then betagasmc(j,kmaxgas+1:nusedgas)=betagasmc(j,kmaxgas) ;extend beta for all overlap case(s)
             endif
             progress,'     ==> Monte-Carlo sampling peak maps to get uncorrelated peak samples',j+i*nmc,nmc*naperture-1
         endfor
+        
         ;APERTURE AREAS
         if calc_ap_area then begin ;calculate aperture area
             apertures_star[i]=mean(apertures_star_mc[i,*]) ;mean aperture size centred on SF peaks for ith target aperture size (order of sqrt(mean) is intentional)
@@ -904,6 +901,7 @@ if calc_obs then begin
         ;get total error
         err_star(i)=sqrt(err_sens_star2(i)+err_apgas_star2(i)+err_apstar_star2(i)+err_apcov_star2(i))*fluxratio_star(i)
         err_star_log(i)=err_star(i)/fluxratio_star(i)/alog(10.) ;error in log space
+        
         ;APERTURES CENTERED ON GAS PEAKS -- obtain data points and errors
         ngasmc(i)=mean(nusegas(i,*)) ;mean number of gas peaks
         for k=0,nincludepeak_gas do begin
@@ -952,14 +950,19 @@ if calc_obs then begin
         nfitgas(i)=.5/total(corrgas_gas(i,*))+.5/total(corrstar_gas(i,*)) ;take the mean of the number of independent datapoints for the numerator and the denominator (for N=>inf 1/2+1/2N is right, but 2/(1+N) is wrong)
         nfitstar(i)=.5/total(corrgas_star(i,*))+.5/total(corrstar_star(i,*))
     endfor
-    surfcontrasts=meantotstar_star(peak_res)/meantotstar_star(max_res)*nstarmc(max_res)/nstarmc(peak_res)-1. ;surface density contrast of SF peak - the -1 subtracts background & isolates the peak contribution
-    surfcontrastg=meantotgas_gas(peak_res)/meantotgas_gas(max_res)*ngasmc(max_res)/ngasmc(peak_res)-1. ;surface density contrast of gas peak - the -1 subtracts background & isolates the peak contribution
+    surfglobals=meantotstar_star/nstarmc/starfluxtotal*totalarea ;surface density of SF peak relative to entire map
+    surfglobalg=meantotgas_gas/ngasmc/gasfluxtotal*totalarea ;surface density of SF peak relative to entire map
+    surfcontrasts=dblarr(naperture)
+    surfcontrastg=dblarr(naperture)
+    for i=peak_res,max_res do begin
+        surfcontrasts(i)=max([1.,meantotstar_star(peak_res)/meantotstar_star(i)*nstarmc(i)/nstarmc(peak_res)],/nan) ;surface density contrast of SF peak
+        surfcontrastg(i)=max([1.,meantotgas_gas(peak_res)/meantotgas_gas(i)*ngasmc(i)/ngasmc(peak_res)],/nan) ;surface density contrast of gas peak
+    endfor
     bias_star=fluxratio_star/fluxratio_galaxy
     bias_gas=fluxratio_gas/fluxratio_galaxy
     err_star=err_star/fluxratio_galaxy ;scale linear error -- log error is unchanged
     err_gas=err_gas/fluxratio_galaxy ;scale linear error -- log error is unchanged
 endif
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;FIT KL14 PRINCIPLE TO DATA;
@@ -970,8 +973,8 @@ if calc_fit then begin
 
     fit=fitKL14(fluxratio_star[fitap]/fluxratio_galaxy,fluxratio_gas[fitap]/fluxratio_galaxy, $
                 err_star_log[fitap],err_gas_log[fitap],tstariso,beta_star,beta_gas,fstarover,fgasover,apertures_star[fitap],apertures_gas[fitap], $
-                surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,tovermaxi,nfitstar[fitap],nfitgas[fitap], $
-                ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir, window_plot)
+                surfcontrasts[fitap],surfcontrastg[fitap],peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,tovermaxi,nfitstar[fitap],nfitgas[fitap], $
+                ndepth,ntry,galaxy,figdir,generate_plot,outputdir,arrdir,window_plot)
     tgas=fit(1)
     tgas_errmin=sqrt(fit(2)^2.+(tgas*tstariso_rerrmin)^2.)
     tgas_errmax=sqrt(fit(3)^2.+(tgas*tstariso_rerrmax)^2.)
@@ -985,17 +988,16 @@ if calc_fit then begin
     ttotal=tgas+tstar-tover
     beta_star_fit=fit(10)
     beta_gas_fit=fit(11)
+    surfcontrasts_fit=fit(12)
+    surfcontrastg_fit=fit(13)
     redchi2=fit(0)
     fit=fit(0:9)
 
-    if peak_prof le 1 then begin
-        rpeaks=0.5*lambda*sqrt(ttotal/(surfcontrasts*tstar)) ; ~lambda*((tgas/tstariso+1)/(tover/tstariso+1))^.5 (if tstar_incl=0) or ~lambda*((tgas/tstariso-tover/tstariso+1)^.5 (if tstar_incl=1)
-        rpeakg=0.5*lambda*sqrt(ttotal/(surfcontrastg*tgas)) ; ~lambda*(1+tstariso/tgas)^.5 (if tstar_incl=0) or ~lambda*((tstariso/tgas-tover/tgas+1)^.5 (if tstar_incl=1)
-    endif
-    if peak_prof eq 2 then begin
-        rpeaks=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrasts*tstar))
-        rpeakg=0.5/sqrt(2.)*lambda*sqrt(ttotal/(2.*alog(2.)*surfcontrastg*tgas))
-    endif
+    zetas=f_zeta(surfcontrasts_fit,ttotal,tstar,peak_prof)
+    zetag=f_zeta(surfcontrastg_fit,ttotal,tgas,peak_prof)
+    rpeaks=f_rpeak(zetas,lambda)
+    rpeakg=f_rpeak(zetag,lambda)
+    
     if tstar_incl eq 0 then terrs=0. else terrs=0.
     if tstar_incl eq 0 then terrg=0. else terrg=0.
 
@@ -1047,10 +1049,14 @@ if derive_phys then begin
     if map_units gt 0 then begin
         ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
                 fcl,fcl*convstar_err/convstar,fcl*convstar_err/convstar,fgmc,fgmc*convgas_err/convgas,fgmc*convgas_err/convgas]+tiny
-        der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
-                                                tstar_incl,surfcontrasts,surfcontrastg,lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
-    endif else der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax, $
-                                                tstar_incl,surfcontrasts,surfcontrastg,lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
+        der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
+                       tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
+                       surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
+                       lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
+    endif else der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
+                   tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
+                   surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
+                   lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
     aux=[nincludepeak_star,nincludepeak_gas,lap_min]
 endif
 
@@ -1111,24 +1117,28 @@ if write_output then begin
                             extad+' '+extqty(15)+', '+extqty(16)+', '+extqty(17)+' ['+extunit(5)+']']
 
     if map_units gt 0 then begin
-        derqty=['tdepl','tdepl_errmin','tdepl_errmax', $
-                'tstar','tstar_errmin','tstar_errmax', $
+        derqty=['tstar','tstar_errmin','tstar_errmax', $
                 'ttotal','ttotal_errmin','ttotal_errmax', $
                 'betastar','betastar_errmin','betastar_errmax', $
                 'betagas','betagas_errmin','betagas_errmax', $
+                'surfglobalstar','surfglobalstar_errmin','surfglobalstar_errmax', $
+                'surfglobalgas','surfglobalgas_errmin','surfglobalgas_errmax', $
+                'surfconstar','surfconstar_errmin','surfconstar_errmax', $
+                'surfcongas','surfcongas_errmin','surfcongas_errmax', $
                 'zetastar','zetastar_errmin','zetastar_errmax', $
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
+                'vfb','vfb_errmin','vfb_errmax', $
+                'tdepl','tdepl_errmin','tdepl_errmax', $
                 'esf','esf_errmin','esf_errmax', $
                 'mdotsf','mdotsf_errmin','mdotsf_errmax', $
                 'mdotfb','mdotfb_errmin','mdotfb_errmax', $
-                'vfb','vfb_errmin','vfb_errmax', $
                 'etainst','etainst_errmin','etainst_errmax', $
                 'etaavg','etaavg_errmin','etaavg_errmax', $
                 'chie','chie_errmin','chie_errmax', $
                 'chip','chip_errmin','chip_errmax']
-        derunit=['Gyr','Myr','Myr','','','','','pc','pc','','Msun yr^-1','Msun yr^-1','km s^-1','','','','']
+        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1146,18 +1156,26 @@ if write_output then begin
                     derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
                     derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']', $
                     derad+' '+derqty(45)+', '+derqty(46)+', '+derqty(47)+' ['+derunit(15)+']', $
-                    derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']']
+                    derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']', $
+                    derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
+                    derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']', $
+                    derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
+                    derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']']
     endif else begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
                 'ttotal','ttotal_errmin','ttotal_errmax', $
                 'betastar','betastar_errmin','betastar_errmax', $
                 'betagas','betagas_errmin','betagas_errmax', $
+                'surfglobalstar','surfglobalstar_errmin','surfglobalstar_errmax', $
+                'surfglobalgas','surfglobalgas_errmin','surfglobalgas_errmax', $
+                'surfconstar','surfconstar_errmin','surfconstar_errmax', $
+                'surfcongas','surfcongas_errmin','surfcongas_errmax', $
                 'zetastar','zetastar_errmin','zetastar_errmax', $
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
                 'vfb','vfb_errmin','vfb_errmax']
-        derunit=['Myr','Myr','','','','','pc','pc','km s^-1']
+        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1167,7 +1185,11 @@ if write_output then begin
                     derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
                     derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
                     derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
-                    derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']']
+                    derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
+                    derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
+                    derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
+                    derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
+                    derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']']
     endelse
 
     auxqty=['npeak_star','npeak_gas', $
