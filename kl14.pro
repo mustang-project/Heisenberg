@@ -38,6 +38,7 @@
 .com clstats2d
 .com smoothfits
 .com peaks2d
+.com derivefunc
 .com fitKL14
 .com derivephys
 .com plotfits
