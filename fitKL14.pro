@@ -25,15 +25,14 @@ function f_fluxratiostar,tgas,tstar,tover,laps,lambda,beta_gas,surfcontrasts,sur
     nl=n_elements(laps) ;number of aperture sizes
     surfratios=dblarr(nl)
     surfratiog=dblarr(nl)
-    rpeak=rpeaks
     for i=0L,nl-1 do begin
         if peak_prof le 1 then begin
             if rpeaks lt 0.5*laps(i) then surfratios(i)=ttotal/tstar*(lambda/laps(i))^2. else surfratios(i)=surfcontrasts
             if rpeakg lt 0.5*laps(i) then surfratiog(i)=ttotal/tgas*(lambda/laps(i))^2. else surfratiog(i)=surfcontrastg
         endif
         if peak_prof eq 2 then begin
-            surfratios(i)=ttotal/tstar*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeak^2.))
-            surfratiog(i)=ttotal/tgas*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeak^2.))
+            surfratios(i)=ttotal/tstar*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeaks^2.))
+            surfratiog(i)=ttotal/tgas*(lambda/laps(i))^2.*(1.-exp(-laps(i)^2./8./rpeakg^2.))
         endif
     endfor
     others=1.
@@ -52,15 +51,14 @@ function f_fluxratiogas,tgas,tstar,tover,lapg,lambda,beta_star,surfcontrasts,sur
     nl=n_elements(lapg) ;number of aperture sizes
     surfratios=dblarr(nl)
     surfratiog=dblarr(nl)
-    rpeak=rpeakg
     for i=0L,nl-1 do begin
         if peak_prof le 1 then begin
             if rpeaks lt 0.5*lapg(i) then surfratios(i)=ttotal/tstar*(lambda/lapg(i))^2. else surfratios(i)=surfcontrasts
             if rpeakg lt 0.5*lapg(i) then surfratiog(i)=ttotal/tgas*(lambda/lapg(i))^2. else surfratiog(i)=surfcontrastg
         endif
         if peak_prof eq 2 then begin
-            surfratios(i)=ttotal/tstar*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeak^2.))
-            surfratiog(i)=ttotal/tgas*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeak^2.))
+            surfratios(i)=ttotal/tstar*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeaks^2.))
+            surfratiog(i)=ttotal/tgas*(lambda/lapg(i))^2.*(1.-exp(-lapg(i)^2./8./rpeakg^2.))
         endif
     endfor
     others=1.
@@ -161,39 +159,21 @@ function f_writetf_obs,xarraystar,xarraygas,yarraystar,yarraygas,errbarstar,errb
     return,report
 end
 
-function f_writebetastar,farray,betaarray,galaxy,outputdir,commentstring ;write table with betastar curve to file
-    openw,lun,outputdir+galaxy+'_betastar.dat',/get_lun
-    printf,lun,'# Overlap-to-isolated stellar flux ratio output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
+function f_writetab,farray,array,galaxy,outputdir,filename,description,commentstring ;write table to file
+    openw,lun,outputdir+galaxy+'_'+filename+'.dat',/get_lun
+    printf,lun,'# '+description+' output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(farray)
     for i=0L,n-1 do begin
         v1=farray(i)
-        v2=betaarray(i)
+        v2=array(i)
         printf,lun,format='(f12.5,3x,f12.5)',v1,v2
     endfor
     close,lun
     free_lun,lun
-    report='         Overlap-to-isolated stellar flux ratio output written'
-    return,report
-end
-
-function f_writebetagas,farray,betaarray,galaxy,outputdir,commentstring ;write table with betagas curve to file
-    openw,lun,outputdir+galaxy+'_betagas.dat',/get_lun
-    printf,lun,'# Overlap-to-isolated gas flux ratio output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
-    printf,lun,commentstring
-    printf,lun,''
-    n=n_elements(farray)
-    for i=0L,n-1 do begin
-        v1=farray(i)
-        v2=betaarray(i)
-        printf,lun,format='(f12.5,3x,f12.5)',v1,v2
-    endfor
-    close,lun
-    free_lun,lun
-    report='         Overlap-to-isolated gas flux ratio output written'
+    report='         '+description+' output written'
     return,report
 end
 
@@ -254,7 +234,8 @@ function f_plotdistr,array,darray,pdf,value,errmin,errmax,galaxy,figdir,varstrin
 end
 
 function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,beta_star,beta_gas,fstarover,fgasover,apertures_star,apertures_gas, $
-                 surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,tovermaxi,nfitstar,nfitgas,ndepth,ntry,galaxy,figdir,genplot,outputdir,arrdir,window_plot
+                 surfcontrasts,surfcontrastg,peak_prof,tstar_incl,tgasmini,tgasmaxi,tovermini,tovermaxi,nfitstar,nfitgas, $
+                 ndepth,ntry,galaxy,figdir,genplot,outputdir,arrdir,window_plot
 
     COMMON numbers
 
@@ -298,6 +279,12 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         chi2=dblarr(ntry,ntry,ntry)
         fluxratio_star_th=dblarr(ntry,ntry,ntry,napertures)
         fluxratio_gas_th=dblarr(ntry,ntry,ntry,napertures)
+        surfs_use=dblarr(ntry)
+        surfg_use=dblarr(ntry)
+        for k=0L,ntry-1 do begin
+            surfs_use(k)=max([1.,10.^interpol(alog10(surfcontrasts),alog10(apertures_star),alog10(lambdaarr(k)))])
+            surfg_use(k)=max([1.,10.^interpol(alog10(surfcontrastg),alog10(apertures_gas),alog10(lambdaarr(k)))])
+        endfor
         timebefore=systime(1)
         for i=0L,ntry-1 do begin
             tgasarr3d(i,*,*)=tgasarr(i)
@@ -312,8 +299,8 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
                 beta_gas_use=interpol(beta_gas,fgasover,toverarr(j)/tgasarr(i))
                 for k=0L,ntry-1 do begin
                     if toverarr(j) le min(tgasarr(i)) then begin
-                        fluxratio_star_th(i,j,k,*)=f_fluxratiostar(tgasarr(i),tstaruse,toverarr(j),apertures_star,lambdaarr(k),beta_gas_use,surfcontrasts,surfcontrastg,peak_prof)
-                        fluxratio_gas_th(i,j,k,*)=f_fluxratiogas(tgasarr(i),tstaruse,toverarr(j),apertures_gas,lambdaarr(k),beta_star_use,surfcontrasts,surfcontrastg,peak_prof)
+                        fluxratio_star_th(i,j,k,*)=f_fluxratiostar(tgasarr(i),tstaruse,toverarr(j),apertures_star,lambdaarr(k),beta_gas_use,surfs_use(k),surfg_use(k),peak_prof)
+                        fluxratio_gas_th(i,j,k,*)=f_fluxratiogas(tgasarr(i),tstaruse,toverarr(j),apertures_gas,lambdaarr(k),beta_star_use,surfs_use(k),surfg_use(k),peak_prof)
                         diff=[(alog10(fluxratio_star(use)/fluxratio_star_th(i,j,k,use)))^2./err_star_log(use)^2., $
                               (alog10(fluxratio_gas(use)/fluxratio_gas_th(i,j,k,use)))^2./err_gas_log(use)^2.]
                     endif else diff=huge
@@ -371,6 +358,8 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         if tstar_incl eq 0 then tstar=tstariso+tover else tstar=tstariso
         beta_star_best=interpol(beta_star,fstarover,tover/tstar)
         beta_gas_best=interpol(beta_gas,fgasover,tover/tgas)
+        surfs_best=10.^interpol(alog10(surfcontrasts),alog10(apertures_star),alog10(lambda))
+        surfg_best=10.^interpol(alog10(surfcontrastg),alog10(apertures_gas),alog10(lambda))
         probtgascum=total(probtgas*dtgas,/cumulative)
         probtovercum=total(probtover*dtover,/cumulative)
         problambdacum=total(problambda*dlambda,/cumulative)
@@ -475,25 +464,25 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         set_plot,window_plot
         nr=1001
         r=min([apertures_star,apertures_gas])*10.^(dindgen(nr)/(nr-1)*alog10(max([apertures_star,apertures_gas])/min([apertures_star,apertures_gas])))
-        fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_star_best,surfcontrasts,surfcontrastg,peak_prof)
-        fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_gas_best,surfcontrasts,surfcontrastg,peak_prof)
+        fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_star_best,surfs_best,surfg_best,peak_prof)
+        fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_gas_best,surfs_best,surfg_best,peak_prof)
         plot,apertures_star,fluxratio_star_th(ibest,jbest,kbest,*),/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1
         oplot,r,fg,thick=5
         oplot,r,fs,thick=5
         for i=0L,ntry-1,fix(ntry/2.) do begin
             beta_gas_use=interpol(beta_gas,fgasover,toverarr(jbest)/tgasarr(i))
-            fg=f_fluxratiogas(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_star_best,surfcontrasts,surfcontrastg,peak_prof)
-            fs=f_fluxratiostar(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_gas_use,surfcontrasts,surfcontrastg,peak_prof)
+            fg=f_fluxratiogas(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_star_best,surfs_best,surfg_best,peak_prof)
+            fs=f_fluxratiostar(tgasarr(i),tstar,toverarr(jbest),r,lambdaarr(kbest),beta_gas_use,surfs_best,surfg_best,peak_prof)
             oplot,r,fg,linestyle=2
             oplot,r,fs,linestyle=2
             beta_star_use=interpol(beta_star,fstarover,toverarr(i)/tstar)
             beta_gas_use=interpol(beta_gas,fgasover,toverarr(i)/tgasarr(ibest))
-            fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(i),r,lambdaarr(kbest),beta_star_use,surfcontrasts,surfcontrastg,peak_prof)
-            fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(i),r,lambdaarr(kbest),beta_gas_use,surfcontrasts,surfcontrastg,peak_prof)
+            fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(i),r,lambdaarr(kbest),beta_star_use,surfs_best,surfg_best,peak_prof)
+            fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(i),r,lambdaarr(kbest),beta_gas_use,surfs_best,surfg_best,peak_prof)
             oplot,r,fg,linestyle=1
             oplot,r,fs,linestyle=1
-            fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(i),beta_star_best,surfcontrasts,surfcontrastg,peak_prof)
-            fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(i),beta_gas_best,surfcontrasts,surfcontrastg,peak_prof)
+            fg=f_fluxratiogas(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(i),beta_star_best,surfs_use(i),surfg_use(i),peak_prof)
+            fs=f_fluxratiostar(tgasarr(ibest),tstar,toverarr(jbest),r,lambdaarr(i),beta_gas_best,surfs_use(i),surfg_use(i),peak_prof)
             oplot,r,fg,linestyle=3
             oplot,r,fs,linestyle=3
         endfor
@@ -535,11 +524,29 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
 
             nr=1001
             r=min([apertures_star,apertures_gas])*10.^(dindgen(nr)/(nr-1)*alog10(max([apertures_star,apertures_gas])/min([apertures_star,apertures_gas])))
-            fg=f_fluxratiogas(tgas,tstar,tover,r,lambda,beta_star_best,surfcontrasts,surfcontrastg,peak_prof)
-            fs=f_fluxratiostar(tgas,tstar,tover,r,lambda,beta_gas_best,surfcontrasts,surfcontrastg,peak_prof)
-            device,filename=figdir+galaxy+'_fit.eps',xsize=12,ysize=11,/color,bits_per_pixel=8,/encapsulated
             xmin=10.*round(0.5*min(r)/10.)
             xmax=10.*round(2.*max(r)/10.)
+            ymin=.5
+            ymax=ceil(max([surfcontrasts,surfcontrastg]))
+            device,filename=figdir+galaxy+'_surfconstar.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
+            plot,apertures_star,surfcontrasts,/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1,ystyle=1,xtitle='!8l!6!Dap!N',ytitle='!7E!6!Dstar!N',charsize=1.3,xtickformat='logticks'
+            oplot,apertures_star,surfcontrasts
+            oplot,[1,1]*lambda,[ymin,ymax],linestyle=1
+            oplot,[xmin,xmax],[1,1]*surfs_best,linestyle=1
+            oplot,[lambda],[surfs_best],psym=8
+            device,/close
+            
+            device,filename=figdir+galaxy+'_surfcongas.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
+            plot,apertures_gas,surfcontrastg,/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1,ystyle=1,xtitle='!8l!6!Dap!N',ytitle='!7E!6!Dgas!N',charsize=1.3,xtickformat='logticks'
+            oplot,apertures_gas,surfcontrastg
+            oplot,[1,1]*lambda,[ymin,ymax],linestyle=1
+            oplot,[xmin,xmax],[1,1]*surfg_best,linestyle=1
+            oplot,[lambda],[surfg_best],psym=8
+            device,/close
+
+            fg=f_fluxratiogas(tgas,tstar,tover,r,lambda,beta_star_best,surfs_best,surfg_best,peak_prof)
+            fs=f_fluxratiostar(tgas,tstar,tover,r,lambda,beta_gas_best,surfs_best,surfg_best,peak_prof)
+            device,filename=figdir+galaxy+'_fit.eps',xsize=12,ysize=11,/color,bits_per_pixel=8,/encapsulated
             decmin=alog10(min([fs,10.^(alog10(fluxratio_star)-err_star_log)])/2.)
             decminfix=fix(decmin)-1.
             ymin=10.^decminfix*fix(10.^(decmin-decminfix))
@@ -721,9 +728,11 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
         n=n+1
     endwhile
         
-    print,'     ==> writing beta plot data to output directory'
-    report=f_writebetastar(fstarover,beta_star,galaxy,outputdir,'# f_star,over, beta_star')
-    report=f_writebetagas(fgasover,beta_gas,galaxy,outputdir,'# f_gas,over, beta_gas')
+    print,'     ==> writing beta and surfcontrast plot data to output directory'
+    report=f_writetab(fstarover,beta_star,galaxy,outputdir,'betastar','Overlap-to-isolated stellar flux ratio','# f_star,over, beta_star')
+    report=f_writetab(fgasover,beta_gas,galaxy,outputdir,'betagas','Overlap-to-isolated gas flux ratio','# f_gas,over, beta_gas')
+    report=f_writetab(apertures_star,surfcontrasts,galaxy,outputdir,'surfconstar','Peak-to-aperture stellar flux density ratio','# l_ap,star, surfcon_star')
+    report=f_writetab(apertures_gas,surfcontrastg,galaxy,outputdir,'surfcongas','Peak-to-aperture gas flux density ratio','# l_ap,gas, surfcon_gas')
 
     print,'     ==> writing tuningfork plot data to output directory'
     report=f_writetf_model(alog10(r),alog10(fs),alog10(fg),galaxy,outputdir,'# log10(apertures), log10(fluxratio_star_model), log10(fluxratio_gas_model)')
@@ -757,6 +766,6 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
     save,filename=arrdir+'dtoverarr.sav',dtoverarr
     save,filename=arrdir+'dtlambdaarr.sav',dlambdaarr
 
-    return,[minchi2,tgas,tgas_errmin,tgas_errmax,tover,tover_errmin,tover_errmax,lambda,lambda_errmin,lambda_errmax,beta_star_best,beta_gas_best]
+    return,[minchi2,tgas,tgas_errmin,tgas_errmax,tover,tover_errmin,tover_errmax,lambda,lambda_errmin,lambda_errmax,beta_star_best,beta_gas_best,surfs_best,surfg_best]
 
 end
