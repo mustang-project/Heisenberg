@@ -29,8 +29,8 @@ function f_createpdf,array,darray,cumpdf,nnew
             left=newarray*(maxval/minval)^(-1./(2.*nnew)) ;left bin edge
             right=newarray*(maxval/minval)^(1./(2.*nnew)) ;right bin edge
             newdarray=right-left
+            if max(newdarray) eq 0 then logrange=0
         endif
-        if max(newdarray) eq 0 then logrange=0
         if ~logrange then begin
             newarray=minval+(maxval-minval)*((dindgen(nnew)+.5)/nnew)
             left=newarray-(maxval-minval)/(2.*nnew) ;left bin edge
