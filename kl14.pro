@@ -31,7 +31,7 @@
  yr = 86400.*365.25           ; sidereal year		[s]
  myr = 1.d6*yr
  kms = 1.d3
-                                ; compile programs                               
+                                ; compile programs
 .com derivefunc
 .com clfind2d
 .com clplot2d
@@ -52,6 +52,17 @@
 .com mask_ds9_file_convert
 .com mask_ds9_file_mask
 .com mask_tool.pro
+.com is_an_integer
+.com fourier_lowpass_ideal
+.com fourier_highpass_ideal
+.com fourier_lowpass_gaussian
+.com fourier_highpass_gaussian
+.com fourier_lowpass_butterworth
+.com fourier_highpass_butterworth
+.com fourier_filter_tool
+.com fourier_diffuse_fraction
+.com flux_fraction_calc
+
 .com f_error.pro
 .com f_string.pro
 
