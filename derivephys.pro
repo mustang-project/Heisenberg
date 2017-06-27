@@ -40,7 +40,7 @@ function f_createpdf,array,darray,cumpdf,nnew
         minlimit=min(where(array gt min(array),nmin))
         maxlimit=max(where(array lt max(array),nmax))
         if nmin eq 0 then interpolmin=0 else interpolmin=minlimit ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once
-        if nmax eq 0 then interpolmax=n_elements(cumpdf)-1 else interpolmax=maxlimit ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once 
+        if nmax eq 0 then interpolmax=n_elements(cumpdf)-1 else interpolmax=maxlimit ;avoid interpolation over saturated maximum values (crashes interpol function) and just include number once
         interpolarr=[0,findgen(interpolmax-interpolmin+1)+interpolmin] ;index array for interpolation
         if interpolmax lt n_elements(cumpdf)-1 then interpolarr=[interpolarr,n_elements(cumpdf)-1] ;update index array for interpolation
         for i=0L,nnew-1 do begin
@@ -63,15 +63,23 @@ function f_createpdf,array,darray,cumpdf,nnew
     return,[[newarray],[newdarray],[pdf]]
 end
 
-function f_writecorr,matrix,complete,galaxy,outputdir
+function f_writecorr,matrix,complete,diffuse_frac,galaxy,outputdir
     openw,lun,outputdir+galaxy+'_correlation_matrix.dat',/get_lun
     printf,lun,'# 2D correlation coefficient matrix between all constrained quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
     printf,lun,'# This symmetric array lists the correlation coefficients for quantities that are, from left to right AND from top to bottom, in the order:'
     if complete then begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+        if diffuse_frac eq 1 then begin ; include fgmc and fcl
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip, fcl, fgmc'
+        endif else begin
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+        endelse
     endif else begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+        if diffuse_frac eq 1 then begin ; include fgmc and fcl
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, fcl, fgmc'
+        endif else begin
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+        endelse
     endelse
     printf,lun,''
     n=n_elements(matrix(0,*))
@@ -85,15 +93,23 @@ function f_writecorr,matrix,complete,galaxy,outputdir
     return,report
 end
 
-function f_writecov,matrix,complete,galaxy,outputdir
+function f_writecov,matrix,complete,diffuse_frac,galaxy,outputdir
     openw,lun,outputdir+galaxy+'_covariance_matrix.dat',/get_lun
     printf,lun,'# 2D covariance matrix between all constrained quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
     printf,lun,'# This symmetric array lists the covariances for quantities that are, from left to right AND from top to bottom, in the order:'
     if complete then begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+        if diffuse_frac eq 1 then begin ; include fgmc and fcl
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip, fcl, fgmc'
+        endif else begin
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+        endelse
     endif else begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+        if diffuse_frac eq 1 then begin ; include fgmc and fcl
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, fcl, fgmc'
+        endif else begin
+            printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+        endelse
     endelse
     printf,lun,''
     n=n_elements(matrix(0,*))
@@ -108,10 +124,11 @@ function f_writecov,matrix,complete,galaxy,outputdir
 end
 
 function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
-                    surfglobals,surfglobalg,surfcontrasts,surfcontrastg,apertures_star,apertures_gas,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units
-    
+                    surfglobals,surfglobalg,surfcontrasts,surfcontrastg,apertures_star,apertures_gas,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units,diffuse_frac
+
     if map_units eq 1 then complete=1 else complete=0
-    
+
+
     ;derived quantities for best-fitting model
     if tstar_incl eq 0 then tstar=tstariso+tover else tstar=tstariso
     ttotal=tgas+tstar-tover
@@ -136,7 +153,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chie=f_chie(tover,esf,vfb,psie)
         chip=f_chip(tover,esf,vfb,psip)
     endif
-    
+
+
     restore,filename=arrdir+'probnorm.sav'
     restore,filename=arrdir+'probtgastover.sav'
     restore,filename=arrdir+'probtgas.sav'
@@ -146,10 +164,16 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     restore,filename=arrdir+'dtgas.sav'
     restore,filename=arrdir+'dtover.sav'
     restore,filename=arrdir+'dtlambda.sav'
-        
+    if diffuse_frac eq 1 then begin ; calculate diffuse fraction at the best-fitting value of lambda (lambda=fit(7))
+        restore,filename=arrdir+'fclarr.sav'
+        restore,filename=arrdir+'fgmcarr.sav' ; ; add
+        ; fcl_test=10.^interpol(alog10(star_flux_frac_arr),alog10(lambdaarr),alog10(lambda))
+        ; fgmc_test=10.^interpol(alog10(gas_flux_frac_arr),alog10(lambdaarr),alog10(lambda))
+    endif
+
     ;get cumulative PDF for use as 1D generation function
     probtgascum=total(probtgas*dtgas,/cumulative)
-    
+
     ;create Monte Carlo arrays
     tgasmc=dblarr(nphysmc)
     tovermc=dblarr(nphysmc)
@@ -183,7 +207,13 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chiemc=dblarr(nphysmc)+chie
         chipmc=dblarr(nphysmc)+chip
     endif
-    
+    if diffuse_frac eq 1 then begin ; calculate diffuse fraction at the best-fitting value of lambda (lambda=fit(7))
+        fclmc=dblarr(nphysmc)+fcl   ; monte-carlo array for fcl
+        fgmcmc=dblarr(nphysmc)+fgmc ; monte-carlo array for fgmc
+    endif
+
+
+
     nredo=0
     nredomax=floor(nphysmc/3.)
     nrnd=3*(nphysmc+nredomax)
@@ -191,7 +221,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     gaussarr=randomn(systime(1),nrnd)
     irnd=long(0)
     igauss=long(0)
-    
+
     tstariso_rerr=0.5*(tstariso_rerrmin+tstariso_rerrmax)
     for i=0L,nphysmc-1 do begin ;do Monte Carlo error propagation
         redo=0
@@ -228,7 +258,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             surfgasmc(i)=surfgas+gaussarr(igauss)*surfgas_err
             igauss+=1
         endif
-        
+
         if tstar_incl eq 0 then tstarmc(i)=tstariso*xi+tovermc(i) else tstarmc(i)=tstariso*xi
         ttotalmc(i)=tgasmc(i)+tstarmc(i)-tovermc(i)
         betastarmc(i)=interpol(beta_star,fstarover,tovermc(i)/tstarmc(i))
@@ -254,25 +284,47 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             chipmc(i)=f_chip(tovermc(i),esfmc(i),vfbmc(i),psip)
             if min(finite([surfsfrmc(i),surfgasmc(i),tdeplmc(i),esfmc(i),mdotsfmc(i),mdotfbmc(i),etainstmc(i),etaavgmc(i),chiemc(i),chipmc(i)])) eq 0 then redo=1
         endif
-        
+        if diffuse_frac eq 1 then begin ;
+            ; fclmc[i]=interpol(star_flux_frac_arr,lambdaarr,lambdamc[i]) ; linear interpolation
+            ; fgmcmc[i]=interpol(gas_flux_frac_arr,lambdaarr,lambdamc[i])
+            fclmc[i]=10.^interpol(alog10(star_flux_frac_arr),alog10(lambdaarr),alog10(lambdamc[i]))  ; logspace interpolation
+            fgmcmc[i]=10.^interpol(alog10(gas_flux_frac_arr),alog10(lambdaarr),alog10(lambdamc[i]))
+        endif
+
+
         if redo eq 1 then begin ;if any Infinity or NaN has been found, redo draw
             i=i-1
             nredo+=1
             if nredo eq nredomax then f_error,['too many Infinity or NaN values encountered in Monte-Carlo error propagation','chi^2 landscape is too sparsely sampled to converge, please verify quality of best fit']
         endif
-        
+
         progress,'     ==> derived quantity error propagation progress',i,nphysmc-1
     endfor
-    
+
     if complete then begin
-        quantmc=[[tgasmc],[tovermc],[lambdamc], $
-                 [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
-                 [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
-                 [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chipmc]]
+        if diffuse_frac eq 1 then begin
+            quantmc=[[tgasmc],[tovermc],[lambdamc], $
+                     [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
+                     [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
+                     [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chipmc], $
+                     [fclmc],[fgmcmc]]
+        endif else begin
+            quantmc=[[tgasmc],[tovermc],[lambdamc], $
+                     [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
+                     [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
+                     [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chipmc]]
+        endelse
     endif else begin
-        quantmc=[[tgasmc],[tovermc],[lambdamc], $
-                 [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
-                 [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc]]
+        if diffuse_frac eq 1 then begin
+            quantmc=[[tgasmc],[tovermc],[lambdamc], $
+                     [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
+                     [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
+                     [fclmc],[fgmcmc]]
+        endif else begin
+            quantmc=[[tgasmc],[tovermc],[lambdamc], $
+                     [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
+                     [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc]]
+        endelse
     endelse
     nquant=n_elements(quantmc(0,*))
     corrquant=dblarr(nquant,nquant)
@@ -284,9 +336,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         endfor
         progress,'     ==> correlation and covariance matrix progress',i,nquant-1
     endfor
-    report=f_writecorr(corrquant,complete,galaxy,outputdir)
-    report=f_writecov(covquant,complete,galaxy,outputdir)
-    
+    report=f_writecorr(corrquant,complete,diffuse_frac,galaxy,outputdir)
+    report=f_writecov(covquant,complete,diffuse_frac,galaxy,outputdir)
     ;sort all arrays
     tgasmc=tgasmc(sort(tgasmc))
     tovermc=tovermc(sort(tovermc))
@@ -296,7 +347,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         surfsfrmc=surfsfrmc(sort(surfsfrmc))
         surfgasmc=surfgasmc(sort(surfgasmc))
     endif
-    
+
     print,'     ==> calculating derived quantity PDFs and uncertainties'
     tstarmc=tstarmc(sort(tstarmc))
     dtstarmc=f_getdvar(tstarmc)
@@ -342,7 +393,12 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chipmc=chipmc(sort(chipmc))
         dchipmc=f_getdvar(chipmc)
     endif
-    
+    if diffuse_frac then begin
+        fclmc=fclmc[sort(fclmc)]
+        dfclmc=f_getdvar(fclmc)
+        fgmcmc=fgmcmc[sort(fgmcmc)]
+        dfgmcmc=f_getdvar(fgmcmc)
+    endif
     ;get error bars on best-fitting values
     cumdistr=findgen(nphysmc)/(nphysmc-1.)
     dummy=f_pdftovalues(tstarmc,dtstarmc,cumdistr,tstar)
@@ -410,7 +466,14 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chip_errmin=dummy(1)
         chip_errmax=dummy(2)
     endif
-            
+    if diffuse_frac then begin
+        dummy=f_pdftovalues(fclmc,dfclmc,cumdistr,fcl) ; get errors for fcl
+        fcl_errmin=dummy[1]
+        fcl_errmax=dummy[2]
+        dummy=f_pdftovalues(fgmcmc,dfgmcmc,cumdistr,fgmc)
+        fgmc_errmin=dummy[1]
+        fgmc_errmax=dummy[2]
+    endif
     ;plot PDFs and write tables
     print,'     ==> plotting PDFs and writing them to output directory'
     dummy=f_createpdf(tstarmc,dtstarmc,cumdistr,ntry)
@@ -541,7 +604,22 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         report=f_plotdistr(chiparr,dchip,probchip,chip,chip_errmin,chip_errmax,galaxy,figdir,'chip','!7v!6!Dfb,!8p!6!N','',0)
         report=f_writepdf(alog10(chiparr),alog10(dchip),alog10(probchip),galaxy,outputdir,'chip','# log10(chip), log10(dchip), log10(PDF)')
     endif
-    
+    if diffuse_frac then begin
+        dummy=f_createpdf(fclmc,dfclmc,cumdistr,ntry)
+        fclarr=dummy(*,0)
+        dfcl=dummy(*,1)
+        probfcl=dummy(*,2)
+        report=f_plotdistr(fclarr,dfcl,probfcl,fcl,fcl_errmin,fcl_errmax,galaxy,figdir,'fcl','!8f!6cl!N','',0)  ;'!8f!6cl!N' = f_cl
+        report=f_writepdf(alog10(fclarr),alog10(dfcl),alog10(probfcl),galaxy,outputdir,'fcl','# log10(fcl), log10(dfcl), log10(PDF)')
+
+        dummy=f_createpdf(fgmcmc,dfgmcmc,cumdistr,ntry)
+        fgmcarr=dummy(*,0)
+        dfgmc=dummy(*,1)
+        probfgmc=dummy(*,2)
+        report=f_plotdistr(fgmcarr,dfgmc,probfgmc,fgmc,fgmc_errmin,fgmc_errmax,galaxy,figdir,'fgmc','!8f!6fgmc!N','',0);'!8f!6cl!N' = f_gmc
+        report=f_writepdf(alog10(fgmcarr),alog10(dfgmc),alog10(probfgmc),galaxy,outputdir,'fgmc','# log10(fgmc), log10(dfgmc), log10(PDF)')
+    endif
+
     returnarr = [tstar,tstar_errmin,tstar_errmax, $
                 ttotal,ttotal_errmin,ttotal_errmax, $
                 betastar,betastar_errmin,betastar_errmax, $
@@ -555,7 +633,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                 rpeakstar,rpeakstar_errmin,rpeakstar_errmax, $
                 rpeakgas,rpeakgas_errmin,rpeakgas_errmax, $
                 vfb,vfb_errmin,vfb_errmax]
-    
+
     if complete then returnarr = [returnarr, $
                                   tdepl,tdepl_errmin,tdepl_errmax, $
                                   esf,esf_errmin,esf_errmax, $
@@ -566,13 +644,14 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                                   chie,chie_errmin,chie_errmax, $
                                   chip,chip_errmin,chip_errmax]
 
+    if diffuse_frac then returnarr = [returnarr, $ ; output non-diffuse fraction
+                                      fcl, fcl_errmin, fcl_errmin, $
+                                      fgmc, fgmc_errmin, fgmc_errmin]
+
+
+
     return,returnarr
-        
+
+
+
 end
-
-
-
-
-
-
-

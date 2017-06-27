@@ -42,6 +42,7 @@ get_distances   1         # Calculate distances between all peak pairs (on/off)
 calc_obs        1         # Monte-Carlo sample peaks, get observed tuning fork (on/off)
 calc_fit        1         # Fit KL14 principle model (on/off)
 derive_phys     1         # Calculate derived physical quantities (on/off)
+diffuse_frac    1         # Calculate diffuse fraction in images (on/off)
 write_output    1         # Write results to output files (on/off)
 cleanup         2         # [0] Keep auxiliary files to allow any of the above flags to be set to 0 for future runs; [1, DEFAULT] Delete auxiliary files after confirmation prompt; [2] WARNING: Automatically delete auxiliary files
 autoexit        0         # Exit IDL automatically upon successful run completion (on/off)
@@ -122,6 +123,10 @@ convstar3       0.        # Log of multiplication factor to convert the pixel va
 convstar3_rerr  0.        # Relative error (sigma_x/x) of convstar3
 lighttomass     0.002     # Light-to-mass ratio of a desired feedback mechanism in m^2 s^-3 (default 0.002 is SNe)
 momratetomass   5.e-10    # Momentum output rate per unit mass of a desired feedback mechanism in m s^-2 (default 5.e-10 is SNe+winds)
+# INPUT PARAMETERS 7 (Fourier filtering for diffuse gas calculation)
+f_filter_type       gaussian      # Filter type choice for Fourier filtering: [butterworth] [gaussian] [ideal]
+butterworth_order   2             # The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = butterworth, but a dummy value should be supplied anyway)
+fourier_len_conv    3.0           # conversion factor for Fourier filtering cut_length (cut_length = lambda * fourier_len_conv)
 
 
 ################################################
