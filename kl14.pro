@@ -62,6 +62,7 @@
 .com fourier_filter_tool
 .com fourier_diffuse_fraction
 .com flux_fraction_calc
+.com fsingle_array_make
 
 .com f_error.pro
 .com f_string.pro

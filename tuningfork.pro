@@ -1010,25 +1010,24 @@ endif
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;CALCULATE DIFFUSE FRACTIONS IN IMAGES USING CALCULATED LAMBDA AND ERRORS ;
+;calculate fgmc and fcl;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if diffuse_frac eq 1 then begin
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;1) method using derivephys and arrays ;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    flux_fraction_calc, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
+     , masked_path_gas, masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
+     , distance, inclination, astr_tolerance $
+     , arrdir $
+     , fourier_len_conv $  ; fourier length conversion factor
+     , lambda $
+     , gas_flux_frac, star_flux_frac $
+     , /save_arrays
 
-  ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ; ;1) method using derivephys and arrays ;
-  ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  flux_fraction_calc, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
-   , masked_path_gas, masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
-   , distance, inclination, astr_tolerance $
-   , arrdir $
-   , fourier_len_conv $  ; fourier length conversion factor
-   , lambda $
-   , gas_flux_frac, star_flux_frac $
-   , /save_arrays
-
-   ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   ; ; 2) direct method using lambda errors ;
-   ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ; 2) direct method using lambda errors ;
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
    fourier_diffuse_fraction, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
      , masked_path_gas $ ; input image
      , distance, inclination, astr_tolerance $ ;
@@ -1038,89 +1037,63 @@ if diffuse_frac eq 1 then begin
      , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
      , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
 
-     fourier_diffuse_fraction, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
-       , masked_path_star $ ; input image
-       , distance, inclination, astr_tolerance $ ;
-       , fourier_len_conv $  ; fourier length conversion factor
-       , lambda $ ; lambda
-       , star_flux_frac $ ; output flux and diffuse fraction
-       , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
-       , flux_frac_errmax = star_flux_frac_errmax, flux_frac_errmin = star_flux_frac_errmin ; output flux fraction errors
+   fourier_diffuse_fraction, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
+     , masked_path_star $ ; input image
+     , distance, inclination, astr_tolerance $ ;
+     , fourier_len_conv $  ; fourier length conversion factor
+     , lambda $ ; lambda
+     , star_flux_frac $ ; output flux and diffuse fraction
+     , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
+     , flux_frac_errmax = star_flux_frac_errmax, flux_frac_errmin = star_flux_frac_errmin ; output flux fraction errors
+   fcl=star_flux_frac
+   fcl_errmin=star_flux_frac_errmin
+   fcl_errmax=star_flux_frac_errmax
+
+   fgmc=gas_flux_frac
+   fgmc_errmin=gas_flux_frac_errmin
+   fgmc_errmax=gas_flux_frac_errmax
+endif else begin ; calcuate fgmc and fcl not using fourier filtering
+    if map_units eq 0 then begin
+        fcl=1. ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fcl_errmin=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
+        fcl_errmax=tiny ; no error calculated as 1.0 is assumed
+
+        fgmc=1. ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc_errmin=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
+        fgmc_errmax=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
+    endif
+    if map_units eq 1 then begin
+        fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
+        fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
+
+        fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
+        fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
+    endif
+    if map_units eq 2 then begin
+        fcl=total(starmap,/nan)*convstar/mgas_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
+        fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
+
+        fgmc=total(gasmap,/nan)*convgas/mgas_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
+        fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
+    endif
+    if map_units eq 3 then begin
+        fcl=total(starmap,/nan)*convstar/sfr_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
+        fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
+
+        fgmc=total(gasmap,/nan)*convgas/sfr_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+        fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
+        fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
+      endif
+
+      fsingle_array_make, arrdir, fcl, fgmc ; save out arrays of fcl and fgmc with same number of elements of lambdaarr
 
 
-
-endif
-
-
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; ;1) method using derivephys ;
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; if diffuse_frac eq 1 then begin
-;   fgmc_derived = dblarr(naperture) ; aperture grid for feeding into derivephys
-;   fcl_derived = dblarr(naperture) ; aperture grid for feeding into derivephys
-;
-;   for i=peak_res,max_res do begin
-;     cut_length_temp = apertures[i] ; pc cut length
-;
-;
-;
-;     ; get gas and star diffuse fractions at best fitting lambda
-;     fourier_diffuse_fraction, kernel, pass, cut_length_temp $ ; description of the filter   $
-;       , masked_path_gas $ ; input image (use masked image, but not regridded/smoothened)
-;       , distance, inclination $
-;       , fourier_length_conv $  ; fourier length conversion factor
-;       , lambda $ ; lambda (minimal call without errors )
-;       , gas_flux_frac, gas_diffuse_frac
-;
-;       fourier_diffuse_fraction, kernel, pass, cut_length_temp $ ; description of the filter   $
-;         , masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
-;         , distance, inclination $
-;         , fourier_length_conv $  ; fourier length conversion factor
-;         , lambda $ ; lambda (minimal call without errors )
-;         , star_flux_frac, star_diffuse_frac
-;
-;
-;
-;
-;     fgmc_derived[i] = gas_flux_frac
-;     fcl_derived[i] = gas_diffuse_frac
-;   endfor
-;
-; endif
-;
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; ; 2) direct method ;
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; ; if diffuse_frac eq 1 then begin
-; ;   fourier_diffuse_fraction, kernel, pass, cut_length $ ; description of the filter   $
-; ;     , masked_path_gas $ ; input image (use masked image, but not regridded/smoothened)
-; ;     , distance, inclination $
-; ;     , fourier_length_conv $  ; fourier length conversion factor
-; ;     , lambda, lambda_errmin, lambda_errmax $ ; lambda
-; ;     , gas_diffuse_frac, gas_diffuse_frac_errmax, gas_diffuse_frac_errmin
-; ;     , gas_flux_frac, gas_flux_frac_errmax, gas_flux_frac_errmin, ; output flux fraction
-; ;
-; ;   fourier_diffuse_fraction, kernel, pass, cut_length $ ; description of the filter   $
-; ;     , masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
-; ;     , distance, inclination $ ;
-; ;     , fourier_length_conv $  ; fourier length conversion factor
-; ;     , lambda, lambda_errmin, lambda_errmax $ ; lambda
-; ;     , star_diffuse_frac, star_diffuse_frac_errmax, star_diffuse_frac_errmin
-; ;     , star_flux_frac, star_flux_frac_errmax, star_flux_frac_errmin, ; output flux fraction
-; ;
-; ;   ; if use_star2 then begin
-;   ;   ljsdf
-;   ; endif
-;   ;
-;   ; if use_star3 then begin
-;   ;   ljsdf
-;   ; endif
-;   ;
-;   ; if use_gas3 then begin
-;   ;   ljsdf
-;   ; endif
-;   ;
+endelse
 
 
 
@@ -1135,99 +1108,42 @@ endif
 
 if derive_phys then begin
     print,' ==> calculate derived physical quantities'
+    ; now set surfsfr and surfgas
     if map_units eq 0 then begin
         surfsfr=tiny
         surfsfr_err=tiny
         surfgas=tiny
         surfgas_err=tiny
-        fcl=1. ;SF flux tracer emission from peaks -- assumed=1 Fourier filtering not currently implemented for map_units=1
-        fgmc=1. ;gas flux tracer emission from peaks -- assumed=1 Fourier filtering not currently implemented for map_units=1
-
     endif
     if map_units eq 1 then begin
         surfsfr=sfr_galaxy/totalarea
         surfsfr_err=sfr_galaxy_err/totalarea
         surfgas=mgas_galaxy/totalarea
         surfgas_err=mgas_galaxy_err/totalarea
-        if diffuse_frac eq 1 then begin
-            fcl=star_flux_frac
-            fcl_errmin=star_flux_frac_errmin
-            fcl_errmax=star_flux_frac_errmax
-
-            fgmc=gas_flux_frac
-            fgmc_errmin=gas_flux_frac_errmin
-            fgmc_errmax=gas_flux_frac_errmax
-        endif else begin
-            fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-            fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-
-            fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-            fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-        endelse
     endif
     if map_units eq 2 then begin
         surfsfr=mgas_galaxy1/totalarea
         surfsfr_err=mgas_galaxy1_err/totalarea
         surfgas=mgas_galaxy2/totalarea
         surfgas_err=mgas_galaxy2_err/totalarea
-        if diffuse_frac eq 1 then begin
-            fcl=star_flux_frac
-            fcl_errmin=star_flux_frac_errmin
-            fcl_errmax=star_flux_frac_errmax
-
-            fgmc=gas_flux_frac
-            fgmc_errmin=gas_flux_frac_errmin
-            fgmc_errmax=gas_flux_frac_errmax
-        endif else begin
-            fcl=total(starmap,/nan)*convstar/mgas_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-            fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-
-            fgmc=total(gasmap,/nan)*convgas/mgas_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-            fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-        endelse
     endif
     if map_units eq 3 then begin
         surfsfr=sfr_galaxy1/totalarea
         surfsfr_err=sfr_galaxy1_err/totalarea
         surfgas=sfr_galaxy2/totalarea
         surfgas_err=sfr_galaxy2_err/totalarea
-        if diffuse_frac eq 1 then begin
-            fcl=star_flux_frac
-            fcl_errmin=star_flux_frac_errmin
-            fcl_errmax=star_flux_frac_errmax
-
-            fgmc=gas_flux_frac
-            fgmc_errmin=gas_flux_frac_errmin
-            fgmc_errmax=gas_flux_frac_errmax
-        endif else begin
-            fcl=total(starmap,/nan)*convstar/sfr_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-            fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-
-            fgmc=total(gasmap,/nan)*convgas/sfr_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-            fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-            fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-        endelse
     endif
     if map_units gt 0 then begin
-        ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
-                fcl,fcl_errmin,fcl_errmax,fgmc,fgmc_errmin,fgmc_errmax]+tiny
-        ;
-        ; ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err, $
-        ;         fcl,fcl*convstar_err/convstar,fcl*convstar_err/convstar,fgmc,fgmc*convgas_err/convgas,fgmc*convgas_err/convgas]+tiny
-        ;
+        ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err]+tiny
+
         der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
                        tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                        surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
-                       lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units,diffuse_frac)
+                       lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
     endif else der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
                    tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                    surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
-                   lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units,diffuse_frac)
+                   lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
     aux=[nincludepeak_star,nincludepeak_gas,lap_min]
 endif
 
@@ -1256,9 +1172,7 @@ if write_output then begin
         extqty=['sfr_galaxy','sfr_galaxy_errmin','sfr_galaxy_errmax', $
                 'mgas_galaxy','mgas_galaxy_errmin','mgas_galaxy_errmax', $
                 'surfsfr','surfsfr_errmin','surfsfr_errmax', $
-                'surfgas','surfgas_errmin','surfgas_errmax', $
-                'fcl','fcl_errmin','fcl_errmax', $
-                'fgmc','fgmc_errmin','fgmc_errmax']
+                'surfgas','surfgas_errmin','surfgas_errmax']
     endif
     if map_units eq 2 then begin
         extunit(0)='Msun'
@@ -1266,9 +1180,7 @@ if write_output then begin
         extqty=['mgas_galaxy1','mgas_galaxy1_errmin','mgas_galaxy1_errmax', $
                 'mgas_galaxy2','mgas_galaxy2_errmin','mgas_galaxy2_errmax', $
                 'surfgas1','surfgas1_errmin','surfgas1_errmax', $
-                'surfgas2','surfgas2_errmin','surfgas2_errmax', $
-                'fcl','fcl_errmin','fcl_errmax', $
-                'fgmc','fgmc_errmin','fgmc_errmax']
+                'surfgas2','surfgas2_errmin','surfgas2_errmax']
     endif
     if map_units eq 3 then begin
         extunit(1)='Msun yr^-1'
@@ -1277,28 +1189,11 @@ if write_output then begin
                 'sfr_galaxy2','sfr_galaxy2_errmin','sfr_galaxy2_errmax', $
                 'surfsfr1','surfsfr1_errmin','surfsfr1_errmax', $
                 'surfsfr2','surfsfr2_errmin','surfsfr2_errmax']
-
     endif
-    if ~diffuse_frac then begin ; fgmc and fcl are external quantities if diffuse_frac=0
-        extqty=[extqty,'fcl','fcl_errmin','fcl_errmax', $
-                       'fgmc','fgmc_errmin','fgmc_errmax']
-        extunit=[extunit,'','']
-        if map_units gt 0 then extstrings=[extad+' '+extqty(0)+', '+extqty(1)+', '+extqty(2)+' ['+extunit(0)+']', $
-                                extad+' '+extqty(3)+', '+extqty(4)+', '+extqty(5)+' ['+extunit(1)+']', $
-                                extad+' '+extqty(6)+', '+extqty(7)+', '+extqty(8)+' ['+extunit(2)+']', $
-                                extad+' '+extqty(9)+', '+extqty(10)+', '+extqty(11)+' ['+extunit(3)+']', $
-                                extad+' '+extqty(12)+', '+extqty(13)+', '+extqty(14)+' ['+extunit(4)+']', $
-                                extad+' '+extqty(15)+', '+extqty(16)+', '+extqty(17)+' ['+extunit(5)+']']
-    endif else begin
-        if map_units gt 0 then extstrings=[extad+' '+extqty(0)+', '+extqty(1)+', '+extqty(2)+' ['+extunit(0)+']', $
-                                extad+' '+extqty(3)+', '+extqty(4)+', '+extqty(5)+' ['+extunit(1)+']', $
-                                extad+' '+extqty(6)+', '+extqty(7)+', '+extqty(8)+' ['+extunit(2)+']', $
-                                extad+' '+extqty(9)+', '+extqty(10)+', '+extqty(11)+' ['+extunit(3)+']']
-    endelse
-
-
-
-
+    if map_units gt 0 then extstrings=[extad+' '+extqty(0)+', '+extqty(1)+', '+extqty(2)+' ['+extunit(0)+']', $
+                            extad+' '+extqty(3)+', '+extqty(4)+', '+extqty(5)+' ['+extunit(1)+']', $
+                            extad+' '+extqty(6)+', '+extqty(7)+', '+extqty(8)+' ['+extunit(2)+']', $
+                            extad+' '+extqty(9)+', '+extqty(10)+', '+extqty(11)+' ['+extunit(3)+']']
 
     if map_units gt 0 then begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
@@ -1309,6 +1204,14 @@ if write_output then begin
                 'surfglobalgas','surfglobalgas_errmin','surfglobalgas_errmax', $
                 'surfconstar','surfconstar_errmin','surfconstar_errmax', $
                 'surfcongas','surfcongas_errmin','surfcongas_errmax', $
+
+                'fcl','fcl_errmin','fcl_errmax', $
+                'fgmc','fgmc_errmin','fgmc_errmax', $
+                ; 'fdiffstar','fdiffstar_errmin','fdiffstar_errmax', $
+                ; 'fdiffgas','fdiffgas_errmin','fdiffgas_errmax', $
+                ;add: fdiffstar
+                ;add: fdiffgas
+
                 'zetastar','zetastar_errmin','zetastar_errmax', $
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
@@ -1322,58 +1225,31 @@ if write_output then begin
                 'etaavg','etaavg_errmin','etaavg_errmax', $
                 'chie','chie_errmin','chie_errmax', $
                 'chip','chip_errmin','chip_errmax']
-        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
+        derunit=['Myr','Myr','','','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
         derad='Derived'
-        if diffuse_frac then begin ; fgmc and fcl are derived quantities if diffuse_frac=1
-            derqty=[derqty,'fcl','fcl_errmin','fcl_errmax', $
-                       'fgmc','fgmc_errmin','fgmc_errmax']
-            derunit=[derunit,'','']
-            derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
-                        derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
-                        derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
-                        derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
-                        derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
-                        derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
-                        derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
-                        derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
-                        derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
-                        derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
-                        derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
-                        derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
-                        derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
-                        derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
-                        derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']', $
-                        derad+' '+derqty(45)+', '+derqty(46)+', '+derqty(47)+' ['+derunit(15)+']', $
-                        derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']', $
-                        derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
-                        derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']', $
-                        derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
-                        derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']', $
-                        derad+' '+derqty(63)+', '+derqty(64)+', '+derqty(65)+' ['+derunit(21)+']', $
-                        derad+' '+derqty(66)+', '+derqty(67)+', '+derqty(68)+' ['+derunit(22)+']']
-        endif else begin
-            derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
-                        derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
-                        derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
-                        derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
-                        derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
-                        derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
-                        derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
-                        derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
-                        derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
-                        derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
-                        derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
-                        derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
-                        derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
-                        derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
-                        derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']', $
-                        derad+' '+derqty(45)+', '+derqty(46)+', '+derqty(47)+' ['+derunit(15)+']', $
-                        derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']', $
-                        derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
-                        derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']', $
-                        derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
-                        derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']']
-        endelse
+        derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
+                    derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
+                    derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
+                    derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
+                    derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
+                    derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
+                    derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
+                    derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
+                    derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
+                    derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
+                    derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
+                    derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
+                    derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
+                    derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
+                    derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']', $
+                    derad+' '+derqty(45)+', '+derqty(46)+', '+derqty(47)+' ['+derunit(15)+']', $
+                    derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']', $
+                    derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
+                    derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']', $
+                    derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
+                    derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']', $
+                    derad+' '+derqty(63)+', '+derqty(64)+', '+derqty(65)+' ['+derunit(21)+']', $
+                    derad+' '+derqty(66)+', '+derqty(67)+', '+derqty(68)+' ['+derunit(22)+']']
     endif else begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
                 'ttotal','ttotal_errmin','ttotal_errmax', $
@@ -1383,47 +1259,35 @@ if write_output then begin
                 'surfglobalgas','surfglobalgas_errmin','surfglobalgas_errmax', $
                 'surfconstar','surfconstar_errmin','surfconstar_errmax', $
                 'surfcongas','surfcongas_errmin','surfcongas_errmax', $
+
+                'fcl','fcl_errmin','fcl_errmax', $
+                'fgmc','fgmc_errmin','fgmc_errmax', $
+                ;add: fdiffstar
+                ;add: fdiffgas
+
+
                 'zetastar','zetastar_errmin','zetastar_errmax', $
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
                 'vfb','vfb_errmin','vfb_errmax']
-        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1']
+        derunit=['Myr','Myr','','','','','','','','','','','pc','pc','km s^-1']
         derad='Derived'
-        if diffuse_frac then begin ; fgmc and fcl are derived quantities if diffuse_frac=1
-            derqty=[derqty,'fcl','fcl_errmin','fcl_errmax', $
-                       'fgmc','fgmc_errmin','fgmc_errmax']
-            derunit=[derunit,'','']
-            derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
-                        derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
-                        derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
-                        derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
-                        derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
-                        derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
-                        derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
-                        derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
-                        derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
-                        derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
-                        derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
-                        derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
-                        derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
-                        derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
-                        derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']']
-        endif else begin
-            derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
-                        derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
-                        derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
-                        derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
-                        derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
-                        derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
-                        derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
-                        derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
-                        derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
-                        derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
-                        derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
-                        derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
-                        derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']']
-        endelse
+        derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
+                    derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
+                    derad+' '+derqty(6)+', '+derqty(7)+', '+derqty(8)+' ['+derunit(2)+']', $
+                    derad+' '+derqty(9)+', '+derqty(10)+', '+derqty(11)+' ['+derunit(3)+']', $
+                    derad+' '+derqty(12)+', '+derqty(13)+', '+derqty(14)+' ['+derunit(4)+']', $
+                    derad+' '+derqty(15)+', '+derqty(16)+', '+derqty(17)+' ['+derunit(5)+']', $
+                    derad+' '+derqty(18)+', '+derqty(19)+', '+derqty(20)+' ['+derunit(6)+']', $
+                    derad+' '+derqty(21)+', '+derqty(22)+', '+derqty(23)+' ['+derunit(7)+']', $
+                    derad+' '+derqty(24)+', '+derqty(25)+', '+derqty(26)+' ['+derunit(8)+']', $
+                    derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
+                    derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
+                    derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
+                    derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
+                    derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
+                    derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']']
     endelse
 
     auxqty=['npeak_star','npeak_gas', $

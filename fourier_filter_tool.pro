@@ -33,8 +33,8 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
   ; ************************************************
   ; test input validity
   ; ************************************************
-  if n_params() lt 4 then begin
-     print,'Syntax: fourier_filter_tool, kernel, pass, cut_length, image_input, [image_hdr'
+  if n_params() lt 5 then begin
+     print,'Syntax: fourier_filter_tool, kernel, butterworth_order, pass, cut_length, image_input, [image_hdr'
      print,'                             filtered_image_arr = , filtered_image_hdr =      '
      print,'                             filtered_image_path = , filtered_image_path =    '
      return
@@ -68,7 +68,7 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
   fft_arr = fft(image_arr)
 
   ; ************************************************
-  ; Create frequency vectors !CHECK!
+  ; Create frequency vectors
   ; ************************************************
 
   image_dimensions = size(image_arr, /dimensions)
@@ -116,7 +116,7 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
 
 
   ; ************************************************
-  ; Create frequency distance array   ; hive off into function !CHECK!
+  ; Create frequency distance array   ; hive off into function 
   ; ************************************************
   if freq_double eq 0 then begin
     fft_freq_dist = fltarr(image_xsize,image_ysize)
