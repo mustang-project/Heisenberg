@@ -63,6 +63,9 @@
 .com fourier_diffuse_fraction
 .com flux_fraction_calc
 .com fsingle_array_make
+.com fourier_power_fraction_vec
+.com fourier_power_fraction
+.com power_fraction_calc
 
 .com f_error.pro
 .com f_string.pro

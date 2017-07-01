@@ -90,7 +90,7 @@ endwhile
 close,lun ;close the logical unit
 free_lun,lun ;make the logical unit available again
 
-expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','derive_phys','diffuse_frac','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
+expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','diffuse_frac','derive_phys','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
 expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
 expected_flags4=['set_centre','tophat','loglevels','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
@@ -103,7 +103,7 @@ expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','l
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
 expected_params5=['nmc','ndepth','ntry','nphysmc'] ;variable names of expected input parameters (5)
 expected_params6=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','momratetomass'] ;variable names of expected input parameters (6)
-expected_params7=['f_filter_type','butterworth_order','fourier_len_conv'] ;variable names of expected input parameters (7)
+expected_params7=['diffuse_quantity','f_filter_type','butterworth_order','fourier_len_conv'] ;variable names of expected input parameters (7)
 expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6,expected_params7] ;variable names of expected input parameters (all)
 expected_vars=[expected_flags,expected_filenames,expected_masknames,expected_params] ;names of all expected variables
 nvars=n_elements(expected_vars) ;number of expected variables
@@ -1013,45 +1013,77 @@ endif
 ;calculate fgmc and fcl;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if diffuse_frac eq 1 then begin
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;1) method using derivephys and arrays ;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    flux_fraction_calc, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
-     , masked_path_gas, masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
-     , distance, inclination, astr_tolerance $
-     , arrdir $
-     , fourier_len_conv $  ; fourier length conversion factor
-     , lambda $
-     , gas_flux_frac, star_flux_frac $
-     , /save_arrays
+  if (diffuse_quantity eq 1) then begin ; diffuse_quantity =1 -> flux
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;1) method using derivephys and arrays ;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      flux_fraction_calc, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
+       , masked_path_gas, masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
+       , distance, inclination, astr_tolerance $
+       , arrdir $
+       , fourier_len_conv $  ; fourier length conversion factor
+       , lambda $
+       , gas_flux_frac, star_flux_frac $
+       , /save_arrays
 
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   ; 2) direct method using lambda errors ;
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   fourier_diffuse_fraction, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
-     , masked_path_gas $ ; input image
-     , distance, inclination, astr_tolerance $ ;
-     , fourier_len_conv $  ; fourier length conversion factor
-     , lambda $ ; lambda
-     , gas_flux_frac $ ; output flux and diffuse fraction
-     , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
-     , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ; 2) direct method using lambda errors ;
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     fourier_diffuse_fraction, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
+       , masked_path_gas $ ; input image
+       , distance, inclination, astr_tolerance $ ;
+       , fourier_len_conv $  ; fourier length conversion factor
+       , lambda $ ; lambda
+       , gas_flux_frac $ ; output flux and diffuse fraction
+       , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
+       , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
 
-   fourier_diffuse_fraction, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
-     , masked_path_star $ ; input image
-     , distance, inclination, astr_tolerance $ ;
-     , fourier_len_conv $  ; fourier length conversion factor
-     , lambda $ ; lambda
-     , star_flux_frac $ ; output flux and diffuse fraction
-     , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
-     , flux_frac_errmax = star_flux_frac_errmax, flux_frac_errmin = star_flux_frac_errmin ; output flux fraction errors
-   fcl=star_flux_frac
-   fcl_errmin=star_flux_frac_errmin
-   fcl_errmax=star_flux_frac_errmax
+     fourier_diffuse_fraction, f_filter_type, butterworth_order, 'high' $ ; description of the filter   $
+       , masked_path_star $ ; input image
+       , distance, inclination, astr_tolerance $ ;
+       , fourier_len_conv $  ; fourier length conversion factor
+       , lambda $ ; lambda
+       , star_flux_frac $ ; output flux and diffuse fraction
+       , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
+       , flux_frac_errmax = star_flux_frac_errmax, flux_frac_errmin = star_flux_frac_errmin ; output flux fraction errors
+     fcl=star_flux_frac
+     fcl_errmin=star_flux_frac_errmin
+     fcl_errmax=star_flux_frac_errmax
 
-   fgmc=gas_flux_frac
-   fgmc_errmin=gas_flux_frac_errmin
-   fgmc_errmax=gas_flux_frac_errmax
+     fgmc=gas_flux_frac
+     fgmc_errmin=gas_flux_frac_errmin
+     fgmc_errmax=gas_flux_frac_errmax
+
+
+   endif else if (diffuse_quantity eq 2) then begin ; diffuse_quantity =2 -> power
+      power_fraction_calc, masked_path_gas, masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
+          , distance, inclination, astr_tolerance $
+          , arrdir $ ; directory to restore lambda array from
+          , fourier_len_conv $  ; fourier length conversion factor
+          , lambda $
+          , gas_flux_frac, star_flux_frac $
+          , /save_arrays
+
+          fcl=star_flux_frac
+          fgmc=gas_flux_frac
+
+
+  ;     power_fraction_calc, masked_path_gas $ ; input image (use masked image, but not regridded/smoothened)
+  ;         , distance, inclination, astr_tolerance $
+  ;         , arrdir $ ; directory to restore lambda array from
+  ;         , fourier_length_conv $  ; fourier length conversion factor
+  ;         , lambda $
+  ;         , fit_power_frac $
+  ;         , power_frac_arr $
+  ;         , save_array = save_array
+   ;
+  ;  print, fit_power_frac
+  ;  print, power_frac_arr
+  ;  stop
+
+   endif else begin
+      f_error, 'The current value of diffuse_quantity (', diffuse_quantity, ') is not valued select 1 (flux) or 2 (power)'
+   endelse
 endif else begin ; calcuate fgmc and fcl not using fourier filtering
     if map_units eq 0 then begin
         fcl=1. ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
