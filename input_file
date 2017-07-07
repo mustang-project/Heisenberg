@@ -114,7 +114,12 @@ nmc             1000      # Number of Monte-Carlo peak drawing experiments to be
 ndepth          4         # Maximum number of free parameter array refinement loops for obtaining best-fitting value
 ntry            101       # Size of each free parameter array to obtain the best-fitting value
 nphysmc         1000000   # Number of Monte-Carlo experiments for error propagation of derived physical quantities
-# INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities)
+# INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
+diffuse_quantity    1     # Calculate the diffuse fraction of [1] flux, [2] power
+f_filter_type       3     # Filter type choice for Fourier filtering: [1] butterworth filter [2] gaussian filter [3] ideal filter (Only relevant if diffuse_quantity = 1 [flux], but a dummy value should be supplied anyway)
+butterworth_order   2     # The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = butterworth and diffuse_quantity = 1 [flux], but a dummy value should be supplied anyway)
+fourier_len_conv    1.0   # conversion factor for Fourier filtering cut_length (cut_length = lambda * fourier_len_conv)
+# INPUT PARAMETERS 7 (conversions and constants to calculate derived quantities)
 convstar       -3.69206   # Log of multiplication factor to convert the pixel value in starfile to a SFR in Msun/yr (if maptypes=1 or maptypes=3) or to a gas mass in Msun (if maptypes=2)
 convstar_rerr   0.        # Relative error (sigma_x/x) of convstar
 convgas         2.30794   # Log of multiplication factor to convert the pixel value in gasfile to a gas mass in Msun (if maptypes=1 or maptypes=2) or to a SFR in Msun/yr (if maptypes=3)
@@ -123,11 +128,6 @@ convstar3       0.        # Log of multiplication factor to convert the pixel va
 convstar3_rerr  0.        # Relative error (sigma_x/x) of convstar3
 lighttomass     0.002     # Light-to-mass ratio of a desired feedback mechanism in m^2 s^-3 (default 0.002 is SNe)
 momratetomass   5.e-10    # Momentum output rate per unit mass of a desired feedback mechanism in m s^-2 (default 5.e-10 is SNe+winds)
-# INPUT PARAMETERS 7 (Fourier filtering for diffuse gas calculation)
-diffuse_quantity    1             # Calculate the diffuse fraction of [1] flux, [2] power
-f_filter_type       gaussian      # Filter type choice for Fourier filtering: [butterworth] [gaussian] [ideal]
-butterworth_order   2             # The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = butterworth, but a dummy value should be supplied anyway)
-fourier_len_conv    1.0           # conversion factor for Fourier filtering cut_length (cut_length = lambda * fourier_len_conv)
 
 
 ################################################
