@@ -580,14 +580,14 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     fclarr=dummy(*,0)
     dfcl=dummy(*,1)
     probfcl=dummy(*,2)
-    report=f_plotdistr(fclarr,dfcl,probfcl,fcl,fcl_errmin,fcl_errmax,galaxy,figdir,'fcl','!7f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_plotdistr(fclarr,dfcl,probfcl,fcl,fcl_errmin,fcl_errmax,galaxy,figdir,'fcl','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
     report=f_writepdf(alog10(fclarr),alog10(dfcl),alog10(probfcl),galaxy,outputdir,'fcl','# log10(fcl), log10(dfcl), log10(PDF)')
 
     dummy=f_createpdf(fgmcmc,dfgmcmc,cumdistr,ntry)
     fgmcarr=dummy(*,0)
     dfgmc=dummy(*,1)
     probfgmc=dummy(*,2)
-    report=f_plotdistr(fgmcarr,dfgmc,probfgmc,fgmc,fgmc_errmin,fgmc_errmax,galaxy,figdir,'fgmc','!7f!6!Dgmc!N','',0);'!7f!6!Dgmc!N' = f_gmc
+    report=f_plotdistr(fgmcarr,dfgmc,probfgmc,fgmc,fgmc_errmin,fgmc_errmax,galaxy,figdir,'fgmc','!8f!6!Dgmc!N','',0);'!7f!6!Dgmc!N' = f_gmc
     report=f_writepdf(alog10(fgmcarr),alog10(dfgmc),alog10(probfgmc),galaxy,outputdir,'fgmc','# log10(fgmc), log10(dfgmc), log10(PDF)')
     ;
 
