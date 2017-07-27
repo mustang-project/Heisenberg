@@ -1,5 +1,5 @@
 ;----------------------------------------------------------------------------------------
-function fourier_lowpass_butterworth, freq_dist, cut_freq, butterworth_order, double = double
+function fourier_highpass_butterworth, freq_dist, cut_freq, butterworth_order, double = double
 ;----------------------------------------------------------------------------------------
 ; Function that returns a highpass Butterworth filter for Fourier filtering.
 ;--(input)-------------------------------------------------------------------------------
