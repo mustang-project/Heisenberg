@@ -28,7 +28,7 @@ pro fourier_power_fraction, image_path $ ; input image (use masked image, but no
 
 
   getrot, image_hdr, rotation, cdelt_var ; get cdelt value ; only single precision
-  if n_elements(cdelt_var) eq 2 && abs(cdelt_var[0]-cdelt_var[1]) le astr_tolerance then begin
+  if n_elements(cdelt_var) eq 2 && abs(abs(cdelt_var[0]) - abs(cdelt_var[1])) le astr_tolerance then begin
     cdelt = mean(cdelt_var)
   endif else begin
     print, "image not square"
