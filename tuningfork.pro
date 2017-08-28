@@ -168,7 +168,7 @@ cdeltstar=abs(sxpar(starmaphdr,'CDELT1',count=ct))
 if ct eq 0 then cdeltstar = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
-
+databeam=beamtest
 if use_star2 then begin
     starfiletot2=resdir+starfile2 ;Halpha peak map
     if mask_images then begin
@@ -232,7 +232,7 @@ cdeltgas=abs(sxpar(gasmaphdr,'CDELT1',count=ct))
 if ct eq 0 then cdeltgas = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
-
+databeam=max([databeam,beamfits])
 if use_gas2 then begin
     gasfiletot2=resdir+gasfile2 ;moment zero CO map (sigma mask for better peak ID)
     if mask_images then begin
@@ -286,33 +286,35 @@ lap_min=apertures(peak_res) ;size of smallest aperture
 if regrid then begin
     print,' ==> regridding maps'
     if mask_images then regriddir = maskeddir else regriddir = resdir ;if images are masked, get them from corresponding directory
-    starmap=smoothfits(distance,inclination,apertures(peak_res),starfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+    if diffuse_frac && beamtest gt databeam then f_error,'Maximum beam of all images (inlcuding starmap2, starmap3 and gasmap2) is larger than the maximum beam of the two main images (starmap and gasmap). This will affect the resolution avaliable for Fourier filtering in the calculation of fcl and fgmc'
+    if diffuse_frac then targetres=beammaxpc<apertures(peak_res) else targetres=apertures(peak_res) ; if calculating diffuse fraction then preserve at least worst beam resolution to maximise fourier resolution, else cut resolution to smallest aperture
+    starmap=smoothfits(distance,inclination,targetres,starfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
     starfileshort=strmid(starfile,0,strpos(starfile,'.fits')) ;short name without extension
     starfile2short=strmid(starfile2,0,strpos(starfile2,'.fits')) ;short name without extension
     starfiletot=griddir+starfile ;Halpha map (total)
     starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
     starmaphdr=hdr ;header of Halpha map
     if use_star2 then begin
-        starmap2=smoothfits(distance,inclination,apertures(peak_res),starfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+        starmap2=smoothfits(distance,inclination,targetres,starfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
         starfiletot2=griddir+starfile2 ;Halpha peak map
         starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
         starmaphdr2=hdr ;header of Halpha peak map
     endif
     if use_star3 then begin
-        starmap3=smoothfits(distance,inclination,apertures(peak_res),starfile3,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+        starmap3=smoothfits(distance,inclination,targetres,starfile3,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
         starfile3short=strmid(starfile3,0,strpos(starfile3,'.fits')) ;short name without extension
         starfiletot3=griddir+starfile3 ;FUV map
         starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
         starmaphdr3=hdr ;header of FUV map
     endif
-    gasmap=smoothfits(distance,inclination,apertures(peak_res),gasfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+    gasmap=smoothfits(distance,inclination,targetres,gasfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
     gasfileshort=strmid(gasfile,0,strpos(gasfile,'.fits')) ;short name without extension
     gasfile2short=strmid(gasfile2,0,strpos(gasfile2,'.fits')) ;short name without extension
     gasfiletot=griddir+gasfile ;moment zero CO map (velocity mask for better flux estimate)
     gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
     gasmaphdr=hdr ;moment zero CO header
     if use_gas2 then begin
-        gasmap2=smoothfits(distance,inclination,apertures(peak_res),gasfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+        gasmap2=smoothfits(distance,inclination,targetres,gasfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
         gasfiletot2=griddir+gasfile2 ;moment zero CO map (signal mask for better peak ID)
         gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
         gasmaphdr2=hdr ;moment zero CO peak header
@@ -1022,7 +1024,7 @@ if diffuse_frac eq 1 then begin
       ;1) method using derivephys and arrays ;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       flux_fraction_calc, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , masked_path_gas, masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
+       , gasfiletot, starfiletot $ ; input image (use masked image, but not regridded/smoothened)
        , distance, inclination, astr_tolerance $
        , arrdir $
        , filter_len_conv $  ; fourier length conversion factor
@@ -1034,7 +1036,7 @@ if diffuse_frac eq 1 then begin
      ; 2) direct method using lambda errors ;
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , masked_path_gas $ ; input image
+       , gasfiletot $ ; input image
        , distance, inclination, astr_tolerance $ ;
        , filter_len_conv $  ; fourier length conversion factor
        , lambda $ ; lambda
@@ -1043,7 +1045,7 @@ if diffuse_frac eq 1 then begin
        , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
 
      fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , masked_path_star $ ; input image
+       , starfiletot $ ; input image
        , distance, inclination, astr_tolerance $ ;
        , filter_len_conv $  ; fourier length conversion factor
        , lambda $ ; lambda
@@ -1060,7 +1062,7 @@ if diffuse_frac eq 1 then begin
 
 
    endif else if (diffuse_quant eq 1) then begin ; diffuse_quant =1 -> power
-      power_fraction_calc, masked_path_gas, masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
+      power_fraction_calc, gasfiletot, starfiletot $ ; input image (use masked image, but not regridded/smoothened)
           , distance, inclination, astr_tolerance $
           , arrdir $ ; directory to restore lambda array from
           , filter_len_conv $  ; fourier length conversion factor
