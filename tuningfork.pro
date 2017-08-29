@@ -102,9 +102,10 @@ expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable 
 expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g'] ;variable names of expected input parameters (3)
 expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
 expected_params5=['nmc','ndepth','ntry','nphysmc'] ;variable names of expected input parameters (5)
-expected_params6=['diffuse_quant','filter_len_conv','f_filter_type','bw_order'] ;variable names of expected input parameters (7)
-expected_params7=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','momratetomass'] ;variable names of expected input parameters (6)
-expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6,expected_params7] ;variable names of expected input parameters (all)
+expected_params6=['diffuse_quant','filter_len_conv','f_filter_type','bw_order'] ;variable names of expected input parameters (6)
+expected_params7=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','momratetomass'] ;variable names of expected input parameters (7)
+expected_params8=['use_stds','std_star','std_star3','std_gas'] ;variable names of expected input parameters (8)
+expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6,expected_params7,expected_params8] ;variable names of expected input parameters (all)
 expected_vars=[expected_flags,expected_filenames,expected_masknames,expected_params] ;names of all expected variables
 nvars=n_elements(expected_vars) ;number of expected variables
 for i=0,nvars-1 do if n_elements(scope_varfetch(expected_vars(i))) eq 0 then f_error,'variable '+expected_vars(i)+' not present in input file' ;verify input reading
@@ -500,62 +501,71 @@ endelse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 if sensitivity then begin
-    print,' ==> determining sensitivity limits'
-    sensstarlist=reform(smoothstar(peak_res,*,*),n_elements(smoothstar(peak_res,*,*)))
-    nans=where(finite(sensstarlist,/nan),ct)
-    if ct ne 0 then remove,nans,sensstarlist
-    sensstarmin=min(sensstarlist)
-    sensstarmed=median(sensstarlist)
-    if sensstarmin lt 0. then use=where(abs(sensstarlist) le abs(sensstarmin)) else use=[-1]
-    if sensstarmin ge 0. || n_elements(use) lt nbins then use=where(abs(sensstarlist) le sensstarmed)
-    if sensstarmin ge 0. && sensstarmed eq 0. then use=where(abs(sensstarlist) le min(sensstarlist(where(sensstarlist gt 0.)))) ;in practice should only happen with near-perfect S/N
-    disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
-    binwidth=disp/nbins
-    set_plot,window_plot
-    histoplot,sensstarlist(use),histdata=hist,locations=bins,binsize=binwidth
-    set_plot,'x'
-    binmid=bins+0.5*binwidth
-    fit=gaussfit(binmid,hist,vars,nterms=3)
-    offstar=vars(1)
-    sensstar=vars(2)
-
-    if use_star3 then begin
-        sensstarlist3=reform(smoothstar3(peak_res,*,*),n_elements(smoothstar3(peak_res,*,*)))
-        nans=where(finite(sensstarlist3,/nan),ct)
-        if ct ne 0 then remove,nans,sensstarlist3
-        sensstarmin3=min(sensstarlist3)
-        sensstarmed3=median(sensstarlist3)
-        if sensstarmin3 lt 0. then use=where(abs(sensstarlist3) le abs(sensstarmin3)) else use=[-1]
-        if sensstarmin3 ge 0. || n_elements(use) lt nbins then use=where(abs(sensstarlist3) le sensstarmed3)
-        if sensstarmin3 ge 0. && sensstarmed3 eq 0. then use=where(abs(sensstarlist3) le min(sensstarlist3(where(sensstarlist3 gt 0.)))) ;in practice should only happen with near-perfect S/N
-        disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
+    if use_stds then begin
+        sensstar=std_star
+        offstar=0.0d0
+        sensstar3=std_star3
+        offstar3=0.0d0
+        offgas=std_gas
+        sensgas=0.0d0
+    endif else begin
+        print,' ==> determining sensitivity limits'
+        sensstarlist=reform(smoothstar(peak_res,*,*),n_elements(smoothstar(peak_res,*,*)))
+        nans=where(finite(sensstarlist,/nan),ct)
+        if ct ne 0 then remove,nans,sensstarlist
+        sensstarmin=min(sensstarlist)
+        sensstarmed=median(sensstarlist)
+        if sensstarmin lt 0. then use=where(abs(sensstarlist) le abs(sensstarmin)) else use=[-1]
+        if sensstarmin ge 0. || n_elements(use) lt nbins then use=where(abs(sensstarlist) le sensstarmed)
+        if sensstarmin ge 0. && sensstarmed eq 0. then use=where(abs(sensstarlist) le min(sensstarlist(where(sensstarlist gt 0.)))) ;in practice should only happen with near-perfect S/N
+        disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
         binwidth=disp/nbins
         set_plot,window_plot
-        histoplot,sensstarlist3(use),histdata=hist,locations=bins,binsize=binwidth
+        histoplot,sensstarlist(use),histdata=hist,locations=bins,binsize=binwidth
         set_plot,'x'
         binmid=bins+0.5*binwidth
         fit=gaussfit(binmid,hist,vars,nterms=3)
-        offstar3=vars(1)
-        sensstar3=vars(2)
-    endif
+        offstar=vars(1)
+        sensstar=vars(2)
 
-    sensgaslist=reform(smoothgas(peak_res,*,*),n_elements(smoothgas(peak_res,*,*)))
-    nans=where(finite(sensgaslist,/nan),ct)
-    if ct ne 0 then remove,nans,sensgaslist
-    sensgasmin=min(sensgaslist)
-    sensgasmed=median(sensgaslist)
-    if sensgasmin lt 0. then use=where(abs(sensgaslist) le abs(sensgasmin)) else use=[-1]
-    if sensgasmin ge 0. || n_elements(use) lt nbins then use=where(abs(sensgaslist) le sensgasmed)
-    if sensgasmin ge 0. && sensgasmed eq 0. then use=where(abs(sensgaslist) le min(sensgaslist(where(sensgaslist gt 0.)))) ;in practice should only happen with near-perfect S/N
-    disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
-    binwidth=disp/nbins
-    set_plot,window_plot
-    histoplot,sensgaslist(use),histdata=hist,locations=bins,binsize=binwidth
-    set_plot,'x'
-    binmid=bins+0.5*binwidth
-    fit=gaussfit(binmid,hist,vars,nterms=3)
-    offgas=vars(1)
-    sensgas=vars(2)
+        if use_star3 then begin
+            sensstarlist3=reform(smoothstar3(peak_res,*,*),n_elements(smoothstar3(peak_res,*,*)))
+            nans=where(finite(sensstarlist3,/nan),ct)
+            if ct ne 0 then remove,nans,sensstarlist3
+            sensstarmin3=min(sensstarlist3)
+            sensstarmed3=median(sensstarlist3)
+            if sensstarmin3 lt 0. then use=where(abs(sensstarlist3) le abs(sensstarmin3)) else use=[-1]
+            if sensstarmin3 ge 0. || n_elements(use) lt nbins then use=where(abs(sensstarlist3) le sensstarmed3)
+            if sensstarmin3 ge 0. && sensstarmed3 eq 0. then use=where(abs(sensstarlist3) le min(sensstarlist3(where(sensstarlist3 gt 0.)))) ;in practice should only happen with near-perfect S/N
+            disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
+            binwidth=disp/nbins
+            set_plot,window_plot
+            histoplot,sensstarlist3(use),histdata=hist,locations=bins,binsize=binwidth
+            set_plot,'x'
+            binmid=bins+0.5*binwidth
+            fit=gaussfit(binmid,hist,vars,nterms=3)
+            offstar3=vars(1)
+            sensstar3=vars(2)
+        endif
+
+        sensgaslist=reform(smoothgas(peak_res,*,*),n_elements(smoothgas(peak_res,*,*)))
+        nans=where(finite(sensgaslist,/nan),ct)
+        if ct ne 0 then remove,nans,sensgaslist
+        sensgasmin=min(sensgaslist)
+        sensgasmed=median(sensgaslist)
+        if sensgasmin lt 0. then use=where(abs(sensgaslist) le abs(sensgasmin)) else use=[-1]
+        if sensgasmin ge 0. || n_elements(use) lt nbins then use=where(abs(sensgaslist) le sensgasmed)
+        if sensgasmin ge 0. && sensgasmed eq 0. then use=where(abs(sensgaslist) le min(sensgaslist(where(sensgaslist gt 0.)))) ;in practice should only happen with near-perfect S/N
+        disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
+        binwidth=disp/nbins
+        set_plot,window_plot
+        histoplot,sensgaslist(use),histdata=hist,locations=bins,binsize=binwidth
+        set_plot,'x'
+        binmid=bins+0.5*binwidth
+        fit=gaussfit(binmid,hist,vars,nterms=3)
+        offgas=vars(1)
+        sensgas=vars(2)
+    endelse
 endif
 
 
