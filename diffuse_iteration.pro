@@ -175,7 +175,7 @@ pro diffuse_iteration, master_inputfile
 
 
 
-    input_file_name = strcompress(master_inputfile + ifile_shortname + '_iter' + string(iter_num), /remove_all)
+    input_file_name = strcompress(ifile_shortname + '_iter' + string(iter_num), /remove_all)
     input_file_filepath = strcompress(master_rundir + input_file_name, /remove_all)
     ; **********************
     ; * generate input file
@@ -301,7 +301,7 @@ pro diffuse_iteration, master_inputfile
       endfor
 
       if iter_break eq 1 then begin
-        print, "Iteration condition reahced. Ending iteration"
+        print, "Iteration condition reached. Ending iteration"
         break ; end Fourier iteration
       endif
     endif
