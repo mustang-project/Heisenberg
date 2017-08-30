@@ -121,27 +121,65 @@ pro diffuse_iteration, master_inputfile
 
   master_gas_pix_to_pc = distance*tan(!dtor*master_gas_cdelt)/sqrt(cos(inclination))
 
+  ; ******************************************************
+  ; Copy the base files used for the filtering
+  ; ******************************************************
+  starfile = "starfile_base.fits"
+  gasfile = "gasfile_base.fits"
 
+  base_starfile = datadir + starfile ; the base file for fourier iterations
+  base_gasfile = datadir + gasfile ; the base file for fourier iterations
 
+  file_copy, master_starfiletot, base_starfile, /overwrite
+  file_copy, master_gasfiletot, base_gasfile, /overwrite
 
   ; ******************************************************
   ; apply initial guess if requested
   ; ******************************************************
 
   if use_guess eq 1 then begin ; initiial fourier cut
-    print, "functionality not implemented"
-    stop
-  endif else begin ; copy original files
 
+    if iter_filter eq 0 then filter_choice = 'butterworth' else $
+        if iter_filter eq 1 then filter_choice = 'gaussian' else $
+        if iter_filter eq 2 then filter_choice = 'ideal'
+
+    star_cut_length = (initial_guess/master_star_pix_to_pc) * iter_len_conv ; in pixels
+    starfile = "starfile_iter0.fits"
+    filtered_starfile = strcompress(datadir + starfile,/remove_all)
+
+    fourier_filter_tool, filter_choice, iter_bwo, 'high', star_cut_length, $ ; description of the filter
+      base_starfile, $ ; input image by filename
+      filtered_image_path = filtered_starfile ; output file for the filtered image
+
+    star_arr = readfits(filtered_starfile, star_hdr)
+    szero_list = where(star_arr lt 0.0e0, szero_count)
+    if szero_count ne 0 then star_arr[szero_list] = 0.0
+    writefits, filtered_starfile, star_arr, star_hdr
+
+
+
+    gas_cut_length = (initial_guess/master_gas_pix_to_pc) * iter_len_conv ; in pixels
+    gasfile = "gasfile_iter0.fits"
+    filtered_gasfile = strcompress(datadir + gasfile,/remove_all)
+
+    fourier_filter_tool, filter_choice, iter_bwo, 'high', star_cut_length, $ ; description of the filter
+      base_gasfile, $ ; input image by filename
+      filtered_image_path = filtered_gasfile ; output file for the filtered image
+
+    gas_arr = readfits(filtered_gasfile, gas_hdr)
+    gzero_list = where(gas_arr lt 0.0e0, gzero_count)
+    if gzero_count ne 0 then gas_arr[gzero_list] = 0.0
+    writefits, filtered_gasfile, gas_arr, gas_hdr
+
+  endif else begin ; copy original files
     starfile = "starfile_iter0.fits"
     gasfile = "gasfile_iter0.fits"
 
-    base_starfile = datadir + starfile ; the base file for fourier iterations
-    base_gasfile = datadir + gasfile ; the base file for fourier iterations
+    zeroth_starfile = datadir + starfile ; the base file for fourier iterations
+    zeroth_gasfile = datadir + gasfile ; the base file for fourier iterations
 
-
-    file_copy, master_starfiletot, base_starfile, /overwrite
-    file_copy, master_gasfiletot, base_gasfile, /overwrite
+    file_copy, master_starfiletot, zeroth_starfile, /overwrite
+    file_copy, master_gasfiletot, zeroth_gasfile, /overwrite
 
   endelse
 
