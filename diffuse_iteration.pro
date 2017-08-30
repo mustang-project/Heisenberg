@@ -149,17 +149,15 @@ pro diffuse_iteration, master_inputfile
   ; ************************************************
   ; *** Cut runs
   ; ************************************************
-  iter_tgas_vec = [] ; initialise blank vecotr
-  iter_tgas_errmin_vec = [] ; initialise blank vecotr
-  iter_tgas_errmax_vec = [] ; initialise blank vecotr
-  iter_tover_vec = [] ; initialise blank vecotr
-  iter_tover_errmin_vec = [] ; initialise blank vecotr
-  iter_tover_errmax_vec = [] ; initialise blank vecotr
-  iter_lambda_vec = [] ; initialise blank vecotr
-  iter_lambda_errmin_vec = [] ; initialise blank vecotr
-  iter_lambda_errmax_vec = [] ; initialise blank vecotr
-
-  cut_vec = [] ; initialise blank vecotr
+  iter_tgas_vec = dblarr(iter_nmax) ; initialise vectors for results             [] ; initialise blank vecotr
+  iter_tgas_errmin_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  iter_tgas_errmax_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  iter_tover_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  iter_tover_errmin_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  iter_tover_errmax_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  iter_lambda_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  iter_lambda_errmin_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  iter_lambda_errmax_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
 
 
   ; ******************************************************
@@ -207,60 +205,69 @@ pro diffuse_iteration, master_inputfile
      ; * get variables
      ; **********************
      output_filename = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_output.dat', /remove_all)
-     read_kl14_tablerow, output_filename, name_vec, value_vec, /de_log ; get values and convert from stored log value to the real value
+     read_kl14_tablerow, output_filename, name_vec, value_vec, /de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
 
-     var_loc = where(name_vec eq 'tgas', /null)
-     if var_loc ne !null then iter_tgas_vec = [iter_tgas_vec, value_vec[var_loc]] else begin
+     var_loc = where(name_vec eq 'tgas', var_count)
+     if var_count eq 1 then iter_tgas_vec[iter_num] = value_vec[var_loc] else begin
+     ;if var_loc ne !null then iter_tgas_vec = [iter_tgas_vec, value_vec[var_loc]] else begin
        print, 'variable tgas not found'
        stop
      endelse
 
-    var_loc = where(name_vec eq 'tgas_errmin', /null)
-    if var_loc ne !null then iter_tgas_errmin_vec = [iter_tgas_errmin_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'tgas_errmin', var_count)
+    if var_count eq 1 then iter_tgas_errmin_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_tgas_errmin_vec = [iter_tgas_errmin_vec, value_vec[var_loc]] else begin
      print, 'variable tgas_errmin not found'
      stop
     endelse
 
-    var_loc = where(name_vec eq 'tgas_errmax', /null)
-    if var_loc ne !null then iter_tgas_errmax_vec = [iter_tgas_errmax_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'tgas_errmax', var_count)
+    if var_count eq 1 then iter_tgas_errmax_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_tgas_errmax_vec = [iter_tgas_errmax_vec, value_vec[var_loc]] else begin
      print, 'variable tgas_errmax not found'
      stop
     endelse
 
 
-    var_loc = where(name_vec eq 'tover', /null)
-    if var_loc ne !null then iter_tover_vec = [iter_tover_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'tover', var_count)
+    if var_count eq 1 then iter_tover_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_tover_vec = [iter_tover_vec, value_vec[var_loc]] else begin
      print, 'variable tover not found'
      stop
     endelse
 
-    var_loc = where(name_vec eq 'tover_errmin', /null)
-    if var_loc ne !null then iter_tover_errmin_vec = [iter_tover_errmin_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'tover_errmin', var_count)
+    if var_count eq 1 then iter_tover_errmin_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_tover_errmin_vec = [iter_tover_errmin_vec, value_vec[var_loc]] else begin
      print, 'variable tover_errmin not found'
      stop
     endelse
 
-    var_loc = where(name_vec eq 'tover_errmax', /null)
-    if var_loc ne !null then iter_tover_errmax_vec = [iter_tover_errmax_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'tover_errmax', var_count)
+    if var_count eq 1 then iter_tover_errmax_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_tover_errmax_vec = [iter_tover_errmax_vec, value_vec[var_loc]] else begin
      print, 'variable tover_errmax not found'
      stop
     endelse
 
 
-    var_loc = where(name_vec eq 'lambda', /null)
-    if var_loc ne !null then iter_lambda_vec = [iter_lambda_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'lambda', var_count)
+    if var_count eq 1 then iter_lambda_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_lambda_vec = [iter_lambda_vec, value_vec[var_loc]] else begin
      print, 'variable lambda not found'
      stop
     endelse
 
-    var_loc = where(name_vec eq 'lambda_errmin', /null)
-    if var_loc ne !null then iter_lambda_errmin_vec = [iter_lambda_errmin_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'lambda_errmin', var_count)
+    if var_count eq 1 then iter_lambda_errmin_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_lambda_errmin_vec = [iter_lambda_errmin_vec, value_vec[var_loc]] else begin
      print, 'variable lambda_errmin not found'
      stop
     endelse
 
-    var_loc = where(name_vec eq 'lambda_errmax', /null)
-    if var_loc ne !null then iter_lambda_errmax_vec = [iter_lambda_errmax_vec, value_vec[var_loc]] else begin
+    var_loc = where(name_vec eq 'lambda_errmax', var_count)
+    if var_count eq 1 then iter_lambda_errmax_vec[iter_num] = value_vec[var_loc] else begin
+    ;if var_loc ne !null then iter_lambda_errmax_vec = [iter_lambda_errmax_vec, value_vec[var_loc]] else begin
      print, 'variable lambda_errmax not found'
      stop
     endelse
@@ -271,14 +278,15 @@ pro diffuse_iteration, master_inputfile
     ; ; ************************************************
     printf, iter_lun,  iter_tgas_vec[iter_num], iter_tgas_errmin_vec[iter_num], iter_tgas_errmax_vec[iter_num], iter_tover_vec[iter_num], iter_tover_errmin_vec[iter_num], iter_tover_errmax_vec[iter_num], iter_lambda_vec[iter_num], iter_lambda_errmin_vec[iter_num], iter_lambda_errmax_vec[iter_num]
 
+
     plot_filename = strcompress(master_rundir + ifile_shortname + '_tgas_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_tgas_vec, iter_tgas_errmin_vec, iter_tgas_errmax_vec, 'Tgas [Myr]'
+    iteration_plot, plot_filename, iter_tgas_vec[0:iter_num], iter_tgas_errmin_vec[0:iter_num], iter_tgas_errmax_vec[0:iter_num], 'Tgas [Myr]'
 
     plot_filename = strcompress(master_rundir + ifile_shortname + '_tover_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_tover_vec, iter_tover_errmin_vec, iter_tover_errmax_vec, 'Tover [Myr]'
+    iteration_plot, plot_filename, iter_tover_vec[0:iter_num], iter_tover_errmin_vec[0:iter_num], iter_tover_errmax_vec[0:iter_num], 'Tover [Myr]'
 
     plot_filename = strcompress(master_rundir + ifile_shortname + '_lambda_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_lambda_vec, iter_lambda_errmin_vec, iter_lambda_errmax_vec, 'Lambda [pc]'
+    iteration_plot, plot_filename, iter_lambda_vec[0:iter_num], iter_lambda_errmin_vec[0:iter_num], iter_lambda_errmax_vec[0:iter_num], 'Lambda [pc]'
 
 
 
@@ -318,8 +326,8 @@ pro diffuse_iteration, master_inputfile
       filtered_image_path = filtered_starfile ; output file for the filtered image
 
     star_arr = readfits(filtered_starfile, star_hdr)
-    szero_list = where(star_arr lt 0.0e0, /null)
-    star_arr[szero_list] = 0.0
+    szero_list = where(star_arr lt 0.0e0, szero_count)
+    if szero_count ne 0 then star_arr[szero_list] = 0.0
     writefits, filtered_starfile, star_arr, star_hdr
 
 
@@ -333,8 +341,8 @@ pro diffuse_iteration, master_inputfile
       filtered_image_path = filtered_gasfile ; output file for the filtered image
 
     gas_arr = readfits(filtered_gasfile, gas_hdr)
-    gzero_list = where(gas_arr lt 0.0e0, /null)
-    gas_arr[gzero_list] = 0.0
+    gzero_list = where(gas_arr lt 0.0e0, gzero_count)
+    if gzero_count ne 0 then gas_arr[gzero_list] = 0.0
     writefits, filtered_gasfile, gas_arr, gas_hdr
 
 
