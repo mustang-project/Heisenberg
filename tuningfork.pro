@@ -1098,7 +1098,7 @@ if diffuse_frac eq 1 then begin
   ;  stop
 
    endif else begin
-      f_error, 'The current value of diffuse_quant (', diffuse_quant, ') is not valued select 1 (flux) or 2 (power)'
+      f_error, 'The current value of diffuse_quant (', diffuse_quant, ') is not valued select 0 (flux) or 1 (power)'
    endelse
 endif else begin ; calcuate fgmc and fcl not using fourier filtering
     if map_units eq 0 then begin
