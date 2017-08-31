@@ -1,10 +1,10 @@
 pro diffuse_iteration, master_inputfile
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
 
-  master_inputfile = master_inputfile[0]
+  master_inputfile = master_inputfile[0] ; convert to single value from array
 
   input_split = strsplit(master_inputfile, path_sep(), /extract)
-  ifile_shortname = input_split[-1]
+  ifile_shortname = input_split[n_elements(input_split)-1]
 
   ; #############################
   ; COPY from tuningfork.pro -> needs modularisation
