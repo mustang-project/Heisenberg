@@ -506,8 +506,8 @@ if sensitivity then begin
         offstar=0.0d0
         sensstar3=std_star3
         offstar3=0.0d0
-        offgas=std_gas
-        sensgas=0.0d0
+        sensgas=std_gas
+        offgas=0.0d0
     endif else begin
         print,' ==> determining sensitivity limits'
         sensstarlist=reform(smoothstar(peak_res,*,*),n_elements(smoothstar(peak_res,*,*)))
