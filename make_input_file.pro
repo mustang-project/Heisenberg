@@ -17,7 +17,11 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
                    , diffuse_quant, f_filter_type, bw_order, filter_len_conv $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
                    , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
-                   , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
+                   , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
+
+                   ; ################################################################################################################################################################################################################################################################
+                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
+
 
 
   openw, inp_lun, input_file_filepath, width = 350, /get_lun
@@ -517,21 +521,46 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while(strlen(std_gas) lt max_string_len) do std_gas = std_gas + pad_string
 
 
+
+
+
+  ; ##########################################################################################
+  ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) -- Optional
+  ; ##########################################################################################
+  iter_input_switch = 0
+  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 then begin
+    iter_input_switch = 1 ; use so don't need to repeat test
+
+
+    use_guess = strcompress(string(use_guess))
+    initial_guess = strcompress(string(initial_guess))
+    iter_criterion = strcompress(string(iter_criterion))
+    iter_crit_len = strcompress(string(iter_crit_len))
+    iter_nmax = strcompress(string(iter_nmax))
+    iter_filter = strcompress(string(iter_filter))
+    iter_bwo = strcompress(string(iter_bwo))
+    iter_len_conv = strcompress(string(iter_len_conv))
+
+    max_string_len = max([strlen(use_guess), strlen(initial_guess), strlen(iter_criterion), strlen(iter_crit_len), strlen(iter_nmax), strlen(iter_filter), strlen(iter_bwo), strlen(iter_len_conv), strlen(max_string_len)])
+
+
+    while(strlen(use_guess) lt max_string_len) do use_guess = use_guess + pad_string
+    while(strlen(initial_guess) lt max_string_len) do initial_guess = initial_guess + pad_string
+    while(strlen(iter_criterion) lt max_string_len) do iter_criterion = iter_criterion + pad_string
+    while(strlen(iter_crit_len) lt max_string_len) do iter_crit_len = iter_crit_len + pad_string
+    while(strlen(iter_nmax) lt max_string_len) do iter_nmax = iter_nmax + pad_string
+    while(strlen(iter_filter) lt max_string_len) do iter_filter = iter_filter + pad_string
+    while(strlen(iter_bwo) lt max_string_len) do iter_bwo = iter_bwo + pad_string
+    while(strlen(iter_len_conv) lt max_string_len) do iter_len_conv = iter_len_conv + pad_string
+
+
+
+  endif
+
+
   ; #############################################
-  ; # FILE NAMES
+  ; # write input file
   ; #############################################
-
-  ; if n_elements(autoexit) ne 1 then autoexit = 0  ; defaults
-  ;
-  ; mask_images = string(mask_images)
-  ;max_string_len = max( ) + comment_sep_length
-  ; while (strlen(autoexit) lt max_string_len) do autoexit = autoexit + pad_string
-
-
-
-
-
-
 
 
   printf, inp_lun, '################################################################################'
@@ -539,6 +568,11 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, '#                  FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                  #'
   printf, inp_lun, '#  start environment with >> idl kl14 -arg [full/absolute path of input file]  #'
   printf, inp_lun, '#                                                                              #'
+  if iter_input_switch eq 1 then begin ; print instructions for iterative running
+    printf, inp_lun, '#  for iterative diffuse filtering, start environment with:                    #'
+    printf, inp_lun, '#   >> idl iterate_kl14 -arg [full/absolute path of input file]                #'
+    printf, inp_lun, '#                                                                              #'
+  endif
   printf, inp_lun, '#                             BEGIN PARAMETER FILE                             #'
   printf, inp_lun, '#                                                                              #'
   printf, inp_lun, '################################################################################'
@@ -696,9 +730,17 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'std_star3       ', std_star3,      '# The measured standard deviation of gasfile'
   printf, inp_lun, 'std_gas         ', std_gas,        '# The measured standard deviation of starfile3 (only used of use_star3 = 1)'
 
-
-
-
+  if iter_input_switch eq 1 then begin ; create input file for iteration
+    printf, inp_lun, '# INPUT PARAMETERS 9 (Fourier diffuse removal iteration)''
+    printf, inp_lun, 'use_guess       ', use_guess,      '#  [0] Do not Filter images before first KL14 run and ignore parameter: "initial_guess" [1] Filter images with initial guess of lambda before first KL14 run'
+    printf, inp_lun, 'initial_guess   ', initial_guess,  '#  Length in pc of the initial estimate of lambda with which to filter the images'
+    printf, inp_lun, 'iter_criterion  ', iter_criterion, '#  Fractional difference between lambda and previous lambda value(s) that triggers an end to the iteration process.'
+    printf, inp_lun, 'iter_crit_len   ', iter_crit_len,  '#  Number of previous runs of KL14 over which iter_criterion must be true, i.e. if iter_crit_len = 1 then the current value of lambda is compared to the previous value of lambda, if iter_crit_len = 2 then then the current value of lambda is compared to the previous value of lambda and the value of lambda prior to the previous value'
+    printf, inp_lun, 'iter_nmax       ', iter_nmax,      '#  Maximum number of KL14 runs allowed in the iteration process. If iter_criterion is not reached before this number of runs the programme will exit anyway.'
+    printf, inp_lun, 'iter_filter     ', iter_filter,    '#  Filter type choice for iterative Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
+    printf, inp_lun, 'iter_bwo        ', iter_bwo,       '#  The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_bwo = 0 [butterworth], but a dummy value should be supplied anyway)'
+    printf, inp_lun, 'iter_len_conv   ', iter_len_conv,  '#  conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)'
+  endif
 
   printf, inp_lun, '################################################'
   printf, inp_lun, '#                                              #'
