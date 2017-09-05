@@ -575,43 +575,61 @@ endif
 
 if id_peaks then begin
     print,' ==> identifying peaks'
+    ; ;IDENTIFY PEAKS IN STELLAR MAP
+    ; if loglevels then begin
+	  ;   maxval=max(alog10(peakidstar),/nan) ;maximum value
+	  ;   maxlevel=(floor(maxval/logspacing_s)-1)*logspacing_s ;level below maximum value
+    ;     levels=10.^(maxlevel-logrange_s+dindgen(nlevels_s)/(nlevels_s-1)*logrange_s) ;array with levels
+    ; endif else begin
+    ;     maxval=max(peakidstar,/nan)
+    ;     minval=min(peakidstar,/nan)
+    ;     levels=minval+(maxval-minval)*dindgen(nlevels_s)/(nlevels_s-1)
+    ; endelse
+    ; starpeaks=peaks2d(peakdir+starfile2short,levels=levels,/log,fluxweight=flux_weight,npixmin=npixmin-1) ;Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
+    ; sortpeaks=reverse(sort(starpeaks(*,2))) ;sort by decreasing intensity
+    ; starpeaks(*,0)=starpeaks(sortpeaks,0)
+    ; starpeaks(*,1)=starpeaks(sortpeaks,1)
+    ; starpeaks(*,2)=starpeaks(sortpeaks,2)
+    ; starpeaks(*,3)=starpeaks(sortpeaks,3)
+    ; if use_star2 then istarmax=n_elements(starpeaks(*,0))-1 else istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar+offstar)) ;last peak with intensity larger than the sensitivity limit
+    ; starpeaks=starpeaks(0:istarmax,*) ;reject stellar peaks with stellar flux lower than sensitivity limit
+    ;
+    ; ;IDENTIFY PEAKS IN GAS MAP
+    ; if loglevels then begin
+	  ;   maxval=max(alog10(peakidgas),/nan) ;maximum value
+	  ;   maxlevel=(fix(maxval/logspacing_g)-1)*logspacing_g ;level below maximum value
+    ;     levels=10.^(maxlevel-logrange_g+dindgen(nlevels_g)/(nlevels_g-1)*logrange_g) ;array with levels
+    ; endif else begin
+    ;     maxval=max(peakidgas,/nan)
+    ;     minval=min(peakidgas,/nan)
+    ;     levels=minval+(maxval-minval)*dindgen(nlevels_g)/(nlevels_g-1)
+    ; endelse
+    ; gaspeaks=peaks2d(peakdir+gasfile2short,levels=levels,/log,fluxweight=flux_weight,npixmin=npixmin-1) ;Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
+    ; sortpeaks=reverse(sort(gaspeaks(*,2))) ;sort by decreasing intensity
+    ; gaspeaks(*,0)=gaspeaks(sortpeaks,0)
+    ; gaspeaks(*,1)=gaspeaks(sortpeaks,1)
+    ; gaspeaks(*,2)=gaspeaks(sortpeaks,2)
+    ; gaspeaks(*,3)=gaspeaks(sortpeaks,3)
+    ; if use_gas2 then igasmax=n_elements(gaspeaks(*,0))-1 else igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas+offgas)) ;last peak with intensity larger than the sensitivity limit
+    ; gaspeaks=gaspeaks(0:igasmax,*) ;reject gas peaks with gas flux lower than sensitivity limit
+
+
     ;IDENTIFY PEAKS IN STELLAR MAP
-    if loglevels then begin
-	    maxval=max(alog10(peakidstar),/nan) ;maximum value
-	    maxlevel=(floor(maxval/logspacing_s)-1)*logspacing_s ;level below maximum value
-        levels=10.^(maxlevel-logrange_s+dindgen(nlevels_s)/(nlevels_s-1)*logrange_s) ;array with levels
-    endif else begin
-        maxval=max(peakidstar,/nan)
-        minval=min(peakidstar,/nan)
-        levels=minval+(maxval-minval)*dindgen(nlevels_s)/(nlevels_s-1)
-    endelse
-    starpeaks=peaks2d(peakdir+starfile2short,levels=levels,/log,fluxweight=flux_weight,npixmin=npixmin-1) ;Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
-    sortpeaks=reverse(sort(starpeaks(*,2))) ;sort by decreasing intensity
-    starpeaks(*,0)=starpeaks(sortpeaks,0)
-    starpeaks(*,1)=starpeaks(sortpeaks,1)
-    starpeaks(*,2)=starpeaks(sortpeaks,2)
-    starpeaks(*,3)=starpeaks(sortpeaks,3)
-    if use_star2 then istarmax=n_elements(starpeaks(*,0))-1 else istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar+offstar)) ;last peak with intensity larger than the sensitivity limit
-    starpeaks=starpeaks(0:istarmax,*) ;reject stellar peaks with stellar flux lower than sensitivity limit
+    interactive_peak_find, $
+      loglevels, peakidstar,logspacing_s,logrange_s, nlevels_s, $
+      peakdir, starfile2short, $
+      flux_weight, npixmin, use_star2, $ ; inputs (x is gas or stars as appropriate)
+      nsigma, sensstar, offstar, $
+      starpeaks ; output variable is Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
 
     ;IDENTIFY PEAKS IN GAS MAP
-    if loglevels then begin
-	    maxval=max(alog10(peakidgas),/nan) ;maximum value
-	    maxlevel=(fix(maxval/logspacing_g)-1)*logspacing_g ;level below maximum value
-        levels=10.^(maxlevel-logrange_g+dindgen(nlevels_g)/(nlevels_g-1)*logrange_g) ;array with levels
-    endif else begin
-        maxval=max(peakidgas,/nan)
-        minval=min(peakidgas,/nan)
-        levels=minval+(maxval-minval)*dindgen(nlevels_g)/(nlevels_g-1)
-    endelse
-    gaspeaks=peaks2d(peakdir+gasfile2short,levels=levels,/log,fluxweight=flux_weight,npixmin=npixmin-1) ;Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
-    sortpeaks=reverse(sort(gaspeaks(*,2))) ;sort by decreasing intensity
-    gaspeaks(*,0)=gaspeaks(sortpeaks,0)
-    gaspeaks(*,1)=gaspeaks(sortpeaks,1)
-    gaspeaks(*,2)=gaspeaks(sortpeaks,2)
-    gaspeaks(*,3)=gaspeaks(sortpeaks,3)
-    if use_gas2 then igasmax=n_elements(gaspeaks(*,0))-1 else igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas+offgas)) ;last peak with intensity larger than the sensitivity limit
-    gaspeaks=gaspeaks(0:igasmax,*) ;reject gas peaks with gas flux lower than sensitivity limit
+    interactive_peak_find, $
+      loglevels, peakidgas,logspacing_g,logrange_g, nlevels_g, $
+      peakdir, gasfile2short, $
+      flux_weight, npixmin, use_gas2, $ ; inputs (x is gas or stars as appropriate)
+      nsigma, sensgas, offgas, $
+      gaspeaks ; output variable is Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
+
 
     peaks=[starpeaks,gaspeaks]
     sz=size(peaks)
