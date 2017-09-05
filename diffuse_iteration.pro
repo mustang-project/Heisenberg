@@ -183,6 +183,18 @@ pro diffuse_iteration, master_inputfile
 
   endelse
 
+  ; ************************************************
+  ; *** copy over starfile2 and gasfile2
+  ; ************************************************
+  if use_star2 eq 1 then begin
+    master_starfile2tot = master_datadir + starfile2
+    file_copy, master_starfile2tot, datadir + starfile2, /overwrite
+  endif
+
+  if use_gas2 eq 1 then begin
+    master_gasfile2tot = master_datadir + gasfile2
+    file_copy, master_gasfile2tot, datadir + gasfile2, /overwrite
+  endif
 
   ; ************************************************
   ; *** Cut runs
