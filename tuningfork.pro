@@ -133,7 +133,7 @@ if loglevels then begin ;set number of logarithmic contour levels for peak ident
     nlevels_g=logrange_g/logspacing_g+1 ;number of gas contour levels
 endif else begin ;set number of linear contour levels for peak identification
     nlevels_s=nlinlevels_s ;number of stellar contour levels
-    nlevels_g=nlinlevels_s ;number of gas contour levels
+    nlevels_g=nlinlevels_g ;number of gas contour levels
 endelse
 if tstar_incl eq 0 then tovermaxi=tgasmaxi else tovermaxi=min([tstariso,tgasmaxi])
 
