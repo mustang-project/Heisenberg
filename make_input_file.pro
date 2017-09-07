@@ -10,7 +10,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , mask_images = mask_images, regrid = regrid, smoothen = smoothen, sensitivity = sensitivity, id_peaks = id_peaks, calc_ap_flux = calc_ap_flux, generate_plot = generate_plot, get_distances = get_distances, calc_obs = calc_obs, calc_fit = calc_fit, diffuse_frac = diffuse_frac, derive_phys = derive_phys, write_output = write_output, cleanup = cleanup, autoexit = autoexit $ ; FLAGS 1 (keywords)'
                    , use_star2 = use_star2, use_gas2 = use_gas2, use_star3 = use_star3 $ ;  FLAGS 2 keywords
                    , mstar_ext1 = mstar_ext, mstar_int1 = mstar_int, mgas_ext1 = mgas_ext, mgas_int1 = mgas_int, mstar_ext2 = mstar_ext2, mstar_int2 = mstar_int2, mgas_ext2 = mgas_ext2, mgas_int2 = mgas_int2, mstar_ext3 = mstar_ext3, mstar_int3 = mstar_int3, convert_masks = convert_masks, cut_radius = cut_radius $ ; # FLAGS 3 (masking-related options) keywords ; note mstar_ext1 = mstar_ext etc. prevents ambigious keyword error
-                   , set_centre = set_centre, tophat = tophat, loglevels = loglevels, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11 $ ; # FLAGS 4 (choose analysis options)
+                   , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11 $ ; # FLAGS 4 (choose analysis options)
 
                    , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
                    , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
@@ -246,6 +246,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   if n_elements(set_centre) ne 1 then set_centre = 1
   if n_elements(tophat) ne 1 then tophat = 1
   if n_elements(loglevels) ne 1 then loglevels = 1
+  if n_elements(peak_find_tui) ne 1 then peak_find_tui = 0
   if n_elements(flux_weight) ne 1 then flux_weight = 0
   if n_elements(calc_ap_area) ne 1 then calc_ap_area = 1
   if n_elements(tstar_incl) ne 1 then tstar_incl = 0
@@ -256,6 +257,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   set_centre = strcompress(string(set_centre))
   tophat = strcompress(string(tophat))
   loglevels = strcompress(string(loglevels))
+  peak_find_tui = strcompress(string(peak_find_tui))
   flux_weight = strcompress(string(flux_weight))
   calc_ap_area = strcompress(string(calc_ap_area))
   tstar_incl = strcompress(string(tstar_incl))
@@ -263,13 +265,14 @@ pro make_input_file, input_file_filepath   $ ; general variables
   map_units = strcompress(string(map_units))
   use_X11 = strcompress(string(use_X11))
 
-  max_string_len = max([strlen(set_centre), strlen(tophat), strlen(loglevels), strlen(flux_weight), strlen(calc_ap_area), strlen(tstar_incl), strlen(peak_prof), strlen(map_units), strlen(use_X11)]) + comment_sep_length
+  max_string_len = max([strlen(set_centre), strlen(tophat), strlen(loglevels), strlen(peak_find_tui), strlen(flux_weight), strlen(calc_ap_area), strlen(tstar_incl), strlen(peak_prof), strlen(map_units), strlen(use_X11)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
 
   while(strlen(set_centre) lt max_string_len) do set_centre = set_centre + pad_string
   while(strlen(tophat) lt max_string_len) do tophat = tophat + pad_string
   while(strlen(loglevels) lt max_string_len) do loglevels = loglevels + pad_string
+  while(strlen(peak_find_tui) lt max_string_len) do peak_find_tui = peak_find_tui + pad_string
   while(strlen(flux_weight) lt max_string_len) do flux_weight = flux_weight + pad_string
   while(strlen(calc_ap_area) lt max_string_len) do calc_ap_area = calc_ap_area + pad_string
   while(strlen(tstar_incl) lt max_string_len) do tstar_incl = tstar_incl + pad_string
@@ -641,6 +644,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'set_centre      ', set_centre,     '# [0] Pixel coordinates of galaxy centre are set to the central pixel of starfile; [1, DEFAULT] Specify pixel coordinates of galaxy centre under INPUT PARAMETERS 1 (basic map analysis)'
   printf, inp_lun, 'tophat          ', tophat,         '# [0] Use Gaussian kernel to smoothen maps to larger aperture sizes; [1, DEFAULT] Use tophat kernel to smoothen maps to larger aperture sizes'
   printf, inp_lun, 'loglevels       ', loglevels,      '# [0] Linear equal-spacing of peak identification contour levels; [1, DEFAULT] Logarithmic equal-spacing of peak identification contour levels'
+  printf, inp_lun, 'peak_find_tui   ', peak_find_tui,  '# [0, DEFAULT] select peaks only using INPUT PARAMETERS 3 (peak identification) without user interactivity; [1] use INPUT PARAMETERS 3 (peak identification) for initial peak finding and then enter interactive peak finding Text User Interface (TUI)'
   printf, inp_lun, 'flux_weight     ', flux_weight,    '# [0, DEFAULT] Peak positions correspond to brightest pixel in peak area; [1] Peak positions correspond to flux-weighted mean position of peak area'
   printf, inp_lun, 'calc_ap_area    ', calc_ap_area,   '# Calculate the area of apertures used based on number of unmasked pixels within the target aperture defined under INPUT PARAMETERS 2 (apertures) (on/off)'
   printf, inp_lun, 'tstar_incl      ', tstar_incl,     '# [0, DEFAULT] Reference time-scale tstariso does not include the overlap phase (tstar=tstariso+tover); [1] tstariso includes the overlap phase (tstar=tstariso)'

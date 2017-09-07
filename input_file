@@ -70,6 +70,7 @@ cut_radius      1         # Mask maps outside a specified radial interval within
 set_centre      1         # [0] Pixel coordinates of galaxy centre are set to the central pixel of starfile; [1, DEFAULT] Specify pixel coordinates of galaxy centre under INPUT PARAMETERS 1 (basic map analysis)
 tophat          1         # [0] Use Gaussian kernel to smoothen maps to larger aperture sizes; [1, DEFAULT] Use tophat kernel to smoothen maps to larger aperture sizes
 loglevels       1         # [0] Linear equal-spacing of peak identification contour levels; [1, DEFAULT] Logarithmic equal-spacing of peak identification contour levels
+peak_find_tui   0         # [0, DEFAULT] select peaks only using INPUT PARAMETERS 3 (peak identification) without user interactivity; [1] use INPUT PARAMETERS 3 (peak identification) for initial peak finding and then enter interactive peak finding Text User Interface (TUI)
 flux_weight     0         # [0, DEFAULT] Peak positions correspond to brightest pixel in peak area; [1] Peak positions correspond to flux-weighted mean position of peak area
 calc_ap_area    1         # Calculate the area of apertures used based on number of unmasked pixels within the target aperture defined under INPUT PARAMETERS 2 (apertures) (on/off)
 tstar_incl      0         # [0, DEFAULT] Reference time-scale tstariso does not include the overlap phase (tstar=tstariso+tover); [1] tstariso includes the overlap phase (tstar=tstariso)
