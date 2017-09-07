@@ -7,7 +7,7 @@ pro interactive_peak_find, peak_find_tui, $
   sensstar, offstar, $ ; star sensitivity variables
   sensgas, offgas, $   ; gas sensitivity variables
   ; ########################################################################
-  starpeaks, gaspeaks ; outputs variables with peaks
+  starpeaks, gaspeaks ; output variables with peaks
   ; ########################################################################
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
 
@@ -152,7 +152,7 @@ pro interactive_peak_find, peak_find_tui, $
   endwhile
 
   ; write out final parameters
-  peak_report_file = peakdir + '  .dat'
+  peak_report_file = peakdir + 'interactive_peak_fin_report.dat'
   openw, peak_lun, peak_report_file, width = 150, /get_lun
   printf, peak_lun, '# Interactive Peak Identification report. Final selected parameters'
   printf, peak_lun, 'npixmin          ', npixmin
