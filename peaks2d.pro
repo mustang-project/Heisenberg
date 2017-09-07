@@ -2,18 +2,20 @@
 ;IDENTIFY PEAKS IN 2D;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-function peaks2d,map,levels=levels,log=log,fluxweight=fluxweight,npixmin=npixmin
-    
+function peaks2d,map,levels=levels,log=log,fluxweight=fluxweight,npixmin=npixmin,peak_find_tui=peak_find_tui
+
     if n_elements(log) eq 0 then log=0
     if n_elements(fluxweight) eq 0 then fluxweight=0
-    
+
     resolve_routine,'clfind2d'
     if log then clfind2d,file=map,levels=levels,/log,npixmin=npixmin else clfind2d,file=map,levels=levels,npixmin=npixmin
-    
+
     clstats2d,file=map,log=log,/silent,fluxweight=fluxweight
     file=map+'_peaks.dat'
     nlines=min(file_lines(file)-8)
-    if nlines le 2 then f_error,'insufficient number of peaks identified ('+f_string(nlines,0)+')' ;analysis fundamentally does not work if number of peaks is 2 or less
+    if nlines le 2 then begin
+      if n_elements(peak_find_tui) eq 1 && peak_find_tui eq 1 then return, 'TOOFEWLINES' else  f_error,'insufficient number of peaks identified ('+f_string(nlines,0)+')' ;analysis fundamentally does not work if number of peaks is 2 or less
+    endif
     n=dblarr(nlines)
     x=dblarr(nlines)
     y=dblarr(nlines)
@@ -41,12 +43,9 @@ function peaks2d,map,levels=levels,log=log,fluxweight=fluxweight,npixmin=npixmin
     endfor
     close,lun ;close the logical unit
     free_lun,lun ;make the logical unit available again
-        
+
     coordinates=[[x],[y],[totflux],[npix]]
-    
+
     return,coordinates
-    
+
 end
-
-
-
