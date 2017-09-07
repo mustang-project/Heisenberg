@@ -1,58 +1,169 @@
-pro interactive_peak_find, $
-  loglevels, peakid_x,logspacing_x,logrange_x, nlevels_x, $
-  peakdir, x_file2short, $
-  flux_weight, npixmin, use_x2, $ ; inputs (x is gas or stars as appropriate)
-  nsigma, sens_x, off_x, $
+pro interactive_peak_find, peak_find_tui, $
+  nsigma, npixmin, $ ; global variables
+  loglevels, flux_weight, use_gas2, use_star2, $ ; control switches
+  peakdir, starfile2short, gasfile2short, $ ; filepaths
+  peakidstar,logspacing_s,logrange_s, nlevels_s, nlinlevel_s, $ ; star levels variables
+  peakidgas,logspacing_g,logrange_g, nlevels_g, nlinlevel_g, $  ; gas levels variables
+  sensstar, offstar, $ ; star sensitivity variables
+  sensgas, offgas, $   ; gas sensitivity variables
   ; ########################################################################
-  x_peaks ; outputs
-
-  if loglevels then begin
-    maxval=max(alog10(peakid_x),/nan) ;maximum value
-    maxlevel=(floor(maxval/logspacing_x)-1)*logspacing_x ;level below maximum value
-    levels=10.^(maxlevel-logrange_x+dindgen(nlevels_x)/(nlevels_x-1)*logrange_x) ;array with levels
-  endif else begin
-    maxval=max(peakid_x,/nan)
-    minval=min(peakid_x,/nan)
-    levels=minval+(maxval-minval)*dindgen(nlevels_x)/(nlevels_x-1)
-  endelse
-  x_peaks=peaks2d(peakdir+x_file2short,levels=levels,/log,fluxweight=flux_weight,npixmin=npixmin-1) ;Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
-  sortpeaks=reverse(sort(x_peaks(*,2))) ;sort by decreasing intensity
-
-
-  x_peaks(*,0)=x_peaks(sortpeaks,0)
-  x_peaks(*,1)=x_peaks(sortpeaks,1)
-  x_peaks(*,2)=x_peaks(sortpeaks,2)
-  x_peaks(*,3)=x_peaks(sortpeaks,3)
-
-
-  if use_x2 then i_x_max=n_elements(x_peaks(*,0))-1 else i_x_max=max(where(x_peaks(*,2) gt nsigma*sens_x+off_x)) ;last peak with intensity larger than the sensitivity limit
-  x_peaks=x_peaks(0:i_x_max,*) ;reject stellar peaks with stellar flux lower than sensitivity limit
+  starpeaks, gaspeaks ; outputs variables with peaks
+  ; ########################################################################
+  compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
 
 
 
+  run_stars = 1  ; variables to control running of peak finding on gas and stars
+  run_gas = 1    ;
+  break_test = 0
+  counter = -1
+  while(break_test eq 0) do begin ; start peak_finding
+    empty_stars = 0
+    empty_gas = 0
+
+
+    if run_stars eq 1 then begin
+      starpeaks = peak_find(peak_find_tui, $
+        loglevels, peakidstar,logspacing_s,logrange_s, nlevels_s, $
+        peakdir, starfile2short, $
+        flux_weight, npixmin, use_star2, $ ; inputs (x is gas or stars as appropriate)
+        nsigma, sensstar, sensgas)
+
+      if (size(starpeaks,/type) eq 7) then begin ; catch errors. 7 = string
+        if starpeaks eq 'TOOFEWLINES' then begin
+          empty_stars = 1
+        endif
+
+      endif
+
+    endif
+    if run_gas eq 1 then begin
+      gaspeaks = peak_find(peak_find_tui, $
+        loglevels, peakidgas,logspacing_g,logrange_g, nlevels_g, $
+        peakdir, gasfile2short, $
+        flux_weight, npixmin, use_gas2, $ ; inputs (x is gas or stars as appropriate)
+        nsigma, sensgas, offgas)
+
+      if (size(gaspeaks,/type) eq 7) then begin ; catch errors. 7 = string
+        if gaspeaks eq 'TOOFEWLINES' then begin
+          empty_gas = 1
+        endif
+      endif
+
+    endif
 
 
 
+    if peak_find_tui ne 1 then break_test = 1 else begin ; if requested, begin peak-identification TUI
+
+      run_test = 0 ; test for run_stars and run_gas = 0
+      while (run_test eq 0) do begin
+
+        if run_stars eq 1 || run_gas eq 1 then begin ; don't reshow peaks if looping to ensure changed variables
+          counter ++
+          print, 'PeakID # ' +  strcompress(string(counter), /remove_all) + '. Current settings:'
+          print, 'npixmin          ', npixmin
+          print, 'nsigma           ', nsigma
+          print, 'logrange_s       ', logrange_s
+          print, 'logspacing_s     ', logspacing_s
+          print, 'logrange_g       ', logrange_g
+          print, 'logspacing_g     ', logspacing_g
+          print, 'nlinlevel_s      ', nlinlevel_s
+          print, 'nlinlevel_g      ', nlinlevel_g
 
 
+          star_window_title = 'starmap_peakID_#' + strcompress(string(counter), /remove_all)
+          gas_window_title = 'gasmap_peakID_#' + strcompress(string(counter), /remove_all)
+          if empty_stars eq 1 then ds9_display_peaks, peakdir, starfile2short, star_window_title else  ds9_display_peaks, peakdir, starfile2short, star_window_title, starpeaks[*,0], starpeaks[*,1]
+          if empty_gas eq 1 then ds9_display_peaks, peakdir, gasfile2short, gas_window_title else ds9_display_peaks, peakdir, gasfile2short, gas_window_title, gaspeaks[*,0], gaspeaks[*,1]
+        endif
 
-  ; if loglevels then begin
-  ;   maxval=max(alog10(peakidstar),/nan) ;maximum value
-  ;   maxlevel=(floor(maxval/logspacing_s)-1)*logspacing_s ;level below maximum value
-  ;     levels=10.^(maxlevel-logrange_s+dindgen(nlevels_s)/(nlevels_s-1)*logrange_s) ;array with levels
-  ; endif else begin
-  ;     maxval=max(peakidstar,/nan)
-  ;     minval=min(peakidstar,/nan)
-  ;     levels=minval+(maxval-minval)*dindgen(nlevels_s)/(nlevels_s-1)
-  ; endelse
-  ; starpeaks=peaks2d(peakdir+starfile2short,levels=levels,/log,fluxweight=flux_weight,npixmin=npixmin-1) ;Nx4 array (N is # peaks) listing (x,y,F_tot,area) of peaks in pixel IDs
-  ; sortpeaks=reverse(sort(starpeaks(*,2))) ;sort by decreasing intensity
-  ; starpeaks(*,0)=starpeaks(sortpeaks,0)
-  ; starpeaks(*,1)=starpeaks(sortpeaks,1)
-  ; starpeaks(*,2)=starpeaks(sortpeaks,2)
-  ; starpeaks(*,3)=starpeaks(sortpeaks,3)
-  ; if use_star2 then istarmax=n_elements(starpeaks(*,0))-1 else istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar+offstar)) ;last peak with intensity larger than the sensitivity limit
-  ; starpeaks=starpeaks(0:istarmax,*) ;reject stellar peaks with stellar flux lower than sensitivity limit
+
+        if empty_stars eq 1 || empty_gas eq 1 then begin
+          test = 'n' ; must redo the peak selection
+          if (empty_stars eq 1 && empty_gas eq 1) then empty_maps = "star and gas maps" else $
+          if (empty_stars eq 1) then  empty_maps = "star map" else $
+          if (empty_gas eq 1) then  empty_maps = "gas map"
+          print, "Too few peaks were found in the " + empty_maps + " . You must change at least one peak identification parameter"
+
+
+        endif else begin
+          print, "Are you satisfied with the identified peaks? Type 'Yes' or 'No' "
+          test =''
+          beep
+          read, test
+          test = strlowcase(test)
+        endelse
+
+        if test eq 'y' || test eq 'yes' then break_test = 1 else begin  ; add check for no or mistaken input...
+          run_stars = 0
+          run_gas = 0
+
+          ; 1) global variables
+          ; npixmin
+          npixmin_old = npixmin
+          npixmin = peak_var_read('npixmin', npixmin_old, /global_var)
+
+          if npixmin ne npixmin_old then begin
+            run_stars = 1
+            run_gas = 1
+          endif
+
+          ; nsigma
+          nsigma_old = nsigma
+          nsigma = peak_var_read('nsigma', nsigma_old, /global_var)
+
+          if nsigma ne nsigma_old then begin
+            run_stars = 1 ; global variable so must rerun both stars and gas
+            run_gas = 1
+          endif
+
+          if loglevels eq 1 then begin ; change log spacing parameters
+            logrange_s_old = logrange_s
+            logrange_s = peak_var_read('logrange_s', logrange_s_old)
+            logspacing_s_old = logspacing_s
+            logspacing_s = peak_var_read('logspacing_s', logspacing_s_old)
+            if logrange_s ne logrange_s_old || logspacing_s ne logspacing_s_old then run_stars = 1
+
+            logrange_g_old = logrange_g
+            logrange_g = peak_var_read('logrange_g', logrange_g_old)
+            logspacing_g_old = logspacing_g
+            logspacing_g = peak_var_read('logspacing_g', logspacing_g_old)
+            if logrange_g ne logrange_g_old || logspacing_g ne logspacing_g_old then run_gas = 1
+
+          endif else begin ; change linear spacing parameters
+            nlinlevel_s_old = nlinlevel_s
+            nlinlevel_s = peak_var_read('nlinlevel_s', nlinlevel_s_old)
+            if nlinlevel_s ne nlinlevel_s_old then run_stars = 1
+
+            nlinlevel_g_old = nlinlevel_g
+            nlinlevel_g = peak_var_read('nlinlevel_g', nlinlevel_g_old)
+            if nlinlevel_g ne nlinlevel_g_old then run_gas = 1
+
+          endelse
+
+          nlevels_s = calc_levels(loglevels, logrange_s, logspacing_s, nlinlevels_s) ; calculate new stellar levels
+          nlevels_g = calc_levels(loglevels, logrange_g, logspacing_g, nlinlevels_g) ; calculate new gas levels
+
+        endelse
+        if run_stars eq 1 || run_gas eq 1 then run_test = 1 else print, "No peakfinding variables are different to the variables of the previous peakfinding run. Please change at least one variable if you want to rerun."
+      endwhile
+    endelse
+  endwhile
+
+  ; write out final parameters
+  peak_report_file = peakdir + '  .dat'
+  openw, peak_lun, peak_report_file, width = 150, /get_lun
+  printf, peak_lun, '# Interactive Peak Identification report. Final selected parameters'
+  printf, peak_lun, 'npixmin          ', npixmin
+  printf, peak_lun, 'nsigma           ', nsigma
+  printf, peak_lun, 'logrange_s       ', logrange_s
+  printf, peak_lun, 'logspacing_s     ', logspacing_s
+  printf, peak_lun, 'logrange_g       ', logrange_g
+  printf, peak_lun, 'logspacing_g     ', logspacing_g
+  printf, peak_lun, 'nlinlevel_s      ', nlinlevel_s
+  printf, peak_lun, 'nlinlevel_g      ', nlinlevel_g
+  free_lun, peak_lun
 
 
 

@@ -67,6 +67,12 @@
 .com fourier_power_fraction
 .com power_fraction_calc
 
+.com calc_levels
+.com ds9_display_peaks
+.com peak_var_read
+.com peak_find
+.com interactive_peak_find
+
 .com f_error.pro
 .com f_string.pro
 
