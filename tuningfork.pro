@@ -578,7 +578,7 @@ if id_peaks then begin
     interactive_peak_find, peak_find_tui, $
       nsigma, npixmin, $ ; global variables
       loglevels, flux_weight, use_gas2, use_star2, $ ; control switches
-      peakdir, starfile2short, gasfile2short, $ ; filepaths
+      peakdir, starfile2short, gasfile2short, outputdir, galaxy,  $ ; filepaths
       peakidstar,logspacing_s,logrange_s, nlevels_s, nlinlevel_s, $ ; star levels variables
       peakidgas,logspacing_g,logrange_g, nlevels_g, nlinlevel_g, $  ; gas levels variables
       sensstar, offstar, $ ; star sensitivity variables
