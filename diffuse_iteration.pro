@@ -322,6 +322,23 @@ pro diffuse_iteration, master_inputfile
      stop
     endelse
 
+    ; ********************************************
+    ; * handle interactive peak ID
+    ; ********************************************
+    peak_id_params_file = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_interactive_peak_ID_report.dat', /remove_all)
+
+    read_kl14_tablerow, peak_id_params_file, peak_name_vec, peak_value_vec, /compress_names
+
+
+    npixmin = tablerow_var_search('npixmin', peak_name_vec, peak_value_vec)
+    nsigma = tablerow_var_search('nsigma', peak_name_vec, peak_value_vec)
+    logrange_s = tablerow_var_search('logrange_s', peak_name_vec, peak_value_vec)
+    logspacing_s = tablerow_var_search('logspacing_s', peak_name_vec, peak_value_vec)
+    logrange_g = tablerow_var_search('logrange_g', peak_name_vec, peak_value_vec)
+    logspacing_g = tablerow_var_search('logspacing_g', peak_name_vec, peak_value_vec)
+    nlinlevel_s = tablerow_var_search('nlinlevel_s', peak_name_vec, peak_value_vec)
+    nlinlevel_g = tablerow_var_search('nlinlevel_g', peak_name_vec, peak_value_vec)
+
 
     ; ; ************************************************
     ; ; *** output
@@ -355,6 +372,8 @@ pro diffuse_iteration, master_inputfile
         break ; end Fourier iteration
       endif
     endif
+
+
 
 
     ; ********************************************
