@@ -3,7 +3,7 @@ pro read_kl14_tablerow, filename, name_vec, value_vec, de_log = de_log, compress
 
   ; de_log; [1] convert from log values [0] do nothing
   ; compress_names[1] remove white space from names_vec [0] do nothing
-  
+
   split_string = ' '
   comment_string = '#'
 
@@ -35,7 +35,7 @@ pro read_kl14_tablerow, filename, name_vec, value_vec, de_log = de_log, compress
 
   name_vec = strcompress(name_vec, /remove_all) ; remove any remaining spaces
 
-  if de_log eq 1 then value_vec = 10.0^value_vec  ; this uses automatic conversion from strings to numbers
+  if n_elements(de_log) eq 1 && de_log eq 1 then value_vec = 10.0^value_vec  ; this uses automatic conversion from strings to numbers
   if compress_names then name_vec = strcompress(name_vec, /remove_all) ; remove all whitespace from the names
 
 
