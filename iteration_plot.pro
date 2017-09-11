@@ -1,5 +1,5 @@
 ;----------------------------------------------------------------------------------------
-pro iteration_plot, plot_filename, iter_vec, errmin, errmax, ytitle
+pro iteration_plot, plot_filename, iter_vec, errmin, errmax, ytitle, zero_ymin = zero_ymin
 ;----------------------------------------------------------------------------------------
 ;
 ;--(dependencies)------------------------------------------------------------------------
@@ -15,14 +15,22 @@ pro iteration_plot, plot_filename, iter_vec, errmin, errmax, ytitle
 
   n_els = n_elements(iter_vec)
 
-  set_plot, 'PS' ; set device to PostScript
-  device, filename=plot_filename, /landscape ; Use device to set some PostScript device options
+  ymax = 1.1 * max(iter_vec + errmax) ; ensure error bars do not overflow the plot area
+  if (n_elements(zero_ymin) eq 1 && zero_ymin eq 1) then ymin = 0.0 else ymin = 0.9 * min(iter_vec - errmin)
 
-    cgplot, indgen(n_els), iter_vec, err_yhigh = errmax, err_ylow = errmin, $
-      xrange = [-0.1, n_els], $
-      xtitle = 'Iteration', ytitle = ytitle
+
+
+  set_plot, 'PS' ; set device to PostScript
+  device, filename=plot_filename, xsize=24,ysize=18,/color,bits_per_pixel=8,/encapsulated
+
+
+    cgplot, indgen(n_els), iter_vec , err_yhigh = errmax, err_ylow = errmin, $
+      xrange = [-0.2, n_els], yrange = [ymin, ymax], $
+      xtitle = '!6Iteration', ytitle = ytitle , $
+      font = -1, charsize = 1.3, charthick = 1.3, xthick = 1.3, ythick = 1.3, err_thick = 1.3, thick = 1.3
 
   device, /close ; close the PostScript file
   set_plot, 'X'  ; return plotting to the original device
+
 
 end

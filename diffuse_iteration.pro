@@ -347,13 +347,13 @@ pro diffuse_iteration, master_inputfile
 
 
     plot_filename = strcompress(master_rundir + ifile_shortname + '_tgas_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_tgas_vec[0:iter_num], iter_tgas_errmin_vec[0:iter_num], iter_tgas_errmax_vec[0:iter_num], 'Tgas [Myr]'
+    iteration_plot, plot_filename, iter_tgas_vec[0:iter_num], iter_tgas_errmin_vec[0:iter_num], iter_tgas_errmax_vec[0:iter_num], '!8t!6!Dgas!N !6[Myr]', /zero_ymin
 
     plot_filename = strcompress(master_rundir + ifile_shortname + '_tover_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_tover_vec[0:iter_num], iter_tover_errmin_vec[0:iter_num], iter_tover_errmax_vec[0:iter_num], 'Tover [Myr]'
+    iteration_plot, plot_filename, iter_tover_vec[0:iter_num], iter_tover_errmin_vec[0:iter_num], iter_tover_errmax_vec[0:iter_num], '!8t!6!Dover!N !6[Myr]', /zero_ymin
 
     plot_filename = strcompress(master_rundir + ifile_shortname + '_lambda_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_lambda_vec[0:iter_num], iter_lambda_errmin_vec[0:iter_num], iter_lambda_errmax_vec[0:iter_num], 'Lambda [pc]'
+    iteration_plot, plot_filename, iter_lambda_vec[0:iter_num], iter_lambda_errmin_vec[0:iter_num], iter_lambda_errmax_vec[0:iter_num], '!7k !6[pc]', /zero_ymin
 
 
 
