@@ -15,8 +15,11 @@ pro iteration_plot, plot_filename, iter_vec, errmin, errmax, ytitle, zero_ymin =
 
   n_els = n_elements(iter_vec)
 
-  ymax = 1.1 * max(iter_vec + errmax) ; ensure error bars do not overflow the plot area
-  if (n_elements(zero_ymin) eq 1 && zero_ymin eq 1) then ymin = 0.0 else ymin = 0.9 * min(iter_vec - errmin)
+  ; ensure error bars do not overflow the plot area
+  if n_elements(errmax) gt 0 then ymax = 1.1 * max(iter_vec + errmax) else ymax = 1.1 * max(iter_vec)
+  if (n_elements(zero_ymin) eq 1 && zero_ymin eq 1) then ymin = 0.0 else begin
+    if n_elements(errmin) gt 0 then ymin = 0.9 * min(iter_vec - errmin) else ymin =  0.9 * min(iter_vec)
+  endelse
 
 
 
