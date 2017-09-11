@@ -120,8 +120,8 @@ ntry            101       # Size of each free parameter array to obtain the best
 nphysmc         1000000   # Number of Monte-Carlo experiments for error propagation of derived physical quantities
 # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
 diffuse_quant   1         # Calculate the diffuse fraction of [0] flux, [1] power
-f_filter_type   2         # Filter type choice for Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)
-bw_order        2         # The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = 0 [butterworth] and diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)
+f_filter_type   2         # Filter type choice for Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 0 [flux], but a dummy value should be supplied anyway)
+bw_order        2         # The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = 0 [butterworth] and diffuse_quant = 0 [flux], but a dummy value should be supplied anyway)
 filter_len_conv 1.0       # conversion factor for Fourier filtering cut_length (cut_length = lambda * filter_len_conv)
 # INPUT PARAMETERS 7 (conversions and constants to calculate derived quantities)
 convstar       -3.69206   # Log of multiplication factor to convert the pixel value in starfile to a SFR in Msun/yr (if maptypes=1 or maptypes=3) or to a gas mass in Msun (if maptypes=2)
@@ -143,8 +143,8 @@ initial_guess   200       # Length in pc of the initial estimate of lambda with 
 iter_criterion  0.05      # Fractional difference between lambda and previous lambda value(s) that triggers an end to the iteration process.
 iter_crit_len   2         # Number of previous runs of KL14 over which iter_criterion must be true, i.e. if iter_crit_len = 1 then the current value of lambda is compared to the previous value of lambda, if iter_crit_len = 2 then then the current value of lambda is compared to the previous value of lambda and the value of lambda prior to the previous value
 iter_nmax       10        # Maximum number of KL14 runs allowed in the iteration process. If iter_criterion is not reached before this number of runs the programme will exit anyway.
-iter_filter     2         # Filter type choice for iterative Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)
-iter_bwo        2         # The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_bwo = 0 [butterworth], but a dummy value should be supplied anyway)
+iter_filter     2         # Filter type choice for iterative Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter
+iter_bwo        2         # The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_filter = 0 [butterworth], but a dummy value should be supplied anyway)
 iter_len_conv   2.0       # conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)
 
 
