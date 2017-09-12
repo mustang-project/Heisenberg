@@ -27,7 +27,7 @@ pro interactive_peak_find, peak_find_tui, $
         loglevels, peakidstar,logspacing_s,logrange_s, nlevels_s, $
         peakdir, starfile2short, $
         flux_weight, npixmin, use_star2, $ ; inputs (x is gas or stars as appropriate)
-        nsigma, sensstar, sensgas)
+        nsigma, sensstar, offstar)
 
       if (size(starpeaks,/type) eq 7) then begin ; catch errors. 7 = string
         if starpeaks eq 'TOOFEWLINES' then begin
