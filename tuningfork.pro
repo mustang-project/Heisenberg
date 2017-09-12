@@ -1380,7 +1380,8 @@ if write_output then begin
     close,lun
     free_lun,lun
 
-    varlen=20
+    ; varlen=20
+    varlen = max(strlen([fitqty, extqty, derqty, auxqty])) ; ensure full parameter names are written to the file
     unitlen=40
     openw,lun,outputdir+galaxy+'_output.dat',/get_lun
     printf,lun,'########################################################################################################################'
