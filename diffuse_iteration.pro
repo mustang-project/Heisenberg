@@ -74,6 +74,19 @@ pro diffuse_iteration, master_inputfile
   if ct eq 0 then spawn,'mkdir '+master_rundir ;if not, create it
   if ct ne 0 then print,' WARNING: iteration run directory already exists, some or all files may be overwritten'
 
+  ; ******************************************************
+  ; create output directories
+  ; ******************************************************
+
+  iteration_plotdir = strcompress(master_rundir + 'Iteration_plotdir' + path_sep(), /remove_all) ; new directory for iteration plots
+  dummy=file_search(iteration_plotdir,count=ct) ;check if rundir exists
+  if ct eq 0 then spawn,'mkdir '+iteration_plotdir ;if not, create it
+  if ct ne 0 then print,' WARNING: iteration plot directory already exists, some or all files may be overwritten'
+
+  iteration_reportdir = strcompress(master_rundir + 'Iteration_reportdir' + path_sep(), /remove_all) ; new directory for iteration plots
+  dummy=file_search(iteration_reportdir,count=ct) ;check if rundir exists
+  if ct eq 0 then spawn,'mkdir '+iteration_reportdir ;if not, create it
+  if ct ne 0 then print,' WARNING: iteration plot directory already exists, some or all files may be overwritten'
 
 
   ; ******************************************************
@@ -87,6 +100,8 @@ pro diffuse_iteration, master_inputfile
   dummy=file_search(datadir,count=ct) ;check if rundir exists
   if ct eq 0 then spawn,'mkdir '+datadir ;if not, create it
   if ct ne 0 then print,' WARNING: iteration data directory already exists, some or all files may be overwritten'
+
+
 
 
   master_starfiletot = master_datadir + starfile
@@ -137,7 +152,7 @@ pro diffuse_iteration, master_inputfile
   ; apply initial guess if requested
   ; ******************************************************
 
-  if use_guess eq 1 then begin ; initiial fourier cut
+  if use_guess eq 1 then begin ; initial fourier cut
 
     if iter_filter eq 0 then filter_choice = 'butterworth' else $
         if iter_filter eq 1 then filter_choice = 'gaussian' else $
@@ -195,19 +210,43 @@ pro diffuse_iteration, master_inputfile
     master_gasfile2tot = master_datadir + gasfile2
     file_copy, master_gasfile2tot, datadir + gasfile2, /overwrite
   endif
+  ; ************************************************
+  ; *** structure for KL14 output
+  ; ************************************************
 
-  ; ************************************************
-  ; *** Cut runs
-  ; ************************************************
-  iter_tgas_vec = dblarr(iter_nmax) ; initialise vectors for results             [] ; initialise blank vecotr
-  iter_tgas_errmin_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
-  iter_tgas_errmax_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
-  iter_tover_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
-  iter_tover_errmin_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
-  iter_tover_errmax_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
-  iter_lambda_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
-  iter_lambda_errmin_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
-  iter_lambda_errmax_vec = dblarr(iter_nmax) ;                                    [] ; initialise blank vecotr
+  output_var_struct = get_kl14_output_var_struct(map_units)
+
+  one_list = where(output_var_struct.errors eq 1, one_count)
+
+  ; assemble vector of all output variable name in cluding *_errmin and *_ermax
+  output_var_names = strarr((one_count * 3) + (n_elements(output_var_struct) - one_count)) ; 3 entries if errors, 1 entry if no errors
+  i_counter = 0
+  for ii = 0, n_elements(output_var_struct)-1, 1 do begin
+    name_temp = output_var_struct[ii].name
+    output_var_names[i_counter] = output_var_struct[ii].name
+    i_counter ++
+    if output_var_struct[ii].errors eq 1 then begin
+      output_var_names[i_counter] = strcompress(name_temp + '_errmin', /remove_all)
+      i_counter ++
+      output_var_names[i_counter] = strcompress(name_temp + '_errmax', /remove_all)
+      i_counter ++
+    endif
+  endfor
+  output_var_names = strcompress(output_var_names, /remove_all)
+
+
+  output_vals_struct = create_struct("dummyvar", 'dummy')
+  for vv = 0, n_elements(output_var_names)-1, 1 do begin
+    ex_test = execute("output_vals_struct = create_struct(output_vals_struct, '" + output_var_names[vv] + "' , fltarr(" + string(iter_nmax) + "))")
+    if ex_test eq 0 then begin
+      print, "faliure to add " + output_var_names[vv] + " to output_vals_struct"
+      stop
+    endif
+
+  endfor
+  output_vals_struct = create_struct(output_vals_struct, remove=0) ; remove dummy tag in array to get around no null structure in idl pre 8.0 (part 2 of 2)
+  vals_tag_names = tag_names(output_vals_struct) ; get struct tag names
+
 
 
   ; ******************************************************
@@ -222,8 +261,6 @@ pro diffuse_iteration, master_inputfile
   iter_break = 0
   iter_num = 0
   while(iter_break eq 0 && iter_num lt iter_nmax) do begin
-
-
 
     input_file_name = strcompress(ifile_shortname + '_iter' + string(iter_num), /remove_all)
     input_file_filepath = strcompress(master_rundir + input_file_name, /remove_all)
@@ -255,72 +292,17 @@ pro diffuse_iteration, master_inputfile
      ; * get variables
      ; **********************
      output_filename = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_output.dat', /remove_all)
-     read_kl14_tablerow, output_filename, name_vec, value_vec, /de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
-
-     var_loc = where(name_vec eq 'tgas', var_count)
-     if var_count eq 1 then iter_tgas_vec[iter_num] = value_vec[var_loc] else begin
-     ;if var_loc ne !null then iter_tgas_vec = [iter_tgas_vec, value_vec[var_loc]] else begin
-       print, 'variable tgas not found'
-       stop
-     endelse
-
-    var_loc = where(name_vec eq 'tgas_errmin', var_count)
-    if var_count eq 1 then iter_tgas_errmin_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_tgas_errmin_vec = [iter_tgas_errmin_vec, value_vec[var_loc]] else begin
-     print, 'variable tgas_errmin not found'
-     stop
-    endelse
-
-    var_loc = where(name_vec eq 'tgas_errmax', var_count)
-    if var_count eq 1 then iter_tgas_errmax_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_tgas_errmax_vec = [iter_tgas_errmax_vec, value_vec[var_loc]] else begin
-     print, 'variable tgas_errmax not found'
-     stop
-    endelse
+     read_kl14_tablerow, output_filename, output_name_vec, output_value_vec, /de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
 
 
-    var_loc = where(name_vec eq 'tover', var_count)
-    if var_count eq 1 then iter_tover_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_tover_vec = [iter_tover_vec, value_vec[var_loc]] else begin
-     print, 'variable tover not found'
-     stop
-    endelse
 
-    var_loc = where(name_vec eq 'tover_errmin', var_count)
-    if var_count eq 1 then iter_tover_errmin_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_tover_errmin_vec = [iter_tover_errmin_vec, value_vec[var_loc]] else begin
-     print, 'variable tover_errmin not found'
-     stop
-    endelse
+     for vv = 0, n_elements(output_var_names)-1, 1 do begin
+       key_name = output_var_names[vv] ; name of the variable to search for
+       s_ind = where(strcmp(vals_tag_names,key_name, /fold_case))
+       output_vals_struct.(s_ind)[iter_num] = tablerow_var_search(key_name, output_name_vec, output_value_vec)
 
-    var_loc = where(name_vec eq 'tover_errmax', var_count)
-    if var_count eq 1 then iter_tover_errmax_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_tover_errmax_vec = [iter_tover_errmax_vec, value_vec[var_loc]] else begin
-     print, 'variable tover_errmax not found'
-     stop
-    endelse
+     endfor
 
-
-    var_loc = where(name_vec eq 'lambda', var_count)
-    if var_count eq 1 then iter_lambda_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_lambda_vec = [iter_lambda_vec, value_vec[var_loc]] else begin
-     print, 'variable lambda not found'
-     stop
-    endelse
-
-    var_loc = where(name_vec eq 'lambda_errmin', var_count)
-    if var_count eq 1 then iter_lambda_errmin_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_lambda_errmin_vec = [iter_lambda_errmin_vec, value_vec[var_loc]] else begin
-     print, 'variable lambda_errmin not found'
-     stop
-    endelse
-
-    var_loc = where(name_vec eq 'lambda_errmax', var_count)
-    if var_count eq 1 then iter_lambda_errmax_vec[iter_num] = value_vec[var_loc] else begin
-    ;if var_loc ne !null then iter_lambda_errmax_vec = [iter_lambda_errmax_vec, value_vec[var_loc]] else begin
-     print, 'variable lambda_errmax not found'
-     stop
-    endelse
 
     ; ********************************************
     ; * handle interactive peak ID
@@ -340,29 +322,51 @@ pro diffuse_iteration, master_inputfile
     nlinlevel_g = tablerow_var_search('nlinlevel_g', peak_name_vec, peak_value_vec)
 
 
-    ; ; ************************************************
-    ; ; *** output
-    ; ; ************************************************
-    printf, iter_lun,  iter_tgas_vec[iter_num], iter_tgas_errmin_vec[iter_num], iter_tgas_errmax_vec[iter_num], iter_tover_vec[iter_num], iter_tover_errmin_vec[iter_num], iter_tover_errmax_vec[iter_num], iter_lambda_vec[iter_num], iter_lambda_errmin_vec[iter_num], iter_lambda_errmax_vec[iter_num]
-
-
-    plot_filename = strcompress(master_rundir + ifile_shortname + '_tgas_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_tgas_vec[0:iter_num], iter_tgas_errmin_vec[0:iter_num], iter_tgas_errmax_vec[0:iter_num], '!8t!6!Dgas!N !6[Myr]', /zero_ymin
-
-    plot_filename = strcompress(master_rundir + ifile_shortname + '_tover_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_tover_vec[0:iter_num], iter_tover_errmin_vec[0:iter_num], iter_tover_errmax_vec[0:iter_num], '!8t!6!Dover!N !6[Myr]', /zero_ymin
-
-    plot_filename = strcompress(master_rundir + ifile_shortname + '_lambda_iteration.ps', /remove_all)
-    iteration_plot, plot_filename, iter_lambda_vec[0:iter_num], iter_lambda_errmin_vec[0:iter_num], iter_lambda_errmax_vec[0:iter_num], '!7k !6[pc]', /zero_ymin
+    ; ************************************************
+    ; *** output
+    ; ************************************************
+    ; printf, iter_lun,  iter_tgas_vec[iter_num], iter_tgas_errmin_vec[iter_num], iter_tgas_errmax_vec[iter_num], iter_tover_vec[iter_num], iter_tover_errmin_vec[iter_num], iter_tover_errmax_vec[iter_num], iter_lambda_vec[iter_num], iter_lambda_errmin_vec[iter_num], iter_lambda_errmax_vec[iter_num]
+    printf, iter_lun, output_vals_struct.(where(strcmp(vals_tag_names,'tgas', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tgas_errmin', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tgas_errmax', /fold_case)))[iter_num]  $
+                    , output_vals_struct.(where(strcmp(vals_tag_names,'tover', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tover_errmin', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tover_errmax', /fold_case)))[iter_num] $
+                    , output_vals_struct.(where(strcmp(vals_tag_names,'lambda', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'lambda_errmin', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'lambda_errmax', /fold_case)))[iter_num]
 
 
 
-    lambda_val = iter_lambda_vec[iter_num] ; lambda value for this iteration
+    ; ************************************************
+    ; *** iteration plots
+    ; ************************************************
+
+    for ii = 0, n_elements(output_var_struct)-1, 1 do begin
+      key_name = output_var_struct[ii].name
+      plot_filename = strcompress(iteration_plotdir + ifile_shortname + '_' + key_name + '_iteration.eps', /remove_all)
+      key_ind = where(strcmp(vals_tag_names,key_name, /fold_case))
+
+      if (output_var_struct[ii].errors eq 0) then begin
+        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], dummy_var, dummy_var, output_var_struct[ii].plot_title, /zero_ymin ; supply empty vector dummy_var as errors
+      endif else if (output_var_struct[ii].errors eq 1) then begin
+        errmin_name = strcompress(key_name + '_errmin', /remove_all)
+        emin_ind = where(strcmp(vals_tag_names,errmin_name, /fold_case))
+        errmax_name = strcompress(key_name + '_errmax', /remove_all)
+        emax_ind = where(strcmp(vals_tag_names,errmax_name, /fold_case))
+
+        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], output_vals_struct.(emin_ind)[0:iter_num], output_vals_struct.(emax_ind)[0:iter_num], output_var_struct[ii].plot_title, /zero_ymin ; supply empty vector dummy_var as errors
+
+      endif
+
+    endfor
+
+
+    ; ************************************************
+    ; *** Check break condition
+    ; ************************************************
+    ;lambda_val = iter_lambda_vec[iter_num] ; lambda value for this iteration
+    lambda_val = output_vals_struct.(where(strcmp(vals_tag_names,'lambda', /fold_case)))[iter_num]
     if iter_num ge iter_crit_len  then begin ; check iteration condition if nim number of iterations reached
 
       iter_break = 1
       for cc = 1,iter_crit_len, 1 do begin
-        if ~(abs((lambda_val - iter_lambda_vec[iter_num-cc]) / lambda_val) lt iter_criterion) then begin
+        ;if ~(abs((lambda_val - iter_lambda_vec[iter_num-cc]) / lambda_val) lt iter_criterion) then begin
+        if ~(abs((lambda_val - output_vals_struct.(where(strcmp(vals_tag_names,'lambda', /fold_case)))[iter_num-cc]) / lambda_val) lt iter_criterion) then begin
           iter_break = 0
         endif
       endfor
