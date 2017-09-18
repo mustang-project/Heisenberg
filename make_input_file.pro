@@ -20,7 +20,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
 
                    ; ################################################################################################################################################################################################################################################################
-                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
+                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_autoexit = iter_autoexit  ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
 
 
 
@@ -535,7 +535,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) -- Optional
   ; ##########################################################################################
   iter_input_switch = 0
-  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 then begin
+  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 && n_elements(iter_autoexit) eq 1 then begin
     iter_input_switch = 1 ; use so don't need to repeat test
 
 
@@ -547,8 +547,9 @@ pro make_input_file, input_file_filepath   $ ; general variables
     iter_filter = strcompress(string(iter_filter))
     iter_bwo = strcompress(string(iter_bwo))
     iter_len_conv = strcompress(string(iter_len_conv))
+    iter_autoexit = strcompress(string(iter_autoexit))
 
-    max_string_len = max([strlen(use_guess), strlen(initial_guess), strlen(iter_criterion), strlen(iter_crit_len), strlen(iter_nmax), strlen(iter_filter), strlen(iter_bwo), strlen(iter_len_conv), strlen(max_string_len)])
+    max_string_len = max([strlen(use_guess), strlen(initial_guess), strlen(iter_criterion), strlen(iter_crit_len), strlen(iter_nmax), strlen(iter_filter), strlen(iter_bwo), strlen(iter_len_conv), strlen(iter_autoexit), strlen(max_string_len)])
 
 
     while(strlen(use_guess) lt max_string_len) do use_guess = use_guess + pad_string
@@ -559,6 +560,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
     while(strlen(iter_filter) lt max_string_len) do iter_filter = iter_filter + pad_string
     while(strlen(iter_bwo) lt max_string_len) do iter_bwo = iter_bwo + pad_string
     while(strlen(iter_len_conv) lt max_string_len) do iter_len_conv = iter_len_conv + pad_string
+    while(strlen(iter_autoexit) lt max_string_len) do iter_autoexit = iter_autoexit + pad_string
 
 
 
@@ -748,6 +750,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
     printf, inp_lun, 'iter_filter     ', iter_filter,    '#  Filter type choice for iterative Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
     printf, inp_lun, 'iter_bwo        ', iter_bwo,       '#  The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_bwo = 0 [butterworth], but a dummy value should be supplied anyway)'
     printf, inp_lun, 'iter_len_conv   ', iter_len_conv,  '#  conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)'
+    printf, inp_lun, 'iter_autoexit   ', iter_autoexit,  '# Exit IDL automatically upon successful iteration run completion (on/off)''
+
   endif
 
   printf, inp_lun, '################################################'

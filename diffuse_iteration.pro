@@ -49,7 +49,7 @@ pro diffuse_iteration, master_inputfile
   expected_params6=['diffuse_quant','filter_len_conv','f_filter_type','bw_order'] ;variable names of expected input parameters (6)
   expected_params7=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','momratetomass'] ;variable names of expected input parameters (7)
   expected_params8=['use_stds','std_star','std_star3','std_gas'] ;variable names of expected input parameters (8)
-  expected_params9=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv'] ;variable names of expected input parameters (8)
+  expected_params9=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_autoexit'] ;variable names of expected input parameters (8)
   expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6,expected_params7,expected_params8,expected_params9] ;variable names of expected input parameters (all)
   expected_vars=[expected_flags,expected_filenames,expected_masknames,expected_params] ;names of all expected variables
   nvars=n_elements(expected_vars) ;number of expected variables
@@ -419,7 +419,7 @@ pro diffuse_iteration, master_inputfile
       endfor
 
       if iter_break eq 1 then begin
-        print, "Iteration condition reached. Ending iteration"
+        print, "=Iter==> Iteration condition reached. Ending iteration"
         break ; end Fourier iteration
       endif
     endif
@@ -471,6 +471,9 @@ pro diffuse_iteration, master_inputfile
 
   free_lun, iter_lun ; free output_file
 
+
+  if iter_autoexit then print,' =Iter==> IDL will now exit automatically'
+  if iter_autoexit then exit
 
 
 end

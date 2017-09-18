@@ -146,7 +146,7 @@ iter_nmax       10        # Maximum number of KL14 runs allowed in the iteration
 iter_filter     2         # Filter type choice for iterative Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter
 iter_bwo        2         # The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_filter = 0 [butterworth], but a dummy value should be supplied anyway)
 iter_len_conv   2.0       # conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)
-
+iter_autoexit   0         # Exit IDL automatically upon successful iteration run completion (on/off)
 
 
 ################################################
