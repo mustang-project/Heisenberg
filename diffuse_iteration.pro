@@ -37,7 +37,7 @@ pro diffuse_iteration, master_inputfile
   expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','diffuse_frac','derive_phys','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
   expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
   expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
-  expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
+  expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11','log10_output'] ;variable names of expected flags (4)
   expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
   expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
   expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
@@ -276,7 +276,7 @@ pro diffuse_iteration, master_inputfile
      , mask_images = mask_images, regrid = regrid, smoothen = smoothen, sensitivity = sensitivity, id_peaks = id_peaks, calc_ap_flux = calc_ap_flux, generate_plot = generate_plot, get_distances = get_distances, calc_obs = calc_obs, calc_fit = calc_fit, diffuse_frac = diffuse_frac, derive_phys = derive_phys, write_output = write_output, cleanup = cleanup, autoexit = autoexit $ ; FLAGS 1 (keywords)'
      , use_star2 = use_star2, use_gas2 = use_gas2, use_star3 = use_star3 $ ;  FLAGS 2 keywords
      , mstar_ext1 = mstar_ext, mstar_int1 = mstar_int, mgas_ext1 = mgas_ext, mgas_int1 = mgas_int, mstar_ext2 = mstar_ext2, mstar_int2 = mstar_int2, mgas_ext2 = mgas_ext2, mgas_int2 = mgas_int2, mstar_ext3 = mstar_ext3, mstar_int3 = mstar_int3, convert_masks = convert_masks, cut_radius = cut_radius $ ; # FLAGS 3 (masking-related options) keywords ; note mstar_ext1 = mstar_ext etc. prevents ambigious keyword error
-     , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11 $ ; # FLAGS 4 (choose analysis options)
+     , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11, log10_output = log10_output $ ; # FLAGS 4 (choose analysis options)
      , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
      , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
      , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
@@ -292,7 +292,9 @@ pro diffuse_iteration, master_inputfile
      ; * get variables
      ; **********************
      output_filename = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_output.dat', /remove_all)
-     read_kl14_tablerow, output_filename, output_name_vec, output_value_vec, /de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
+
+     if log10_output eq 1 then de_log = 1 else de_log = 0
+     read_kl14_tablerow, output_filename, output_name_vec, output_value_vec, de_log = de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
 
 
 
@@ -331,6 +333,47 @@ pro diffuse_iteration, master_inputfile
                     , output_vals_struct.(where(strcmp(vals_tag_names,'lambda', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'lambda_errmin', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'lambda_errmax', /fold_case)))[iter_num]
 
 
+    for ii = 0, n_elements(output_var_struct)-1, 1 do begin
+      key_name = output_var_struct[ii].name
+      report_filename = strcompress(iteration_reportdir + ifile_shortname + '_' + key_name + '_iteration.dat', /remove_all)
+      key_ind = where(strcmp(vals_tag_names,key_name, /fold_case))
+
+      if iter_num eq 0 then begin
+        openw, rep_lun, report_filename, width = 150, /get_lun ; overwrite the previous file
+
+        rtitle = output_var_struct[ii].name
+        if (output_var_struct[ii].errors eq 1) then begin
+          emin_title = key_name + '_errmin'
+          emax_title = key_name + '_errmax'
+        endif
+        if strlen(output_var_struct[ii].units) gt 0 then begin
+          rtitle += '[' + output_var_struct[ii].units + ']'
+          if (output_var_struct[ii].errors eq 1) then begin
+            emin_title += '[' + output_var_struct[ii].units + ']'
+            emax_title += '[' + output_var_struct[ii].units + ']'
+          endif
+        endif
+        if (output_var_struct[ii].errors eq 1) then printf, rep_lun, '#', rtitle, '  ', emin_title, '  ', emax_title else printf, rep_lun, rtitle
+        ; printf, rep_lun,format ='(3(a' + f_string(max(strlen(output_var_struct[ii].name)),0) + ',4x, f4.2))',  output_vals_struct.(key_ind)[iter_num], output_vals_struct.(emin_ind)[iter_num], output_vals_struct.(emax_ind)[iter_num]
+
+        free_lun, rep_lun
+      endif
+
+
+      openw, rep_lun, report_filename, /append ; add to file, don't delete previous
+
+
+      if (output_var_struct[ii].errors eq 1) then begin
+        errmin_name = strcompress(key_name + '_errmin', /remove_all)
+        emin_ind = where(strcmp(vals_tag_names,errmin_name, /fold_case))
+        errmax_name = strcompress(key_name + '_errmax', /remove_all)
+        emax_ind = where(strcmp(vals_tag_names,errmax_name, /fold_case))
+        ; double precision numbers have ~15-16 significant figures, so write to file with too much precision:s
+        printf, rep_lun, format ='(3(G0.17, 4x))',  output_vals_struct.(key_ind)[iter_num], output_vals_struct.(emin_ind)[iter_num], output_vals_struct.(emax_ind)[iter_num]
+      endif else printf, rep_lun, output_vals_struct.(key_ind)[iter_num]
+      free_lun, rep_lun
+
+    endfor
 
     ; ************************************************
     ; *** iteration plots
@@ -341,15 +384,19 @@ pro diffuse_iteration, master_inputfile
       plot_filename = strcompress(iteration_plotdir + ifile_shortname + '_' + key_name + '_iteration.eps', /remove_all)
       key_ind = where(strcmp(vals_tag_names,key_name, /fold_case))
 
+
+      ytitle = output_var_struct[ii].plot_title_name
+      if strlen(output_var_struct[ii].units) gt 0 then ytitle += '[' + output_var_struct[ii].units + ']'
+
       if (output_var_struct[ii].errors eq 0) then begin
-        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], dummy_var, dummy_var, output_var_struct[ii].plot_title, /zero_ymin ; supply empty vector dummy_var as errors
+        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], dummy_var, dummy_var, ytitle, /zero_ymin ; supply empty vector dummy_var as errors
       endif else if (output_var_struct[ii].errors eq 1) then begin
         errmin_name = strcompress(key_name + '_errmin', /remove_all)
         emin_ind = where(strcmp(vals_tag_names,errmin_name, /fold_case))
         errmax_name = strcompress(key_name + '_errmax', /remove_all)
         emax_ind = where(strcmp(vals_tag_names,errmax_name, /fold_case))
 
-        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], output_vals_struct.(emin_ind)[0:iter_num], output_vals_struct.(emax_ind)[0:iter_num], output_var_struct[ii].plot_title, /zero_ymin ; supply empty vector dummy_var as errors
+        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], output_vals_struct.(emin_ind)[0:iter_num], output_vals_struct.(emax_ind)[0:iter_num], ytitle, /zero_ymin ; supply empty vector dummy_var as errors
 
       endif
 

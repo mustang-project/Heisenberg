@@ -10,7 +10,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , mask_images = mask_images, regrid = regrid, smoothen = smoothen, sensitivity = sensitivity, id_peaks = id_peaks, calc_ap_flux = calc_ap_flux, generate_plot = generate_plot, get_distances = get_distances, calc_obs = calc_obs, calc_fit = calc_fit, diffuse_frac = diffuse_frac, derive_phys = derive_phys, write_output = write_output, cleanup = cleanup, autoexit = autoexit $ ; FLAGS 1 (keywords)'
                    , use_star2 = use_star2, use_gas2 = use_gas2, use_star3 = use_star3 $ ;  FLAGS 2 keywords
                    , mstar_ext1 = mstar_ext, mstar_int1 = mstar_int, mgas_ext1 = mgas_ext, mgas_int1 = mgas_int, mstar_ext2 = mstar_ext2, mstar_int2 = mstar_int2, mgas_ext2 = mgas_ext2, mgas_int2 = mgas_int2, mstar_ext3 = mstar_ext3, mstar_int3 = mstar_int3, convert_masks = convert_masks, cut_radius = cut_radius $ ; # FLAGS 3 (masking-related options) keywords ; note mstar_ext1 = mstar_ext etc. prevents ambigious keyword error
-                   , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11 $ ; # FLAGS 4 (choose analysis options)
+                   , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11, log10_output = log10_output $ ; # FLAGS 4 (choose analysis options)
 
                    , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
                    , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
@@ -253,6 +253,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   if n_elements(peak_prof) ne 1 then peak_prof = 2
   if n_elements(map_units) ne 1 then map_units = 1
   if n_elements(use_X11) ne 1 then use_X11 = 1
+  if n_elements(log10_output) ne 1 then log10_output = 1
 
   set_centre = strcompress(string(set_centre))
   tophat = strcompress(string(tophat))
@@ -264,8 +265,10 @@ pro make_input_file, input_file_filepath   $ ; general variables
   peak_prof = strcompress(string(peak_prof))
   map_units = strcompress(string(map_units))
   use_X11 = strcompress(string(use_X11))
+  log10_output = strcompress(string(log10_output))
 
-  max_string_len = max([strlen(set_centre), strlen(tophat), strlen(loglevels), strlen(peak_find_tui), strlen(flux_weight), strlen(calc_ap_area), strlen(tstar_incl), strlen(peak_prof), strlen(map_units), strlen(use_X11)]) + comment_sep_length
+
+  max_string_len = max([strlen(set_centre), strlen(tophat), strlen(loglevels), strlen(peak_find_tui), strlen(flux_weight), strlen(calc_ap_area), strlen(tstar_incl), strlen(peak_prof), strlen(map_units), strlen(use_X11), strlen(log10_output)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
 
@@ -279,6 +282,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while(strlen(peak_prof) lt max_string_len) do peak_prof = peak_prof + pad_string
   while(strlen(map_units) lt max_string_len) do map_units = map_units + pad_string
   while(strlen(use_X11) lt max_string_len) do use_X11 = use_X11 + pad_string
+  while(strlen(log10_output) lt max_string_len) do log10_output = log10_output + pad_string
 
 
 
@@ -651,7 +655,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'peak_prof       ', peak_prof,      '# [0] Model independent regions as points; [1] Model independent regions as constant-surface density discs; [2, DEFAULT] Model independent regions as two-dimensional Gaussians'
   printf, inp_lun, 'map_units       ', map_units,      '# [0] Unknown, do not calculate derived quantities; [1, DEFAULT] star=SFR and gas=gas; [2] star=gas1 and gas=gas2; [3] star=SFR1 and gas=SFR2'
   printf, inp_lun, 'use_X11         ', use_X11,        '# [0] Not allowed to create X11 windows; [1] Allowed to create X11 windows'
-
+  printf, inp_lun, 'log10_output    ', log10_output,   '# [0] Values of output parameters in output file: galaxy_output.dat are written a double precision floating point numbers [1] Values of output parameters in output file: galaxy_output.dat are written with as log10(value)'
 
 
 

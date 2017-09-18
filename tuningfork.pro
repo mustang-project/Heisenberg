@@ -93,7 +93,7 @@ free_lun,lun ;make the logical unit available again
 expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','diffuse_frac','derive_phys','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
 expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
 expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
-expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11'] ;variable names of expected flags (4)
+expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11','log10_output'] ;variable names of expected flags (4)
 expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
 expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
@@ -1396,21 +1396,31 @@ if write_output then begin
     printf,lun,''
     printf,lun,''
     printf,lun,'# FUNDAMENTAL QUANTITIES (obtained directly from the fitting process)'
-    for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log10['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
+    if log10_output eq 1 then for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log10['+fitqty(i)+'/('+fitunit((i+2)/3)+')]' else $
+      ; for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',fitqty(i),fit(i),'# ['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
+      for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(fit(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',fitqty(i),fit(i),'# ['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
     printf,lun,''
     printf,lun,''
     if map_units gt 0 then begin
         printf,lun,'# EXTERNAL QUANTITIES (obtained through secondary analysis of the maps)'
-        for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log10['+extqty(i)+'/('+extunit(i/3)+')]'
+        if log10_output eq 1 then for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log10['+extqty(i)+'/('+extunit(i/3)+')]' else $
+          ; for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',extqty(i),ext(i),'# ['+extqty(i)+'/('+extunit(i/3)+')]'
+          for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(ext(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',extqty(i),ext(i),'# ['+extqty(i)+'/('+extunit(i/3)+')]'
+
         printf,lun,''
         printf,lun,''
         printf,lun,'# DERIVED QUANTITIES (from fundamental and external quantities)'
     endif else printf,lun,'# DERIVED QUANTITIES (from fundamental quantities)'
-    for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log10['+derqty(i)+'/('+derunit(i/3)+')]'
+    if log10_output eq 1 then for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log10['+derqty(i)+'/('+derunit(i/3)+')]' else $
+      ; for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',derqty(i),der(i),'# ['+derqty(i)+'/('+derunit(i/3)+')]'
+      for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(der(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',derqty(i),der(i),'# ['+derqty(i)+'/('+derunit(i/3)+')]'
+
     printf,lun,''
     printf,lun,''
     printf,lun,'# AUXILIARY QUANTITIES (byproduct of the fitting process)'
-    for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]'
+    if log10_output eq 1 then for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]' else $
+      ; for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',auxqty(i),aux(i),'# ['+auxqty(i)+'/('+auxunit(i/2)+')]'
+      for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(aux(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',auxqty(i),aux(i),'# ['+auxqty(i)+'/('+auxunit(i/2)+')]'
     printf,lun,''
     printf,lun,''
     printf,lun,'########################################################################################################################'

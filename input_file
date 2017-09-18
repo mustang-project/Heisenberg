@@ -77,7 +77,7 @@ tstar_incl      0         # [0, DEFAULT] Reference time-scale tstariso does not 
 peak_prof       2         # [0] Model independent regions as points; [1] Model independent regions as constant-surface density discs; [2, DEFAULT] Model independent regions as two-dimensional Gaussians
 map_units       1         # [0] Unknown, do not calculate derived quantities; [1, DEFAULT] star=SFR and gas=gas; [2] star=gas1 and gas=gas2; [3] star=SFR1 and gas=SFR2
 use_X11         1         # [0] Not allowed to create X11 windows; [1] Allowed to create X11 windows
-
+log10_output    1         # [0] Values of output parameters in output file: galaxy_output.dat are written as naturally formatted double precision floating point numbers. This is recommended when running in iterative mode. [1] Values of output parameters in output file: galaxy_output.dat are written with as log10(value)
 
 # INPUT PARAMETERS 1 (basic map analysis)
 distance        840000.   # Distance to galaxy in pc
