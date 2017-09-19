@@ -113,6 +113,12 @@ pro diffuse_iteration, master_inputfile
   if ct ne 0 then print,' WARNING: iteration data directory already exists, some or all files may be overwritten'
 
 
+  raw_datadir = strcompress(master_rundir + 'Raw_datadir' + path_sep(), /remove_all) ; new datadir for Fourier_filtered data
+  dummy=file_search(raw_datadir,count=ct) ;check if rundir exists
+  if ct eq 0 then spawn,'mkdir '+raw_datadir ;if not, create it
+  if ct ne 0 then print,' WARNING: iteration raw data directory already exists, some or all files may be overwritten'
+
+
 
 
   master_starfiletot = master_datadir + starfile
@@ -532,31 +538,27 @@ pro diffuse_iteration, master_inputfile
 
     star_cut_length = (lambda_val/master_star_pix_to_pc) * iter_len_conv ; in pixels
     starfile = strcompress("starfile_iter" + string(iter_num) + ".fits",/remove_all) ; change starfile for input_file
-    filtered_starfile = strcompress(datadir + starfile,/remove_all)
+    raw_starfile = strcompress(raw_datadir + starfile, /remove_all)
+
 
     fourier_filter_tool, filter_choice, iter_bwo, 'high', star_cut_length, $ ; description of the filter
       base_starfile, $ ; input image by filename
-      filtered_image_path = filtered_starfile ; output file for the filtered image
+      filtered_image_path = raw_starfile ; output file for the filtered image
 
-    star_arr = readfits(filtered_starfile, star_hdr)
-    szero_list = where(star_arr lt 0.0e0, szero_count)
-    if szero_count ne 0 then star_arr[szero_list] = 0.0
-    writefits, filtered_starfile, star_arr, star_hdr
-
+    filtered_starfile = strcompress(datadir + starfile,/remove_all)
+    iter_image_postprocess, raw_starfile, filtered_starfile, /zero_negatives
 
 
     gas_cut_length = (lambda_val/master_gas_pix_to_pc) * iter_len_conv ; in pixels
     gasfile = strcompress("gasfile_iter" + string(iter_num) + ".fits",/remove_all) ; change gasfile for input_file
-    filtered_gasfile = strcompress(datadir + gasfile,/remove_all)
+    raw_gasfile = strcompress(raw_datadir + gasfile, /remove_all)
 
     fourier_filter_tool, filter_choice, iter_bwo, 'high', star_cut_length, $ ; description of the filter
       base_gasfile, $ ; input image by filename
-      filtered_image_path = filtered_gasfile ; output file for the filtered image
+      filtered_image_path = raw_gasfile ; output file for the filtered image
 
-    gas_arr = readfits(filtered_gasfile, gas_hdr)
-    gzero_list = where(gas_arr lt 0.0e0, gzero_count)
-    if gzero_count ne 0 then gas_arr[gzero_list] = 0.0
-    writefits, filtered_gasfile, gas_arr, gas_hdr
+    filtered_gasfile = strcompress(datadir + gasfile,/remove_all)
+    iter_image_postprocess, raw_gasfile, filtered_gasfile, /zero_negatives
 
 
 
