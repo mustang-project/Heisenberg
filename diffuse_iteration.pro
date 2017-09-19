@@ -78,15 +78,26 @@ pro diffuse_iteration, master_inputfile
   ; create output directories
   ; ******************************************************
 
-  iteration_plotdir = strcompress(master_rundir + 'Iteration_plotdir' + path_sep(), /remove_all) ; new directory for iteration plots
-  dummy=file_search(iteration_plotdir,count=ct) ;check if rundir exists
+  iteration_plotdir = strcompress(master_rundir + 'Iteration_plotdir' + path_sep(), /remove_all) ; new directory for kl14 output iteration plots
+  dummy=file_search(iteration_plotdir,count=ct) ;check if directory exists
   if ct eq 0 then spawn,'mkdir '+iteration_plotdir ;if not, create it
   if ct ne 0 then print,' WARNING: iteration plot directory already exists, some or all files may be overwritten'
 
-  iteration_reportdir = strcompress(master_rundir + 'Iteration_reportdir' + path_sep(), /remove_all) ; new directory for iteration plots
-  dummy=file_search(iteration_reportdir,count=ct) ;check if rundir exists
+  iteration_reportdir = strcompress(master_rundir + 'Iteration_reportdir' + path_sep(), /remove_all) ; new directory for kl14 output iteration .dat files
+  dummy=file_search(iteration_reportdir,count=ct) ;check if directory exists
   if ct eq 0 then spawn,'mkdir '+iteration_reportdir ;if not, create it
-  if ct ne 0 then print,' WARNING: iteration plot directory already exists, some or all files may be overwritten'
+  if ct ne 0 then print,' WARNING: iteration report directory already exists, some or all files may be overwritten'
+
+  peakid_plotdir = strcompress(master_rundir + 'Peakid_plotdir' + path_sep(), /remove_all) ; new directory for peakID iteration plots
+  dummy=file_search(peakid_plotdir,count=ct) ;check if directory exists
+  if ct eq 0 then spawn,'mkdir '+peakid_plotdir ;if not, create it
+  if ct ne 0 then print,' WARNING: peakid plot directory already exists, some or all files may be overwritten'
+
+  peakid_reportdir = strcompress(master_rundir + 'Peakid_reportdir' + path_sep(), /remove_all) ; new directory for peakID iteration .dat files
+  dummy=file_search(peakid_reportdir,count=ct) ;check if directory exists
+  if ct eq 0 then spawn,'mkdir '+peakid_reportdir ;if not, create it
+  if ct ne 0 then print,' WARNING: peakid report directory already exists, some or all files may be overwritten'
+
 
 
   ; ******************************************************
@@ -248,6 +259,38 @@ pro diffuse_iteration, master_inputfile
   vals_tag_names = tag_names(output_vals_struct) ; get struct tag names
 
 
+  ; ************************************************
+  ; *** create vectors for peak_ID variables
+  ; ************************************************
+  npixmin_vec = dblarr(iter_nmax)
+  nsigma_vec = dblarr(iter_nmax)
+  logrange_s_vec = dblarr(iter_nmax)
+  logspacing_s_vec = dblarr(iter_nmax)
+  logrange_g_vec = dblarr(iter_nmax)
+  logspacing_g_vec = dblarr(iter_nmax)
+  nlinlevel_s_vec = dblarr(iter_nmax)
+  nlinlevel_g_vec = dblarr(iter_nmax)
+
+  ; open report files for each vector
+  openw, npixmin_lun, strcompress(peakid_reportdir + ifile_shortname + '_npixmin_iteration.dat', /remove_all), width = 150, /get_lun
+  openw, nsigma_lun, strcompress(peakid_reportdir + ifile_shortname + '_nsigma_iteration.dat', /remove_all), width = 150, /get_lun
+  openw, logrange_s_lun, strcompress(peakid_reportdir + ifile_shortname + '_logrange_iteration.dat', /remove_all), width = 150, /get_lun
+  openw, logspacing_s_lun, strcompress(peakid_reportdir + ifile_shortname + '_logspacing_iteration.dat', /remove_all), width = 150, /get_lun
+  openw, logrange_g_lun, strcompress(peakid_reportdir + ifile_shortname + '_logrange_iteration.dat', /remove_all), width = 150, /get_lun
+  openw, logspacing_g_lun, strcompress(peakid_reportdir + ifile_shortname + '_logspacing_iteration.dat', /remove_all), width = 150, /get_lun
+  openw, nlinlevel_s_lun, strcompress(peakid_reportdir + ifile_shortname + '_nlinlevel_iteration.dat', /remove_all), width = 150, /get_lun
+  openw, nlinlevel_g_lun, strcompress(peakid_reportdir + ifile_shortname + '_nlinlevel_iteration.dat', /remove_all), width = 150, /get_lun
+
+  ; print titles
+  printf, npixmin_lun, '# npixmin'
+  printf, nsigma_lun, '# nsigma'
+  printf, logrange_s_lun, '# logrange'
+  printf, logspacing_s_lun, '# logspacing'
+  printf, logrange_g_lun, '# logrange'
+  printf, logspacing_g_lun, '# logspacing'
+  printf, nlinlevel_s_lun, '# nlinlevel'
+  printf, nlinlevel_g_lun, '# nlinlevel'
+
 
   ; ******************************************************
   ; iteration loop
@@ -314,18 +357,27 @@ pro diffuse_iteration, master_inputfile
     read_kl14_tablerow, peak_id_params_file, peak_name_vec, peak_value_vec, /compress_names
 
 
-    npixmin = tablerow_var_search('npixmin', peak_name_vec, peak_value_vec)
-    nsigma = tablerow_var_search('nsigma', peak_name_vec, peak_value_vec)
-    logrange_s = tablerow_var_search('logrange_s', peak_name_vec, peak_value_vec)
-    logspacing_s = tablerow_var_search('logspacing_s', peak_name_vec, peak_value_vec)
-    logrange_g = tablerow_var_search('logrange_g', peak_name_vec, peak_value_vec)
-    logspacing_g = tablerow_var_search('logspacing_g', peak_name_vec, peak_value_vec)
-    nlinlevel_s = tablerow_var_search('nlinlevel_s', peak_name_vec, peak_value_vec)
-    nlinlevel_g = tablerow_var_search('nlinlevel_g', peak_name_vec, peak_value_vec)
+    npixmin_vec[iter_num] = tablerow_var_search('npixmin', peak_name_vec, peak_value_vec)  ; store values in vectors for plotting
+    nsigma_vec[iter_num] = tablerow_var_search('nsigma', peak_name_vec, peak_value_vec)
+    logrange_s_vec[iter_num] = tablerow_var_search('logrange_s', peak_name_vec, peak_value_vec)
+    logspacing_s_vec[iter_num] = tablerow_var_search('logspacing_s', peak_name_vec, peak_value_vec)
+    logrange_g_vec[iter_num] = tablerow_var_search('logrange_g', peak_name_vec, peak_value_vec)
+    logspacing_g_vec[iter_num] = tablerow_var_search('logspacing_g', peak_name_vec, peak_value_vec)
+    nlinlevel_s_vec[iter_num] = tablerow_var_search('nlinlevel_s', peak_name_vec, peak_value_vec)
+    nlinlevel_g_vec[iter_num] = tablerow_var_search('nlinlevel_g', peak_name_vec, peak_value_vec)
+
+    npixmin = npixmin_vec[iter_num] ; set values for next iteration
+    nsigma = nsigma_vec[iter_num]
+    logrange_s = logrange_s_vec[iter_num]
+    logspacing_s = logspacing_s_vec[iter_num]
+    logrange_g = logrange_g_vec[iter_num]
+    logspacing_g = logspacing_g_vec[iter_num]
+    nlinlevel_s = nlinlevel_s_vec[iter_num]
+    nlinlevel_g = nlinlevel_g_vec[iter_num]
 
 
     ; ************************************************
-    ; *** output
+    ; *** KL14 output .dat files
     ; ************************************************
     ; printf, iter_lun,  iter_tgas_vec[iter_num], iter_tgas_errmin_vec[iter_num], iter_tgas_errmax_vec[iter_num], iter_tover_vec[iter_num], iter_tover_errmin_vec[iter_num], iter_tover_errmax_vec[iter_num], iter_lambda_vec[iter_num], iter_lambda_errmin_vec[iter_num], iter_lambda_errmax_vec[iter_num]
     printf, iter_lun, output_vals_struct.(where(strcmp(vals_tag_names,'tgas', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tgas_errmin', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tgas_errmax', /fold_case)))[iter_num]  $
@@ -376,7 +428,7 @@ pro diffuse_iteration, master_inputfile
     endfor
 
     ; ************************************************
-    ; *** iteration plots
+    ; *** KL14 iteration plots
     ; ************************************************
 
     for ii = 0, n_elements(output_var_struct)-1, 1 do begin
@@ -389,19 +441,60 @@ pro diffuse_iteration, master_inputfile
       if strlen(output_var_struct[ii].units) gt 0 then ytitle += '[' + output_var_struct[ii].units + ']'
 
       if (output_var_struct[ii].errors eq 0) then begin
-        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], dummy_var, dummy_var, ytitle, /zero_ymin ; supply empty vector dummy_var as errors
+        iteration_plot, plot_filename, ytitle, output_vals_struct.(key_ind)[0:iter_num], /zero_ymin ; supply empty vector dummy_var as errors
+
       endif else if (output_var_struct[ii].errors eq 1) then begin
         errmin_name = strcompress(key_name + '_errmin', /remove_all)
         emin_ind = where(strcmp(vals_tag_names,errmin_name, /fold_case))
         errmax_name = strcompress(key_name + '_errmax', /remove_all)
         emax_ind = where(strcmp(vals_tag_names,errmax_name, /fold_case))
 
-        iteration_plot, plot_filename, output_vals_struct.(key_ind)[0:iter_num], output_vals_struct.(emin_ind)[0:iter_num], output_vals_struct.(emax_ind)[0:iter_num], ytitle, /zero_ymin ; supply empty vector dummy_var as errors
+        iteration_plot, plot_filename, ytitle, output_vals_struct.(key_ind)[0:iter_num], output_vals_struct.(emin_ind)[0:iter_num], output_vals_struct.(emax_ind)[0:iter_num], /zero_ymin ; supply empty vector dummy_var as errors
 
       endif
 
     endfor
 
+    ; ************************************************
+    ; *** Peak_ID parameter plots
+    ; ************************************************
+
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_npixmin.eps', /remove_all)
+    iteration_plot, plot_filename, '!8N!6!Dpixmin', npixmin_vec[0:iter_num], zero_ymin = zero_ymin
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_nsigma.eps', /remove_all)
+    iteration_plot, plot_filename, '!8N!6!Dsigma', nsigma_vec[0:iter_num], zero_ymin = zero_ymin
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_logrange_s.eps', /remove_all)
+    iteration_plot, plot_filename, '!8logrange!6!Ds', logrange_s_vec[0:iter_num], zero_ymin = zero_ymin
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_logspacing_s.eps', /remove_all)
+    iteration_plot, plot_filename, '!8logspacing!6!Ds', logspacing_s_vec[0:iter_num], zero_ymin = zero_ymin
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_logrange_g.eps', /remove_all)
+    iteration_plot, plot_filename, '!8logrange!6!Dg', logrange_g_vec[0:iter_num], zero_ymin = zero_ymin
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_logspacing_g.eps', /remove_all)
+    iteration_plot, plot_filename, '!8logspacing!6!Dg', logspacing_g_vec[0:iter_num], zero_ymin = zero_ymin
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_nlinlevel_s.eps', /remove_all)
+    iteration_plot, plot_filename, '!8N!6!Dlinlevel_s', nlinlevel_s_vec[0:iter_num], zero_ymin = zero_ymin
+
+    plot_filename = strcompress(peakid_plotdir + ifile_shortname + '_' + key_name + '_nlinlevel_g.eps', /remove_all)
+    iteration_plot, plot_filename, '!8N!6!Dlinlevel_g', nlinlevel_g_vec[0:iter_num], zero_ymin = zero_ymin
+
+    ; ************************************************
+    ; *** Peak_ID .dat files
+    ; ************************************************
+    printf, npixmin_lun, format ='(G0.17)', npixmin
+    printf, nsigma_lun, format ='(G0.17)', nsigma
+    printf, logrange_s_lun, format ='(G0.17)', logrange_s
+    printf, logspacing_s_lun, format ='(G0.17)', logspacing_s
+    printf, logrange_g_lun, format ='(G0.17)', logrange_g
+    printf, logspacing_g_lun, format ='(G0.17)', logspacing_g
+    printf, nlinlevel_s_lun, format ='(G0.17)', nlinlevel_s
+    printf, nlinlevel_g_lun, format ='(G0.17)', nlinlevel_g
 
     ; ************************************************
     ; *** Check break condition
@@ -469,10 +562,20 @@ pro diffuse_iteration, master_inputfile
 
   endwhile
 
+  ; free peak_ID iteration files:
+  free_lun,npixmin_lun
+  free_lun,nsigma_lun
+  free_lun,logrange_s_lun
+  free_lun,logspacing_s_lun
+  free_lun,logrange_g_lun
+  free_lun,logspacing_g_lun
+  free_lun,nlinlevel_s_lun
+  free_lun,nlinlevel_g_lun
+
   free_lun, iter_lun ; free output_file
 
 
-  if iter_autoexit then print,' =Iter==> IDL will now exit automatically'
+  if iter_autoexit then print,'=Iter==> IDL will now exit automatically'
   if iter_autoexit then exit
 
 

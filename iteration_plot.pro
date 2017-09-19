@@ -1,5 +1,5 @@
 ;----------------------------------------------------------------------------------------
-pro iteration_plot, plot_filename, iter_vec, errmin, errmax, ytitle, zero_ymin = zero_ymin
+pro iteration_plot, plot_filename, ytitle, iter_vec, errmin, errmax, zero_ymin = zero_ymin
 ;----------------------------------------------------------------------------------------
 ;
 ;--(dependencies)------------------------------------------------------------------------
