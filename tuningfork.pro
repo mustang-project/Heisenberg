@@ -1380,8 +1380,8 @@ if write_output then begin
     close,lun
     free_lun,lun
 
-    ; varlen=20
-    varlen = max(strlen([fitqty, extqty, derqty, auxqty])) ; ensure full parameter names are written to the file
+    ; ensure full parameter names are written to the file:
+    if map_units gt 0 then varlen = max(strlen([fitqty, extqty, derqty, auxqty])) else varlen = max(strlen([fitqty, derqty, auxqty]))
     unitlen=40
     openw,lun,outputdir+galaxy+'_output.dat',/get_lun
     printf,lun,'########################################################################################################################'
@@ -1397,29 +1397,23 @@ if write_output then begin
     printf,lun,''
     printf,lun,'# FUNDAMENTAL QUANTITIES (obtained directly from the fitting process)'
     if log10_output eq 1 then for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',fitqty(i),alog10(fit(i)),'# log10['+fitqty(i)+'/('+fitunit((i+2)/3)+')]' else $
-      ; for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',fitqty(i),fit(i),'# ['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
       for i=0,(nfit-1)*3 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(fit(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',fitqty(i),fit(i),'# ['+fitqty(i)+'/('+fitunit((i+2)/3)+')]'
     printf,lun,''
     printf,lun,''
     if map_units gt 0 then begin
         printf,lun,'# EXTERNAL QUANTITIES (obtained through secondary analysis of the maps)'
         if log10_output eq 1 then for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',extqty(i),alog10(ext(i)),'# log10['+extqty(i)+'/('+extunit(i/3)+')]' else $
-          ; for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',extqty(i),ext(i),'# ['+extqty(i)+'/('+extunit(i/3)+')]'
           for i=0,next*3-1 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(ext(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',extqty(i),ext(i),'# ['+extqty(i)+'/('+extunit(i/3)+')]'
-
         printf,lun,''
         printf,lun,''
         printf,lun,'# DERIVED QUANTITIES (from fundamental and external quantities)'
     endif else printf,lun,'# DERIVED QUANTITIES (from fundamental quantities)'
     if log10_output eq 1 then for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',derqty(i),alog10(der(i)),'# log10['+derqty(i)+'/('+derunit(i/3)+')]' else $
-      ; for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',derqty(i),der(i),'# ['+derqty(i)+'/('+derunit(i/3)+')]'
       for i=0,nder*3-1 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(der(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',derqty(i),der(i),'# ['+derqty(i)+'/('+derunit(i/3)+')]'
-
     printf,lun,''
     printf,lun,''
     printf,lun,'# AUXILIARY QUANTITIES (byproduct of the fitting process)'
     if log10_output eq 1 then for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,f12.5,3x,a'+f_string(unitlen,0)+')',auxqty(i),alog10(aux(i)),'# log10['+auxqty(i)+'/('+auxunit(i/2)+')]' else $
-      ; for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+',3x,g0.17,3x,a'+f_string(unitlen,0)+')',auxqty(i),aux(i),'# ['+auxqty(i)+'/('+auxunit(i/2)+')]'
       for i=0,naux*2-2 do printf,lun,format='(a'+f_string(varlen,0)+','+f_string(28 - strlen(string(aux(i), format= '(g0.17)',/print)),0)+'x,g0.17,3x,a'+f_string(unitlen,0)+')',auxqty(i),aux(i),'# ['+auxqty(i)+'/('+auxunit(i/2)+')]'
     printf,lun,''
     printf,lun,''
