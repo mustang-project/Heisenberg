@@ -411,7 +411,7 @@ pro diffuse_iteration, master_inputfile
             emax_title += '[' + output_var_struct[ii].units + ']'
           endif
         endif
-        if (output_var_struct[ii].errors eq 1) then printf, rep_lun, '#', rtitle, '  ', emin_title, '  ', emax_title else printf, rep_lun, rtitle
+        if (output_var_struct[ii].errors eq 1) then printf, rep_lun, '#', rtitle, '  ', emin_title, '  ', emax_title else printf, rep_lun,'#', rtitle
         ; printf, rep_lun,format ='(3(a' + f_string(max(strlen(output_var_struct[ii].name)),0) + ',4x, f4.2))',  output_vals_struct.(key_ind)[iter_num], output_vals_struct.(emin_ind)[iter_num], output_vals_struct.(emax_ind)[iter_num]
 
         free_lun, rep_lun
