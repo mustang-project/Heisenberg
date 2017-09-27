@@ -95,7 +95,10 @@ pro interactive_peak_find, peak_find_tui, $
           test = strlowcase(test)
         endelse
 
-        if test eq 'y' || test eq 'yes' then break_test = 1 else begin  ; add check for no or mistaken input...
+        if test eq 'y' || test eq 'yes' then begin
+          break_test = 1 ; to break out of main loop
+          break ; break out of run testing loop
+        endif else begin  ; add check for no or mistaken input...
           run_stars = 0
           run_gas = 0
 
