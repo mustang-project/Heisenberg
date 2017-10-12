@@ -449,7 +449,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
                 lambdamin=lambdaminold
                 lambdamax=lambdamaxold
             endif
-           
+
         logdifftgas=0.5*(2.-alog10(tgasmax/tgasmin)) ;is the range at least two orders of magnitude?
         if logdifftgas gt 0 then tgr=[tgasmin/10.^logdifftgas,tgasmax*10.^logdifftgas] else tgr=[tgasmin,tgasmax] ;if not, extend for plotting
         logdifftover=0.5*(2.-alog10(tovermax/tovermin)) ;is the range at least two orders of magnitude?
@@ -500,7 +500,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             x=a*cos(findgen(33)*!pi/16.)
             y=a*sin(findgen(33)*!pi/16.)
             USERSYM,x,y,/FILL
-            
+
             set_plot,'ps'
             xmin=0
             xmax=1
@@ -513,7 +513,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[xmin,xmax],[1,1]*beta_star_best,linestyle=1
             oplot,[tover/tstar],[beta_star_best],psym=8
             device,/close
-            
+
             device,filename=figdir+galaxy+'_beta_gas.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
             plot,fgasover,beta_gas,xr=[0,1],yr=[0,3],/nodata,xstyle=1,ystyle=1,xtitle='!8f!6!Dgas,over!N=!8t!6!Dover!N/!8t!6!Dgas!N',ytitle='!7b!6!Dgas!N',charsize=1.3
             oplot,fgasover,beta_gas
@@ -525,9 +525,26 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             nr=1001
             r=min([apertures_star,apertures_gas])*10.^(dindgen(nr)/(nr-1)*alog10(max([apertures_star,apertures_gas])/min([apertures_star,apertures_gas])))
             xmin=10.*round(0.5*min(r)/10.)
+            if xmin eq 0.0 then begin  ; catch resolutions <10pc and deal with them (xmin is only single precision)
+              start_num = min(r)
+              xmin_tens = floor(alog10(start_num))
+              xmin_tens_val = 10.0e0^xmin_tens
+
+              new_xmin = round(start_num/(xmin_tens_val))* xmin_tens_val
+
+              ; want xmin smaller than min(r):
+              if ((new_xmin - start_num) gt 0) then new_xmin -= xmin_tens_val ; larger number
+              if (abs(new_xmin - start_num) lt xmin_tens_val/1000.0) then new_xmin -= xmin_tens_val ; floating point zero
+              ; check that previous steps haven't given us zero:
+              if new_xmin eq 0.0 then new_xmin = xmin_tens_val - (xmin_tens_val/10.0)
+
+              xmin = new_xmin
+
+            endif
             xmax=10.*round(2.*max(r)/10.)
             ymin=.5
             ymax=ceil(max([surfcontrasts,surfcontrastg]))
+
             device,filename=figdir+galaxy+'_surfconstar.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
             plot,apertures_star,surfcontrasts,/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1,ystyle=1,xtitle='!8l!6!Dap!N',ytitle='!7E!6!Dstar!N',charsize=1.3,xtickformat='logticks'
             oplot,apertures_star,surfcontrasts
@@ -535,7 +552,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
             oplot,[xmin,xmax],[1,1]*surfs_best,linestyle=1
             oplot,[lambda],[surfs_best],psym=8
             device,/close
-            
+
             device,filename=figdir+galaxy+'_surfcongas.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
             plot,apertures_gas,surfcontrastg,/xlog,/ylog,xr=[xmin,xmax],yr=[ymin,ymax],/nodata,xstyle=1,ystyle=1,xtitle='!8l!6!Dap!N',ytitle='!7E!6!Dgas!N',charsize=1.3,xtickformat='logticks'
             oplot,apertures_gas,surfcontrastg
@@ -727,7 +744,7 @@ function fitKL14,fluxratio_star,fluxratio_gas,err_star_log,err_gas_log,tstariso,
 
         n=n+1
     endwhile
-        
+
     print,'     ==> writing beta and surfcontrast plot data to output directory'
     report=f_writetab(fstarover,beta_star,galaxy,outputdir,'betastar','Overlap-to-isolated stellar flux ratio','# f_star,over, beta_star')
     report=f_writetab(fgasover,beta_gas,galaxy,outputdir,'betagas','Overlap-to-isolated gas flux ratio','# f_gas,over, beta_gas')
