@@ -147,6 +147,8 @@ iter_filter     2         # Filter type choice for iterative Fourier filtering: 
 iter_bwo        2         # The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_filter = 0 [butterworth], but a dummy value should be supplied anyway)
 iter_len_conv   2.0       # conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)
 iter_autoexit   0         # Exit IDL automatically upon successful iteration run completion (on/off)
+use_nice        0         # (on/off) Use the "nice" command when spawning KL14 runs to the terminal to adjust the process priority. Note that this may not work depending on the system configuration
+nice_value      0         # Value of the priority adjustment must be an integer between -20 (the highest) to 19 (the lowest). (Note this varies according to the implementation of nice)
 
 
 ################################################

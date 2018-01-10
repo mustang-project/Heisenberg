@@ -13,7 +13,7 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   diffuse_quant, filter_len_conv, f_filter_type, bw_order, $ ;variable names of expected input parameters (6)
   convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
   use_stds, std_star, std_star3, std_gas, $ ;variable names of expected input parameters (8)
-  use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_autoexit ;variable names of expected input parameters (9)
+  use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (9)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;READ INPUT FILE AND VERIFY;
@@ -59,7 +59,7 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
 
   n_min_vars = n_elements([expected_flags,expected_filenames,expected_masknames,expected_params]) + 1 ; plus 1 for input file
   ; check for optional input parameters:
-  expected_params9=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_autoexit'] ;variable names of expected input parameters (9)
+  expected_params9=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_autoexit', 'use_nice', 'nice_value'] ;variable names of expected input parameters (9)
   if n_params() eq (n_min_vars + n_elements(expected_params9)) then begin
     expected_params = [expected_params,expected_params9]
   endif else if n_params() gt n_min_vars then begin

@@ -20,7 +20,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
 
                    ; ################################################################################################################################################################################################################################################################
-                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_autoexit = iter_autoexit  ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
+                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
 
 
 
@@ -535,7 +535,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) -- Optional
   ; ##########################################################################################
   iter_input_switch = 0
-  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 && n_elements(iter_autoexit) eq 1 then begin
+  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 && n_elements(iter_autoexit) eq 1 && n_elements(use_nice) eq 1 && n_elements(nice_value) eq 1 then begin
     iter_input_switch = 1 ; use so don't need to repeat test
 
 
@@ -548,8 +548,12 @@ pro make_input_file, input_file_filepath   $ ; general variables
     iter_bwo_str = strcompress(string(iter_bwo))
     iter_len_conv_str = strcompress(string(iter_len_conv))
     iter_autoexit_str = strcompress(string(iter_autoexit))
+    use_nice_str = strcompress(string(use_nice))
+    nice_value_str = strcompress(string(nice_value))
 
-    max_string_len = max([strlen(use_guess_str), strlen(initial_guess_str), strlen(iter_criterion_str), strlen(iter_crit_len_str), strlen(iter_nmax_str), strlen(iter_filter_str), strlen(iter_bwo_str), strlen(iter_len_conv_str), strlen(iter_autoexit_str), strlen(max_string_len)])
+
+
+    max_string_len = max([strlen(use_guess_str), strlen(initial_guess_str), strlen(iter_criterion_str), strlen(iter_crit_len_str), strlen(iter_nmax_str), strlen(iter_filter_str), strlen(iter_bwo_str), strlen(iter_len_conv_str), strlen(iter_autoexit_str), strlen(max_string_len), strlen(use_nice_str), strlen(nice_value_str)])
     max_string_len = max([max_string_len,22])
 
 
@@ -562,6 +566,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
     while(strlen(iter_bwo_str) lt max_string_len) do iter_bwo_str = iter_bwo_str + pad_string
     while(strlen(iter_len_conv_str) lt max_string_len) do iter_len_conv_str = iter_len_conv_str + pad_string
     while(strlen(iter_autoexit_str) lt max_string_len) do iter_autoexit_str = iter_autoexit_str + pad_string
+    while(strlen(use_nice_str) lt max_string_len) do use_nice_str = use_nice_str + pad_string
+    while(strlen(nice_value_str) lt max_string_len) do nice_value_str = nice_value_str + pad_string
 
 
 
@@ -752,6 +758,9 @@ pro make_input_file, input_file_filepath   $ ; general variables
     printf, inp_lun, 'iter_bwo        ', iter_bwo_str,       '#  The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_bwo = 0 [butterworth], but a dummy value should be supplied anyway)'
     printf, inp_lun, 'iter_len_conv   ', iter_len_conv_str,  '#  conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)'
     printf, inp_lun, 'iter_autoexit   ', iter_autoexit_str,  '# Exit IDL automatically upon successful iteration run completion (on/off)''
+    printf, inp_lun, 'use_nice        ', use_nice_str,       '# (on/off) Use the "nice" command when spawning KL14 runs to the terminal to adjust the process priority. Note that this may not work depending on the system configuration'
+    printf, inp_lun, 'nice_value      ', nice_value_str,     '# Value of the priority adjustment must be an integer between -20 (the highest) to 19 (the lowest). (Note this varies according to the implementation of nice)'
+
 
   endif
 
