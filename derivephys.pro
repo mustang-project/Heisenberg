@@ -295,7 +295,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     
     ;sort all arrays
     tgasmc=tgasmc(sort(tgasmc))
+    dtgasmc=f_getdvar(tgasmc)
     tovermc=tovermc(sort(tovermc))
+    dtovermc=f_getdvar(tovermc)
     lambdamc=lambdamc(sort(lambdamc))
     tstarisomc=tstarisomc(sort(tstarisomc))
     if complete then begin
@@ -351,6 +353,12 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     
     ;get error bars on best-fitting values
     cumdistr=findgen(nphysmc)/(nphysmc-1.)
+    dummy=f_pdftovalues(tgasmc,dtstarmc,cumdistr,tgas)
+    tgas_errmin=dummy(1)
+    tgas_errmax=dummy(2)
+    dummy=f_pdftovalues(tovermc,dtstarmc,cumdistr,tover)
+    tover_errmin=dummy(1)
+    tover_errmax=dummy(2)
     dummy=f_pdftovalues(tstarmc,dtstarmc,cumdistr,tstar)
     tstar_errmin=dummy(1)
     tstar_errmax=dummy(2)
@@ -419,6 +427,18 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             
     ;plot PDFs and write tables
     print,'     ==> plotting PDFs and writing them to output directory'
+    dummy=f_createpdf(tgasmc,dtgasmc,cumdistr,ntry)
+    tgasarr=dummy(*,0)
+    dtgas=dummy(*,1)
+    probtgas=dummy(*,2)
+    report=f_plotdistr(tgasarr,dtgas,probtgas,tgas,tgas_errmin,tgas_errmax,galaxy,figdir,'tgas','!8t!6!Dgas!N','!6Myr',0)
+    report=f_writepdf(alog10(tgasarr),alog10(dtgas),alog10(probtgas),galaxy,outputdir,'tgas','# log10(tgas[Myr]), log10(dtgas[Myr]), log10(PDF[Myr^-1])')
+    dummy=f_createpdf(tovermc,dtovermc,cumdistr,ntry)
+    toverarr=dummy(*,0)
+    dtover=dummy(*,1)
+    probtover=dummy(*,2)
+    report=f_plotdistr(toverarr,dtover,probtover,tover,tover_errmin,tover_errmax,galaxy,figdir,'tover','!8t!6!Dover!N','!6Myr',0)
+    report=f_writepdf(alog10(toverarr),alog10(dtover),alog10(probtover),galaxy,outputdir,'tover','# log10(tover[Myr]), log10(dtover[Myr]), log10(PDF[Myr^-1])')
     dummy=f_createpdf(tstarmc,dtstarmc,cumdistr,ntry)
     tstararr=dummy(*,0)
     dtstar=dummy(*,1)
@@ -548,7 +568,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         report=f_writepdf(alog10(chiparr),alog10(dchip),alog10(probchip),galaxy,outputdir,'chip','# log10(chip), log10(dchip), log10(PDF)')
     endif
     
-    returnarr = [tstar,tstar_errmin,tstar_errmax, $
+    returnarr = [tgas,tgas_errmin,tgas_errmax, $
+                tover,tover_errmin,tover_errmax, $
+                tstar,tstar_errmin,tstar_errmax, $
                 ttotal,ttotal_errmin,ttotal_errmax, $
                 betastar,betastar_errmin,betastar_errmax, $
                 betagas,betagas_errmin,betagas_errmax, $
