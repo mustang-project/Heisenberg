@@ -18,7 +18,13 @@ end
 
 function f_createpdf,array,darray,cumpdf,nnew
     COMMON numbers
-    norig=n_elements(array) ;originial number of elements
+    norig0=n_elements(array) ;originial number of elements
+    medval=median(array)
+    use=where(array gt medval/dynrange and array lt medval*dynrange) ;limit dynamic range to 1e10 both ways, thus excluding zero and infinity
+    array=array[use] ;update array
+    darray=darray[use] ;update difference array
+    norig=n_elements(array) ;new number of elements
+    cumpdf=cumpdf[use]*norig0/norig ;update cumulative pdf and rescale to unity
     minval=min(array)-.5*darray(0) ;assume linearly-symmetric bins as input
     maxval=max(array)+.5*darray(norig-1) ;assume linearly-symmetric bins as input
     pdf=dblarr(nnew)
