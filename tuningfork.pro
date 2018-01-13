@@ -1057,6 +1057,9 @@ if derive_phys then begin
                    tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                    surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
                    lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
+    fit[2:3]=der[1:2]
+    fit[5:6]=der[4:5]
+    der=der[6:n_elements(der)-1]
     aux=[nincludepeak_star,nincludepeak_gas,lap_min]
 endif
 
