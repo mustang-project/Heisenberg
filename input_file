@@ -31,7 +31,10 @@ gas_ext_mask2       -                                 # Region file for masking 
 gas_int_mask2       -                                 # Region file for masking areas in gasfile2 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
 star_ext_mask3      -                                 # Region file for masking areas in starfile3 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
 star_int_mask3      -                                 # Region file for masking areas in starfile3 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)
-
+# UNFILTERED FILE NAMES
+unfiltdir           /full/path/of/directory/where/unfiltered/files/are/stored/          # Full path of unfiltered image directory
+star_unfilt_file    -
+gas_unfilt_file     -
 
 # FLAGS 1 (module switches)
 mask_images     1         # Mask images (on/off)
@@ -119,6 +122,7 @@ ndepth          4         # Maximum number of free parameter array refinement lo
 ntry            101       # Size of each free parameter array to obtain the best-fitting value
 nphysmc         1000000   # Number of Monte-Carlo experiments for error propagation of derived physical quantities
 # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
+use_unfilt_ims  0         # Calculate the diffuse fraction of [0] starfile and gasfile, the images used for the fitting process [1] star_unfilt_file and gas_unfilt_file, pass-through images (in the case of iterative diffuse filtering to calculate diffuse fraction of the unfiltered images)
 diffuse_quant   1         # Calculate the diffuse fraction of [0] flux, [1] power
 f_filter_type   2         # Filter type choice for Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 0 [flux], but a dummy value should be supplied anyway)
 bw_order        2         # The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = 0 [butterworth] and diffuse_quant = 0 [flux], but a dummy value should be supplied anyway)

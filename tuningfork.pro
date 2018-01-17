@@ -78,12 +78,13 @@ read_kl14_input_file, inputfile, $ ; input_file_filepath
   set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, use_X11, log10_output, $;variable names of expected flags (4)
   datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
   maskdir, star_ext_mask, star_int_mask, gas_ext_mask,gas_int_mask, star_ext_mask2 ,star_int_mask2, gas_ext_mask2, gas_int_mask2, star_ext_mask3, star_int_mask3, $ ;variable names of expected mask filenames
+  unfiltdir, star_unfilt_file, gas_unfilt_file, $
   distance, inclination, posangle, centrex,centrey, minradius ,maxradius, Fs1_Fs2_min, max_sample, astr_tolerance, nbins, $ ;variable names of expected input parameters (1)
   lapmin, lapmax, naperture, peak_res,max_res, $  ;variable names of expected input parameters (2)
   npixmin, nsigma, logrange_s, logspacing_s,logrange_g, logspacing_g, nlinlevel_s, nlinlevel_g, $ ;variable names of expected input parameters (3)
   tstariso, tstariso_errmin, tstariso_errmax, tgasmini,tgasmaxi, tovermini, $ ;variable names of expected input parameters (4)
   nmc, ndepth, ntry, nphysmc, $ ;variable names of expected input parameters (5)
-  diffuse_quant, filter_len_conv, f_filter_type, bw_order, $ ;variable names of expected input parameters (6)
+  use_unfilt_ims, diffuse_quant, filter_len_conv, f_filter_type, bw_order, $ ;variable names of expected input parameters (6)
   convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
   use_stds, std_star, std_star3, std_gas
 
@@ -973,6 +974,21 @@ endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;calculate fgmc and fcl;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+if n_elements(use_unfilt_ims) eq 1 && use_unfilt_ims eq 1 then begin
+  if strmid(unfiltdir, 0, /reverse) ne path_sep() then unfiltdir = unfiltdir + path_sep() ; directory check
+  stardiffusefiletot = unfiltdir + star_unfilt_file ; use supplied unfiltered images
+  gasdiffusefiletot = unfiltdir + gas_unfilt_file
+endif else begin
+  stardiffusefiletot = gasfiletot ; else just use gasfile and starfile
+  gasdiffusefiletot = starfiletot
+endelse
+
+
+
+
 if diffuse_frac eq 1 then begin
   if f_filter_type eq 0 then filter_choice = 'butterworth' else $
       if f_filter_type eq 1 then filter_choice = 'gaussian' else $
@@ -983,7 +999,7 @@ if diffuse_frac eq 1 then begin
       ;1) method using derivephys and arrays ;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       flux_fraction_calc, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , gasfiletot, starfiletot $ ; input image (use masked image, but not regridded/smoothened)
+       , gasdiffusefiletot, stardiffusefiletot $ ; input image (use masked image, but not regridded/smoothened)
        , distance, inclination, astr_tolerance $
        , arrdir $
        , filter_len_conv $  ; fourier length conversion factor
@@ -995,7 +1011,7 @@ if diffuse_frac eq 1 then begin
      ; 2) direct method using lambda errors ;
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , gasfiletot $ ; input image
+       , gasdiffusefiletot $ ; input image
        , distance, inclination, astr_tolerance $ ;
        , filter_len_conv $  ; fourier length conversion factor
        , lambda $ ; lambda
@@ -1004,7 +1020,7 @@ if diffuse_frac eq 1 then begin
        , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
 
      fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , starfiletot $ ; input image
+       , stardiffusefiletot $ ; input image
        , distance, inclination, astr_tolerance $ ;
        , filter_len_conv $  ; fourier length conversion factor
        , lambda $ ; lambda
@@ -1021,7 +1037,7 @@ if diffuse_frac eq 1 then begin
 
 
    endif else if (diffuse_quant eq 1) then begin ; diffuse_quant =1 -> power
-      power_fraction_calc, gasfiletot, starfiletot $ ; input image (use masked image, but not regridded/smoothened)
+      power_fraction_calc, gasdiffusefiletot, stardiffusefiletot $ ; input image (use masked image, but not regridded/smoothened)
           , distance, inclination, astr_tolerance $
           , arrdir $ ; directory to restore lambda array from
           , filter_len_conv $  ; fourier length conversion factor

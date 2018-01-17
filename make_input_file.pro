@@ -7,6 +7,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
 
                    , starfile2 = starfile2, gasfile2 = gasfile2, starfile3 = starfile3  $  ; File names keywords
                    , maskdir = maskdir, star_ext_mask1 = star_ext_mask, star_int_mask1 = star_int_mask, gas_ext_mask1 = gas_ext_mask, gas_int_mask1 = gas_int_mask, star_ext_mask2 = star_ext_mask2, star_int_mask2 = star_int_mask2, gas_ext_mask2 = gas_ext_mask2, gas_int_mask2 = gas_int_mask2, star_ext_mask3 = star_ext_mask3, star_int_mask3 = star_int_mask3  $  ; Mask file names keywords ; note star_ext_mask1 = star_ext_mask etc. prevents ambigious keyword error
+                   , unfiltdir = unfiltdir, star_unfilt_file = star_unfilt_file, gas_unfilt_file = gas_unfilt_file $ ; unfiltered image keywords
+
                    , mask_images = mask_images, regrid = regrid, smoothen = smoothen, sensitivity = sensitivity, id_peaks = id_peaks, calc_ap_flux = calc_ap_flux, generate_plot = generate_plot, get_distances = get_distances, calc_obs = calc_obs, calc_fit = calc_fit, diffuse_frac = diffuse_frac, derive_phys = derive_phys, write_output = write_output, cleanup = cleanup, autoexit = autoexit $ ; FLAGS 1 (keywords)'
                    , use_star2 = use_star2, use_gas2 = use_gas2, use_star3 = use_star3 $ ;  FLAGS 2 keywords
                    , mstar_ext1 = mstar_ext, mstar_int1 = mstar_int, mgas_ext1 = mgas_ext, mgas_int1 = mgas_int, mstar_ext2 = mstar_ext2, mstar_int2 = mstar_int2, mgas_ext2 = mgas_ext2, mgas_int2 = mgas_int2, mstar_ext3 = mstar_ext3, mstar_int3 = mstar_int3, convert_masks = convert_masks, cut_radius = cut_radius $ ; # FLAGS 3 (masking-related options) keywords ; note mstar_ext1 = mstar_ext etc. prevents ambigious keyword error
@@ -15,7 +17,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
                    , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
                    , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
-                   , diffuse_quant, f_filter_type, bw_order, filter_len_conv $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
+                   , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
                    , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
                    , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
 
@@ -104,6 +106,25 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while( strlen(star_ext_mask3_str) lt max_string_len) do star_ext_mask3_str = star_ext_mask3_str + pad_string
   while( strlen(star_int_mask3_str) lt max_string_len) do star_int_mask3_str = star_int_mask3_str + pad_string
 
+
+  ; #############################################
+  ; UNFILTERED FILE NAMES
+  ; #############################################
+  if n_elements(unfiltdir) ne 1 then maskdir = '-'
+  if n_elements(star_unfilt_file) ne 1 then star_unfilt_file = '-'
+  if n_elements(gas_unfilt_file) ne 1 then gas_unfilt_file = '-'
+
+
+  unfiltdir_str = string(unfiltdir)
+  star_unfilt_file_str = string(star_unfilt_file)
+  gas_unfilt_file_str = string(gas_unfilt_file)
+
+  max_string_len = max([strlen(unfiltdir_str), strlen(star_unfilt_file_str), strlen(gas_unfilt_file_str)]) + comment_sep_length
+  max_string_len = max([max_string_len,22])
+
+  while( strlen(unfiltdir_str) lt max_string_len) do unfiltdir_str = unfiltdir_str + pad_string
+  while( strlen(star_unfilt_file_str) lt max_string_len) do star_unfilt_file_str = star_unfilt_file_str + pad_string
+  while( strlen(gas_unfilt_file_str) lt max_string_len) do gas_unfilt_file_str = gas_unfilt_file_str + pad_string
 
 
   ; #############################################
@@ -451,19 +472,22 @@ pro make_input_file, input_file_filepath   $ ; general variables
   ; #############################################
   ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
   ; #############################################
+  if n_elements(use_unfilt_ims) ne 1 then use_unfilt_ims = 0
   if n_elements(diffuse_quant) ne 1 then diffuse_quant = 1
   if n_elements(f_filter_type) ne 1 then f_filter_type = 2
   if n_elements(bw_order) ne 1 then bw_order = 2
   if n_elements(filter_len_conv) ne 1 then filter_len_conv = 1.0
 
+  use_unfilt_ims_str = strcompress(string(use_unfilt_ims))
   diffuse_quant_str = strcompress(string(diffuse_quant))
   f_filter_type_str = strcompress(string(f_filter_type))
   bw_order_str = strcompress(string(bw_order))
   filter_len_conv_str = strcompress(string(filter_len_conv))
 
-  max_string_len = max([strlen(diffuse_quant_str), strlen(f_filter_type_str), strlen(bw_order_str), strlen(filter_len_conv_str)]) + comment_sep_length
+  max_string_len = max([strlen(use_unfilt_ims_str),strlen(diffuse_quant_str), strlen(f_filter_type_str), strlen(bw_order_str), strlen(filter_len_conv_str)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
+  while(strlen(use_unfilt_ims_str) lt max_string_len) do use_unfilt_ims_str = use_unfilt_ims_str + pad_string
   while(strlen(diffuse_quant_str) lt max_string_len) do diffuse_quant_str = diffuse_quant_str + pad_string
   while(strlen(f_filter_type_str) lt max_string_len) do f_filter_type_str = f_filter_type_str + pad_string
   while(strlen(bw_order_str) lt max_string_len) do bw_order_str = bw_order_str + pad_string
@@ -617,6 +641,13 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'star_ext_mask3     ', star_ext_mask3_str,    '# Region file for masking areas in starfile3 exterior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)'
   printf, inp_lun, 'star_int_mask3     ', star_int_mask3_str,    '# Region file for masking areas in starfile3 interior to closed shapes (only used if mask_gas=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)'
 
+
+  printf, inp_lun, '# UNFILTERED FILE NAMES'
+  printf, inp_lun, 'unfiltdir          ', unfiltdir_str,         '# Full path of unfiltered image directory'
+  printf, inp_lun, 'star_unfilt_file   ', star_unfilt_file_str
+  printf, inp_lun, 'gas_unfilt_file    ', gas_unfilt_file_str
+
+
   printf, inp_lun, '# FLAGS 1 (module switches)'
   printf, inp_lun, 'mask_images     ', mask_images_str,    '# Mask images (on/off)'
   printf, inp_lun, 'regrid          ', regrid_str,         '# Read and regrid original files and synchronise masks across all used images, i.e. pixels masked in one image will be masked in all images (on/off)'
@@ -723,6 +754,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
 
 
   printf, inp_lun, '# INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)''
+  printf, inp_lun, 'use_unfilt_ims  ', use_unfilt_ims_str, ' # Calculate the diffuse fraction of [0] starfile and gasfile, the images used for the fitting process [1] star_unfilt_file and gas_unfilt_file, pass-through images (in the case of iterative diffuse filtering to calculate diffuse fraction of the unfiltered images)'
   printf, inp_lun, 'diffuse_quant   ', diffuse_quant_str,  '# Calculate the diffuse fraction of [0] flux, [1] power'
   printf, inp_lun, 'f_filter_type   ', f_filter_type_str,  '# Filter type choice for Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
   printf, inp_lun, 'bw_order        ', bw_order_str,       '# The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = 0 [butterworth] and diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
