@@ -139,8 +139,8 @@ momratetomass   5.e-10    # Momentum output rate per unit mass of a desired feed
 # INPUT PARAMETERS 8 (sensitivity)
 use_stds        0         # [0] calculate standard deviations of images [1] Use supplied standard deviation measurements
 std_star        0.1       # The measured standard deviation of starfile
-std_star3       0.1       # The measured standard deviation of gasfile
-std_gas         0.1       # The measured standard deviation of starfile3 (only used if use_star3 = 1)
+std_star3       0.1       # The measured standard deviation of starfile3 (only used if use_star3 = 1)
+std_gas         0.1       # The measured standard deviation of gasfile
 # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
 use_guess       0         # [0] Do not Filter images before first KL14 run and ignore parameter: "initial_guess" [1] Filter images with initial guess of lambda before first KL14 run
 initial_guess   200       # Length in pc of the initial estimate of lambda with which to filter the images
