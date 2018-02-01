@@ -107,7 +107,9 @@ pro diffuse_iteration, master_inputfile
     stop
   endelse
 
-  master_star_pix_to_pc = distance*tan(!dtor*master_star_cdelt)/sqrt(cos(inclination))
+  inclination_radians = inclination * !dtor ; inclination in radians
+
+  master_star_pix_to_pc = distance * tan(!dtor*master_star_cdelt)/sqrt(cos(inclination_radians))
 
 
 
@@ -119,7 +121,7 @@ pro diffuse_iteration, master_inputfile
     stop
   endelse
 
-  master_gas_pix_to_pc = distance*tan(!dtor*master_gas_cdelt)/sqrt(cos(inclination))
+  master_gas_pix_to_pc = distance*tan(!dtor*master_gas_cdelt)/sqrt(cos(inclination_radians))
 
   ; ******************************************************
   ; Copy the base files used for the filtering
