@@ -517,27 +517,42 @@ pro diffuse_iteration, master_inputfile
     starfile = strcompress("starfile_iter" + string(iter_num) + ".fits",/remove_all) ; change starfile for input_file
     raw_starfile = strcompress(raw_datadir + starfile, /remove_all)
 
+    star_diffusefile = strcompress("starfile_diffuse" + string(iter_num) + ".fits",/remove_all) ; change starfile for input_file
+    raw_star_diffusefile = strcompress(raw_datadir + star_diffusefile, /remove_all)
+
 
     fourier_filter_tool, filter_choice, iter_bwo, 'high', star_cut_length, $ ; description of the filter
       base_starfile, $ ; input image by filename
-      filtered_image_path = raw_starfile ; output file for the filtered image
+      filtered_image_path = raw_starfile, $ ; output file for the filtered image
+      negative_image_path = raw_star_diffusefile ; output file for the negative image
+
 
     filtered_starfile = strcompress(datadir + starfile,/remove_all)
     iter_image_postprocess, raw_starfile, filtered_starfile, /zero_negatives
+
+    filtered_star_diffusefile = strcompress(datadir + star_diffusefile, /remove_all)
+    writefits, filtered_star_diffusefile, readfits(base_starfile) - readfits(filtered_starfile), headfits(base_starfile) ; diffuse image
 
 
     gas_cut_length = (lambda_val/master_gas_pix_to_pc) * iter_len_conv ; in pixels
     gasfile = strcompress("gasfile_iter" + string(iter_num) + ".fits",/remove_all) ; change gasfile for input_file
     raw_gasfile = strcompress(raw_datadir + gasfile, /remove_all)
 
+    gas_diffusefile = strcompress("gasfile_diffuse" + string(iter_num) + ".fits",/remove_all) ; change starfile for input_file
+    raw_gas_diffusefile = strcompress(raw_datadir + gas_diffusefile, /remove_all)
+
+
+
     fourier_filter_tool, filter_choice, iter_bwo, 'high', star_cut_length, $ ; description of the filter
       base_gasfile, $ ; input image by filename
-      filtered_image_path = raw_gasfile ; output file for the filtered image
+      filtered_image_path = raw_gasfile, $ ; output file for the filtered image
+      negative_image_path = raw_gas_diffusefile ; output file for the negative image
 
     filtered_gasfile = strcompress(datadir + gasfile,/remove_all)
     iter_image_postprocess, raw_gasfile, filtered_gasfile, /zero_negatives
 
-
+    filtered_gas_diffusefile = strcompress(datadir + gas_diffusefile, /remove_all)
+    writefits, filtered_gas_diffusefile, readfits(base_gasfile) - readfits(filtered_gasfile), headfits(base_gasfile) ; diffuse image
 
   endwhile
 
