@@ -2,7 +2,9 @@
 pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; description of the filter
                        , image_input, image_hdr $ ; input image
                        , filtered_image_arr = filtered_image_arr, filtered_image_hdr = filtered_image_hdr $ ; filtered image output variablse
-                       , filtered_image_path = filtered_image_path ; filtered image output paths
+                       , filtered_image_path = filtered_image_path $ ; filtered image output paths
+                       , negative_image_arr = negative_image_arr, negative_image_hdr = negative_image_hdr $ ; filtered image output variablse
+                       , negative_image_path = negative_image_path ; filtered image output paths
 ;----------------------------------------------------------------------------------------
 ; Tool for fourier filtering a .fits image
 ;--(dependencies)------------------------------------------------------------------------
@@ -116,7 +118,7 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
 
 
   ; ************************************************
-  ; Create frequency distance array   ; hive off into function 
+  ; Create frequency distance array   ; hive off into function
   ; ************************************************
   if freq_double eq 0 then begin
     fft_freq_dist = fltarr(image_xsize,image_ysize)
@@ -185,5 +187,14 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
   ; ************************************************
   filtered_image_hdr = image_hdr
   if n_elements(filtered_image_path) ne 0 then writefits, filtered_image_path, filtered_image_arr, filtered_image_hdr
+
+  ; ************************************************
+  ; write out negative image
+  ; ************************************************
+  if n_elements(negative_image_path) ne 0 || n_elements(negative_image_hdr) ne 0 || n_elements(negative_image_arr) ne 0 then begin
+    negative_image_hdr = image_hdr
+    negative_image_arr = image_arr - filtered_image_arr
+  endif
+  if n_elements(negative_image_path) ne 0 then writefits, negative_image_path, negative_image_arr, negative_image_hdr
 
 end
