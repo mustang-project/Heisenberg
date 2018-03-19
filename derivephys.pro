@@ -108,7 +108,8 @@ function f_writecov,matrix,complete,galaxy,outputdir
 end
 
 function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
-                    surfglobals,surfglobalg,surfcontrasts,surfcontrastg,apertures_star,apertures_gas,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units
+                    surfglobals,surfglobalg,surfcontrasts,surfcontrastg,apertures_star,apertures_gas,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units, $
+                    emfrac_cor_mode, filter_choice, filter_len_conv
 
     if map_units eq 1 then complete=1 else complete=0
 
@@ -136,7 +137,30 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         chie=f_chie(tover,esf,vfb,psie)
         chip=f_chip(tover,esf,vfb,psip)
     endif
+    if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+      cut_len_temp = filter_len_conv * lambda
 
+      fwhm_star_temp =  rpeakstar * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+      fwhm_gas_temp =  rpeakgas * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+
+      qconstar = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_star_temp)
+      qcongas = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_gas_temp)
+      fcl /= qconstar ; flux loss correction
+      fgmc /= qcongas  ; flux loss correction
+    endif else begin
+      qconstar = 1.0d0
+      qcongas = 1.0d0
+    endelse
+    if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+      qzetastar = fourier_zeta_correction(filter_choice, zetastar, fcl)
+      qzetagas = fourier_zeta_correction(filter_choice, zetagas, fgmc)
+
+      fcl  /=  qzetastar ; zeta correction
+      fgmc  /= qzetagas ; zeta correction
+    endif else begin
+      qzetatar = 1.0d0
+      qzetagas = 1.0d0
+    endelse
 
     restore,filename=arrdir+'probnorm.sav'
     restore,filename=arrdir+'probtgastover.sav'
@@ -193,8 +217,11 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     ; diffuse fraction
     fclmc=dblarr(nphysmc)+fcl   ; monte-carlo array for fcl
     fgmcmc=dblarr(nphysmc)+fgmc ; monte-carlo array for fgmc
-    ;
-
+    ; diffuse fraction corrections
+    qconstarmc = dblarr(nphysmc)
+    qcongasmc = dblarr(nphysmc)
+    qzetastarmc = dblarr(nphysmc)
+    qzetagasmc = dblarr(nphysmc)
 
 
     nredo=0
@@ -272,7 +299,32 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         ; fgmcmc[i]=interpol(gas_flux_frac_arr,lambdaarr,lambdamc[i])
         fclmc[i]=10.^interpol(alog10(star_flux_frac_arr),alog10(lambdaarr),alog10(lambdamc[i]))  ; logspace interpolation
         fgmcmc[i]=10.^interpol(alog10(gas_flux_frac_arr),alog10(lambdaarr),alog10(lambdamc[i]))
-        ;
+
+        if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+          cut_len_temp = filter_len_conv * lambdamc[i]
+
+          fwhm_star_temp =  rpeakstarmc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          fwhm_gas_temp =  rpeakgasmc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          qconstarmc[i] = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_star_temp)
+          qcongasmc[i] = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_gas_temp)
+
+          fclmc[i] /= qconstarmc[i] ; flux loss correction
+          fgmcmc[i] /= qcongasmc[i]  ; flux loss correction
+        endif else begin
+          qconstarmc[i] = 1.0d0
+          qcongasmc[i] = 1.0d0
+        endelse
+        if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+          qzetastarmc[i] = fourier_zeta_correction(filter_choice, zetastarmc[i], fclmc[i])
+          qzetagasmc[i] = fourier_zeta_correction(filter_choice, zetagasmc[i], fgmcmc[i])
+
+          fclmc[i]  /=  qzetastarmc[i] ; zeta correction
+          fgmcmc[i]  /= qzetagasmc[i] ; zeta correction
+        endif else begin
+          qzetastarmc[i] = 1.0d0
+          qzetagasmc[i] = 1.0d0
+        endelse
+
 
 
         if redo eq 1 then begin ;if any Infinity or NaN has been found, redo draw
@@ -289,14 +341,22 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                  [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
                  [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
                  [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chipmc], $
-                 [fclmc],[fgmcmc]]
+                 [fclmc],[fgmcmc],[qconstarmc],[qcongasmc],[qzetastarmc],[qzetagasmc]]
 
     endif else begin
         quantmc=[[tgasmc],[tovermc],[lambdamc], $
                  [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
                  [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
-                 [fclmc],[fgmcmc]]
+                 [fclmc],[fgmcmc],[qconstarmc],[qcongasmc],[qzetastarmc],[qzetagasmc]]
     endelse
+    ; if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then quantmc=[[quantmc], [qconstarmc],[qcongasmc]]
+    ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then  quantmc=[[quantmc], [qzetastarmc],[qzetagasmc]]
+    ;
+
+
+
+
+
     nquant=n_elements(quantmc(0,*))
     corrquant=dblarr(nquant,nquant)
     covquant=dblarr(nquant,nquant)
@@ -370,6 +430,18 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     fgmcmc=fgmcmc[sort(fgmcmc)]
     dfgmcmc=f_getdvar(fgmcmc)
     ;
+    ; if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+    qconstarmc = qconstarmc[sort(qconstarmc)]
+    dqconstarmc = f_getdvar(qconstarmc)
+    qcongasmc = qcongasmc[sort(qcongasmc)]
+    dqcongasmc = f_getdvar(qcongasmc)
+    ; endif
+    ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+    qzetastarmc = qzetastarmc[sort(qzetastarmc)]
+    dqzetastarmc = f_getdvar(qzetastarmc)
+    qzetagasmc = qzetagasmc[sort(qzetagasmc)]
+    dqzetagasmc = f_getdvar(qzetagasmc)
+    ; endif
     ;get error bars on best-fitting values
     cumdistr=findgen(nphysmc)/(nphysmc-1.)
     dummy=f_pdftovalues(tstarmc,dtstarmc,cumdistr,tstar)
@@ -445,6 +517,25 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     fgmc_errmin=dummy[1]
     fgmc_errmax=dummy[2]
     ;
+    ; if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+    dummy=f_pdftovalues(qconstarmc,dqconstarmc,cumdistr,qconstar) ; get errors for qconstar
+    qconstar_errmin=dummy[1]
+    qconstar_errmax=dummy[2]
+    dummy=f_pdftovalues(qcongasmc,dqcongasmc,cumdistr,qcongas) ; get errors for qcongas
+    qcongas_errmin=dummy[1]
+    qcongas_errmax=dummy[2]
+    ; endif
+    ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+    dummy=f_pdftovalues(qzetastarmc,dqzetastarmc,cumdistr,qzetastar) ; get errors for qzetastar
+    qzetastar_errmin=dummy[1]
+    qzetastar_errmax=dummy[2]
+    dummy=f_pdftovalues(qzetagasmc,dqzetagasmc,cumdistr,qzetagas) ; get errors for qzetagas
+    qzetagas_errmin=dummy[1]
+    qzetagas_errmax=dummy[2]
+    ; endif
+
+
+
     ;plot PDFs and write tables
     print,'     ==> plotting PDFs and writing them to output directory'
     dummy=f_createpdf(tstarmc,dtstarmc,cumdistr,ntry)
@@ -591,6 +682,44 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     report=f_writepdf(alog10(fgmcarr),alog10(dfgmc),alog10(probfgmc),galaxy,outputdir,'fgmc','# log10(fgmc), log10(dfgmc), log10(PDF)')
     ;
 
+
+    ; if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+    dummy=f_createpdf(qconstarmc,dqconstarmc,cumdistr,ntry)
+    qconstararr=dummy(*,0)
+    dqconstar=dummy(*,1)
+    probqconstar=dummy(*,2)
+    report=f_plotdistr(qconstararr,dqconstar,probqconstar,qconstar,qconstar_errmin,qconstar_errmax,galaxy,figdir,'qconstar','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_writepdf(alog10(qconstararr),alog10(dqconstar),alog10(probqconstar),galaxy,outputdir,'qconstar','# log10(qconstar), log10(dqconstar), log10(PDF)')
+
+
+    dummy=f_createpdf(qcongasmc,dqcongasmc,cumdistr,ntry)
+    qcongasarr=dummy(*,0)
+    dqcongas=dummy(*,1)
+    probqcongas=dummy(*,2)
+    report=f_plotdistr(qcongasarr,dqcongas,probqcongas,qcongas,qcongas_errmin,qcongas_errmax,galaxy,figdir,'qcongas','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_writepdf(alog10(qcongasarr),alog10(dqcongas),alog10(probqcongas),galaxy,outputdir,'qcongas','# log10(qcongas), log10(dqcongas), log10(PDF)')
+    ; endif
+
+    ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+    dummy=f_createpdf(qzetastarmc,dqzetastarmc,cumdistr,ntry)
+    qzetastararr=dummy(*,0)
+    dqzetastar=dummy(*,1)
+    probqzetastar=dummy(*,2)
+    report=f_plotdistr(qzetastararr,dqzetastar,probqzetastar,qzetastar,qzetastar_errmin,qzetastar_errmax,galaxy,figdir,'qzetastar','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_writepdf(alog10(qzetastararr),alog10(dqzetastar),alog10(probqzetastar),galaxy,outputdir,'qzetastar','# log10(qzetastar), log10(dqzetastar), log10(PDF)')
+
+
+    dummy=f_createpdf(qzetagasmc,dqzetagasmc,cumdistr,ntry)
+    qzetagasarr=dummy(*,0)
+    dqzetagas=dummy(*,1)
+    probqzetagas=dummy(*,2)
+    report=f_plotdistr(qzetagasarr,dqzetagas,probqzetagas,qzetagas,qzetagas_errmin,qzetagas_errmax,galaxy,figdir,'qzetagas','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_writepdf(alog10(qzetagasarr),alog10(dqzetagas),alog10(probqzetagas),galaxy,outputdir,'qzetagas','# log10(qzetagas), log10(dqzetagas), log10(PDF)')
+    ; endif
+
+
+
+
     returnarr = [tstar,tstar_errmin,tstar_errmax, $
                 ttotal,ttotal_errmin,ttotal_errmax, $
                 betastar,betastar_errmin,betastar_errmax, $
@@ -601,6 +730,10 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                 surfg_fit,surfg_errmin,surfg_errmax, $
                 fcl, fcl_errmin, fcl_errmin, $
                 fgmc, fgmc_errmin, fgmc_errmin, $
+                qconstar,qconstar_errmin,qconstar_errmax, $
+                qcongas,qcongas_errmin,qcongas_errmax, $
+                qzetastar,qzetastar_errmin,qzetastar_errmax, $
+                qzetagas,qzetagas_errmin,qzetagas_errmax, $
                 zetastar,zetastar_errmin,zetastar_errmax, $
                 zetagas,zetagas_errmin,zetagas_errmax, $
                 rpeakstar,rpeakstar_errmin,rpeakstar_errmax, $
@@ -616,6 +749,18 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                                   etaavg,etaavg_errmin,etaavg_errmax, $
                                   chie,chie_errmin,chie_errmax, $
                                   chip,chip_errmin,chip_errmax]
+
+    ; if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+    ;   returnarr = [returnarr, $
+    ;                qconstar,qconstar_errmin,qconstar_errmax, $
+    ;                qcongas,qcongas_errmin,qcongas_errmax]
+    ; endif
+    ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+    ;   returnarr = [returnarr, $
+    ;                qzetastar,qzetastar_errmin,qzetastar_errmax, $
+    ;                qzetagas,qzetagas_errmin,qzetagas_errmax]
+    ; endif
+
 
     return,returnarr
 

@@ -121,12 +121,13 @@ nmc             1000      # Number of Monte-Carlo peak drawing experiments to be
 ndepth          4         # Maximum number of free parameter array refinement loops for obtaining best-fitting value
 ntry            101       # Size of each free parameter array to obtain the best-fitting value
 nphysmc         1000000   # Number of Monte-Carlo experiments for error propagation of derived physical quantities
-# INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
+# INPUT PARAMETERS 6 (Fourier filtering for diffuse emission fraction calculation)
 use_unfilt_ims  0         # Calculate the diffuse fraction of [0] starfile and gasfile, the images used for the fitting process [1] star_unfilt_file and gas_unfilt_file, pass-through images (in the case of iterative diffuse filtering to calculate diffuse fraction of the unfiltered images)
 diffuse_quant   1         # Calculate the diffuse fraction of [0] flux, [1] power
 f_filter_type   2         # Filter type choice for Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 0 [flux], but a dummy value should be supplied anyway)
 bw_order        2         # The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = 0 [butterworth] and diffuse_quant = 0 [flux], but a dummy value should be supplied anyway)
 filter_len_conv 1.0       # conversion factor for Fourier filtering cut_length (cut_length = lambda * filter_len_conv)
+emfrac_cor_mode 0         # Apply corrections to measured fgmc and fcl [0] apply no correction [1] apply correction for flux loss from signal regions [2] apply correction for the filling factor, zeta, only [3] apply both corrections (flux loss from signal regions and filling factor, zeta)
 # INPUT PARAMETERS 7 (conversions and constants to calculate derived quantities)
 convstar       -3.69206   # Log of multiplication factor to convert the pixel value in starfile to a SFR in Msun/yr (if maptypes=1 or maptypes=3) or to a gas mass in Msun (if maptypes=2)
 convstar_rerr   0.        # Relative error (sigma_x/x) of convstar

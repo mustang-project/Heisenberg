@@ -84,7 +84,7 @@ read_kl14_input_file, inputfile, $ ; input_file_filepath
   npixmin, nsigma, logrange_s, logspacing_s,logrange_g, logspacing_g, nlinlevel_s, nlinlevel_g, $ ;variable names of expected input parameters (3)
   tstariso, tstariso_errmin, tstariso_errmax, tgasmini,tgasmaxi, tovermini, $ ;variable names of expected input parameters (4)
   nmc, ndepth, ntry, nphysmc, $ ;variable names of expected input parameters (5)
-  use_unfilt_ims, diffuse_quant, filter_len_conv, f_filter_type, bw_order, $ ;variable names of expected input parameters (6)
+  use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, $ ;variable names of expected input parameters (6)
   convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
   use_stds, std_star, std_star3, std_gas
 
@@ -998,43 +998,55 @@ if diffuse_frac eq 1 then begin
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;1) method using derivephys and arrays ;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ; if rpeak_cor_mode eq 0 then begin ; use measured rpeaks
+      ;   rpeaks_cor_val = rpeaks
+      ;   rpeakg_cor_val = rpeakg
+      ; endif  ; else rpeaks supplied in input file
+      ;
+
+
+
+
+
       flux_fraction_calc, filter_choice, bw_order, 'high' $ ; description of the filter   $
        , gasdiffusefiletot, stardiffusefiletot $ ; input image (use masked image, but not regridded/smoothened)
        , distance, inclination, astr_tolerance $
        , arrdir $
        , filter_len_conv $  ; fourier length conversion factor
        , lambda $
+       ; , emfrac_cor_mode $ ; apply flux loss and/or zeta correction
        , gas_flux_frac, star_flux_frac $
        , /save_arrays
 
-     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     ; 2) direct method using lambda errors ;
-     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , gasdiffusefiletot $ ; input image
-       , distance, inclination, astr_tolerance $ ;
-       , filter_len_conv $  ; fourier length conversion factor
-       , lambda $ ; lambda
-       , gas_flux_frac $ ; output flux and diffuse fraction
-       , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
-       , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
+     ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ; ; 2) direct method using lambda errors ;
+     ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ; fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
+     ;   , gasdiffusefiletot $ ; input image
+     ;   , distance, inclination, astr_tolerance $ ;
+     ;   , filter_len_conv $  ; fourier length conversion factor
+     ;   , lambda $ ; lambda
+     ;   , gas_flux_frac $ ; output flux and diffuse fraction
+     ;   , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
+     ;   , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
+     ;
+     ; fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
+     ;   , stardiffusefiletot $ ; input image
+     ;   , distance, inclination, astr_tolerance $ ;
+     ;   , filter_len_conv $  ; fourier length conversion factor
+     ;   , lambda $ ; lambda
+     ;   , star_flux_frac $ ; output flux and diffuse fraction
+     ;   , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
+     ;   , flux_frac_errmax = star_flux_frac_errmax, flux_frac_errmin = star_flux_frac_errmin ; output flux fraction errors
 
-     fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-       , stardiffusefiletot $ ; input image
-       , distance, inclination, astr_tolerance $ ;
-       , filter_len_conv $  ; fourier length conversion factor
-       , lambda $ ; lambda
-       , star_flux_frac $ ; output flux and diffuse fraction
-       , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
-       , flux_frac_errmax = star_flux_frac_errmax, flux_frac_errmin = star_flux_frac_errmin ; output flux fraction errors
      fcl=star_flux_frac
-     fcl_errmin=star_flux_frac_errmin
-     fcl_errmax=star_flux_frac_errmax
+     ; fcl_errmin=star_flux_frac_errmin
+     ; fcl_errmax=star_flux_frac_errmax
 
      fgmc=gas_flux_frac
-     fgmc_errmin=gas_flux_frac_errmin
-     fgmc_errmax=gas_flux_frac_errmax
-
+     ; fgmc_errmin=gas_flux_frac_errmin
+     ; fgmc_errmax=gas_flux_frac_errmax
+     ;
 
    endif else if (diffuse_quant eq 1) then begin ; diffuse_quant =1 -> power
       power_fraction_calc, gasdiffusefiletot, stardiffusefiletot $ ; input image (use masked image, but not regridded/smoothened)
@@ -1152,11 +1164,11 @@ if derive_phys then begin
         der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
                        tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                        surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
-                       lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
+                       lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units, emfrac_cor_mode, filter_choice,filter_len_conv)
     endif else der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
                    tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                    surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
-                   lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units)
+                   lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units,emfrac_cor_mode, filter_choice,filter_len_conv)
     aux=[nincludepeak_star,nincludepeak_gas,lap_min]
 endif
 
@@ -1220,11 +1232,14 @@ if write_output then begin
 
                 'fcl','fcl_errmin','fcl_errmax', $
                 'fgmc','fgmc_errmin','fgmc_errmax', $
+                'qconstar','qconstar_errmin','qconstar_errmax', $
+                'qcongas','qcongas_errmin','qcongas_errmax', $
+                'qzetastar','qzetastar_errmin','qzetastar_errmax', $
+                'qzetagas','qzetagas_errmin','qzetagas_errmax', $
                 ; 'fdiffstar','fdiffstar_errmin','fdiffstar_errmax', $
                 ; 'fdiffgas','fdiffgas_errmin','fdiffgas_errmax', $
                 ;add: fdiffstar
                 ;add: fdiffgas
-
                 'zetastar','zetastar_errmin','zetastar_errmax', $
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
@@ -1238,7 +1253,7 @@ if write_output then begin
                 'etaavg','etaavg_errmin','etaavg_errmax', $
                 'chie','chie_errmin','chie_errmax', $
                 'chip','chip_errmin','chip_errmax']
-        derunit=['Myr','Myr','','','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
+        derunit=['Myr','Myr','','','','','','','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1262,7 +1277,11 @@ if write_output then begin
                     derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
                     derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']', $
                     derad+' '+derqty(63)+', '+derqty(64)+', '+derqty(65)+' ['+derunit(21)+']', $
-                    derad+' '+derqty(66)+', '+derqty(67)+', '+derqty(68)+' ['+derunit(22)+']']
+                    derad+' '+derqty(66)+', '+derqty(67)+', '+derqty(68)+' ['+derunit(22)+']', $
+                    derad+' '+derqty(69)+', '+derqty(70)+', '+derqty(71)+' ['+derunit(23)+']', $
+                    derad+' '+derqty(72)+', '+derqty(73)+', '+derqty(74)+' ['+derunit(24)+']', $
+                    derad+' '+derqty(75)+', '+derqty(76)+', '+derqty(77)+' ['+derunit(25)+']', $
+                    derad+' '+derqty(78)+', '+derqty(79)+', '+derqty(80)+' ['+derunit(26)+']']
     endif else begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
                 'ttotal','ttotal_errmin','ttotal_errmax', $
@@ -1275,6 +1294,10 @@ if write_output then begin
 
                 'fcl','fcl_errmin','fcl_errmax', $
                 'fgmc','fgmc_errmin','fgmc_errmax', $
+                'qconstar','qconstar_errmin','qconstar_errmax', $
+                'qcongas','qcongas_errmin','qcongas_errmax', $
+                'qzetastar','qzetastar_errmin','qzetastar_errmax', $
+                'qzetagas','qzetagas_errmin','qzetagas_errmax', $
                 ;add: fdiffstar
                 ;add: fdiffgas
 
@@ -1284,7 +1307,7 @@ if write_output then begin
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
                 'vfb','vfb_errmin','vfb_errmax']
-        derunit=['Myr','Myr','','','','','','','','','','','pc','pc','km s^-1']
+        derunit=['Myr','Myr','','','','','','','','','','','','','','','pc','pc','km s^-1']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1300,7 +1323,11 @@ if write_output then begin
                     derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
                     derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
                     derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']', $
-                    derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']']
+                    derad+' '+derqty(42)+', '+derqty(43)+', '+derqty(44)+' ['+derunit(14)+']', $
+                    derad+' '+derqty(45)+', '+derqty(46)+', '+derqty(47)+' ['+derunit(15)+']', $
+                    derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']', $
+                    derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
+                    derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']']
     endelse
 
     auxqty=['npeak_star','npeak_gas', $

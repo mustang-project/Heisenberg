@@ -17,7 +17,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
                    , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
                    , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
-                   , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
+                   , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
                    , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
                    , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
 
@@ -477,20 +477,24 @@ pro make_input_file, input_file_filepath   $ ; general variables
   if n_elements(f_filter_type) ne 1 then f_filter_type = 2
   if n_elements(bw_order) ne 1 then bw_order = 2
   if n_elements(filter_len_conv) ne 1 then filter_len_conv = 1.0
+  if n_elements(emfrac_cor_mode) ne 1 then emfrac_cor_mode = 0
+
 
   use_unfilt_ims_str = strcompress(string(use_unfilt_ims))
   diffuse_quant_str = strcompress(string(diffuse_quant))
   f_filter_type_str = strcompress(string(f_filter_type))
   bw_order_str = strcompress(string(bw_order))
   filter_len_conv_str = strcompress(string(filter_len_conv))
+  emfrac_cor_mode_str = strcompress(string(emfrac_cor_mode))
 
-  max_string_len = max([strlen(use_unfilt_ims_str),strlen(diffuse_quant_str), strlen(f_filter_type_str), strlen(bw_order_str), strlen(filter_len_conv_str)]) + comment_sep_length
+  max_string_len = max([strlen(use_unfilt_ims_str),strlen(diffuse_quant_str), strlen(f_filter_type_str), strlen(bw_order_str), strlen(filter_len_conv_str), strlen(filter_len_conv_str)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
   while(strlen(use_unfilt_ims_str) lt max_string_len) do use_unfilt_ims_str = use_unfilt_ims_str + pad_string
   while(strlen(diffuse_quant_str) lt max_string_len) do diffuse_quant_str = diffuse_quant_str + pad_string
   while(strlen(f_filter_type_str) lt max_string_len) do f_filter_type_str = f_filter_type_str + pad_string
   while(strlen(bw_order_str) lt max_string_len) do bw_order_str = bw_order_str + pad_string
+  while(strlen(filter_len_conv_str) lt max_string_len) do filter_len_conv_str = filter_len_conv_str + pad_string
   while(strlen(filter_len_conv_str) lt max_string_len) do filter_len_conv_str = filter_len_conv_str + pad_string
 
   ; #############################################
@@ -754,12 +758,12 @@ pro make_input_file, input_file_filepath   $ ; general variables
 
 
   printf, inp_lun, '# INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)''
-  printf, inp_lun, 'use_unfilt_ims  ', use_unfilt_ims_str, ' # Calculate the diffuse fraction of [0] starfile and gasfile, the images used for the fitting process [1] star_unfilt_file and gas_unfilt_file, pass-through images (in the case of iterative diffuse filtering to calculate diffuse fraction of the unfiltered images)'
+  printf, inp_lun, 'use_unfilt_ims  ', use_unfilt_ims_str, '# Calculate the diffuse fraction of [0] starfile and gasfile, the images used for the fitting process [1] star_unfilt_file and gas_unfilt_file, pass-through images (in the case of iterative diffuse filtering to calculate diffuse fraction of the unfiltered images)'
   printf, inp_lun, 'diffuse_quant   ', diffuse_quant_str,  '# Calculate the diffuse fraction of [0] flux, [1] power'
   printf, inp_lun, 'f_filter_type   ', f_filter_type_str,  '# Filter type choice for Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
   printf, inp_lun, 'bw_order        ', bw_order_str,       '# The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = 0 [butterworth] and diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
   printf, inp_lun, 'filter_len_conv ', filter_len_conv_str,'# conversion factor for Fourier filtering cut_length (cut_length = lambda * filter_len_conv)'
-
+  printf, inp_lun, 'emfrac_cor_mode ', emfrac_cor_mode_str,'# Apply corrections to measured fgmc and fcl [0] apply no correction [1] apply correction for flux loss from signal regions [2] apply correction for the filling factor, zeta, only [3] apply both corrections (flux loss from signal regions and filling factor, zeta)'
 
 
   printf, inp_lun, '# INPUT PARAMETERS 7 (conversions and constants to calculate derived quantities)'
