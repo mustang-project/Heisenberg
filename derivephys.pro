@@ -109,7 +109,8 @@ end
 
 function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                     surfglobals,surfglobalg,surfcontrasts,surfcontrastg,apertures_star,apertures_gas,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units, $
-                    emfrac_cor_mode, filter_choice, filter_len_conv
+                    emfrac_cor_mode, filter_choice, filter_len_conv, $
+                    rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax
 
     if map_units eq 1 then complete=1 else complete=0
 
@@ -140,8 +141,13 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
       cut_len_temp = filter_len_conv * lambda
 
-      fwhm_star_temp =  rpeakstar * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
-      fwhm_gas_temp =  rpeakgas * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+      if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
+        fwhm_star_temp = rpeakstar * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+        fwhm_gas_temp = rpeakgas * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+      endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
+        fwhm_star_temp = rpeaks_cor_val * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+        fwhm_gas_temp = rpeakg_cor_val * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+      endif
 
       qconstar = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_star_temp)
       qcongas = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_gas_temp)
@@ -152,8 +158,14 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
       qcongas = 1.0d0
     endelse
     if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
-      etastar = (tstar/(tgas + tstar)) * zetastar ; corrected zeta for timeline
-      etagas = (tgas/(tgas + tstar)) * zetagas ; corrected zeta for timeline
+
+      if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
+        etastar = (tstar/(tgas + tstar)) * zetastar ; zeta corrected for timeline. i.e. peak density in image
+        etagas = (tgas/(tgas + tstar)) * zetagas ; zeta corrected for timeline. i.e. peak density in image
+      endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
+        etastar = ((tstar/(tgas + tstar)) * zetastar) / (rpeakstar/rpeaks_cor_val) ; eta with correction for flux loss from signal regions
+        etagas = ((tgas/(tgas + tstar)) * zetagas) / (rpeakgas/rpeakg_cor_val) ; eta with correction for flux loss from signal regions
+      endif
 
       qzetastar = fourier_zeta_correction(filter_choice, etastar)
       qzetagas = fourier_zeta_correction(filter_choice, etagas)
@@ -221,6 +233,10 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     fclmc=dblarr(nphysmc)+fcl   ; monte-carlo array for fcl
     fgmcmc=dblarr(nphysmc)+fgmc ; monte-carlo array for fgmc
     ; diffuse fraction corrections
+    if rpeak_cor_mode eq 1 then begin
+      rpeakscormc=dblarr(nphysmc)
+      rpeakgcormc=dblarr(nphysmc)
+    endif
     qconstarmc = dblarr(nphysmc)
     qcongasmc = dblarr(nphysmc)
     etastarmc = dblarr(nphysmc)
@@ -238,6 +254,10 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     igauss=long(0)
 
     tstariso_rerr=0.5*(tstariso_rerrmin+tstariso_rerrmax)
+    if rpeak_cor_mode eq 1 then begin
+       rpeakscor_rerr=0.5*(rpeaks_cor_emin+rpeaks_cor_emax)
+       rpeakgcor_rerr=0.5*(rpeakg_cor_emin+rpeakg_cor_emax)
+     endif
     for i=0L,nphysmc-1 do begin ;do Monte Carlo error propagation
         redo=0
         tstarisomc(i)=tstariso+gaussarr(igauss)*tstariso_rerr*tstariso
@@ -305,11 +325,30 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         fclmc[i]=10.^interpol(alog10(star_flux_frac_arr),alog10(lambdaarr),alog10(lambdamc[i]))  ; logspace interpolation
         fgmcmc[i]=10.^interpol(alog10(gas_flux_frac_arr),alog10(lambdaarr),alog10(lambdamc[i]))
 
+        if rpeak_cor_mode eq 1 then begin
+          rpeakscormc[i]=rpeaks_cor_val+gaussarr(igauss)*rpeakscor_rerr*rpeaks_cor_val
+          rpeakgcormc[i]=rpeakg_cor_val+gaussarr(igauss)*rpeakgcor_rerr*rpeakg_cor_val
+        endif
+
         if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
           cut_len_temp = filter_len_conv * lambdamc[i]
 
-          fwhm_star_temp =  rpeakstarmc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
-          fwhm_gas_temp =  rpeakgasmc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          ; if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
+          ;   fwhm_star_temp =  rpeakstar * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          ;   fwhm_gas_temp =  rpeakgas * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          ; endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
+          ;   fwhm_star_temp =  rpeaks_cor_val * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          ;   fwhm_gas_temp =  rpeakg_cor_val * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          ; endif
+
+          if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
+            fwhm_star_temp = rpeakstarmc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+            fwhm_gas_temp = rpeakgasmc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
+            fwhm_star_temp = rpeakscormc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+            fwhm_gas_temp = rpeakgcormc[i] * (2.0d0 *sqrt(2.0d0 * alog(2.0d0)) )
+          endif
+
           qconstarmc[i] = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_star_temp)
           qcongasmc[i] = fourier_flux_loss_correction(filter_choice, cut_len_temp/fwhm_gas_temp)
 
@@ -320,8 +359,15 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
           qcongasmc[i] = 1.0d0
         endelse
         if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
-          etastarmc[i] = (tstarmc[i]/(tgasmc[i] + tstarmc[i])) * zetastarmc[i] ; corrected zeta for timeline
-          etagasmc[i] = (tgasmc[i]/(tgasmc[i] + tstarmc[i])) * zetagasmc[i]
+
+          if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
+            etastarmc[i] = (tstarmc[i]/(tgasmc[i] + tstarmc[i])) * zetastarmc[i] ; corrected zeta for timeline
+            etagasmc[i] = (tgasmc[i]/(tgasmc[i] + tstarmc[i])) * zetagasmc[i]
+          endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
+            etastarmc[i] = ((tstarmc[i]/(tgasmc[i] + tstarmc[i])) * zetastarmc[i]) / (rpeakstarmc[i]/rpeakscormc[i]) ; eta with correction for flux loss from signal regions
+            etagasmc[i] = ((tgasmc[i]/(tgasmc[i] + tstarmc[i])) * zetagasmc[i])  / (rpeakgasmc[i]/rpeakgcormc[i]) ; eta with correction for flux loss from signal regions
+          endif
+
           qzetastarmc[i] = fourier_zeta_correction(filter_choice, etastarmc[i])
           qzetagasmc[i] = fourier_zeta_correction(filter_choice, etagasmc[i])
 

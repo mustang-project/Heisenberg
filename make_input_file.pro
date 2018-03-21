@@ -17,12 +17,11 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
                    , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
                    , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
-                   , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
+                   , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode, rpeak_cor_mode = rpeak_cor_mode, rpeaks_cor_val = rpeaks_cor_val, rpeaks_cor_emin = rpeaks_cor_emin, rpeaks_cor_emax = rpeaks_cor_emax, rpeakg_cor_val = rpeakg_cor_val, rpeakg_cor_emin = rpeakg_cor_emin, rpeakg_cor_emax = rpeakg_cor_emax $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
                    , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
                    , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
-
                    ; ################################################################################################################################################################################################################################################################
-                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
+                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_rpeak_mode = iter_rpeak_mode, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
 
 
 
@@ -479,6 +478,15 @@ pro make_input_file, input_file_filepath   $ ; general variables
   if n_elements(filter_len_conv) ne 1 then filter_len_conv = 1.0
   if n_elements(emfrac_cor_mode) ne 1 then emfrac_cor_mode = 0
 
+  if n_elements(rpeak_cor_mode) ne 1 then rpeak_cor_mode = 0
+  if n_elements(rpeaks_cor_val) ne 1 then rpeaks_cor_val = 1.0
+  if n_elements(rpeaks_cor_emin) ne 1 then rpeaks_cor_emin = 0.5
+  if n_elements(rpeaks_cor_emax) ne 1 then rpeaks_cor_emax = 0.5
+  if n_elements(rpeakg_cor_val) ne 1 then rpeakg_cor_val = 1.0
+  if n_elements(rpeakg_cor_emin) ne 1 then rpeakg_cor_emin = 0.5
+  if n_elements(rpeakg_cor_emax) ne 1 then rpeakg_cor_emax = 0.5
+
+
 
   use_unfilt_ims_str = strcompress(string(use_unfilt_ims))
   diffuse_quant_str = strcompress(string(diffuse_quant))
@@ -486,8 +494,15 @@ pro make_input_file, input_file_filepath   $ ; general variables
   bw_order_str = strcompress(string(bw_order))
   filter_len_conv_str = strcompress(string(filter_len_conv))
   emfrac_cor_mode_str = strcompress(string(emfrac_cor_mode))
+  rpeak_cor_mode_str = strcompress(string(rpeak_cor_mode))
+  rpeaks_cor_val_str = strcompress(string(rpeaks_cor_val))
+  rpeaks_cor_emin_str = strcompress(string(rpeaks_cor_emin))
+  rpeaks_cor_emax_str = strcompress(string(rpeaks_cor_emax))
+  rpeakg_cor_val_str = strcompress(string(rpeakg_cor_val))
+  rpeakg_cor_emin_str = strcompress(string(rpeakg_cor_emin))
+  rpeakg_cor_emax_str = strcompress(string(rpeakg_cor_emax))
 
-  max_string_len = max([strlen(use_unfilt_ims_str),strlen(diffuse_quant_str), strlen(f_filter_type_str), strlen(bw_order_str), strlen(filter_len_conv_str), strlen(filter_len_conv_str)]) + comment_sep_length
+  max_string_len = max([strlen(use_unfilt_ims_str),strlen(diffuse_quant_str), strlen(f_filter_type_str), strlen(bw_order_str), strlen(filter_len_conv_str), strlen(emfrac_cor_mode), strlen(rpeak_cor_mode_str), strlen(rpeaks_cor_val_str), strlen(rpeaks_cor_emin_str), strlen(rpeaks_cor_emax_str), strlen(rpeakg_cor_val_str), strlen(rpeakg_cor_emin_str), strlen(rpeakg_cor_emax_str)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
   while(strlen(use_unfilt_ims_str) lt max_string_len) do use_unfilt_ims_str = use_unfilt_ims_str + pad_string
@@ -495,7 +510,15 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while(strlen(f_filter_type_str) lt max_string_len) do f_filter_type_str = f_filter_type_str + pad_string
   while(strlen(bw_order_str) lt max_string_len) do bw_order_str = bw_order_str + pad_string
   while(strlen(filter_len_conv_str) lt max_string_len) do filter_len_conv_str = filter_len_conv_str + pad_string
-  while(strlen(filter_len_conv_str) lt max_string_len) do filter_len_conv_str = filter_len_conv_str + pad_string
+  while(strlen(emfrac_cor_mode_str) lt max_string_len) do emfrac_cor_mode_str = emfrac_cor_mode_str + pad_string
+  while(strlen(rpeak_cor_mode_str) lt max_string_len) do rpeak_cor_mode_str = rpeak_cor_mode_str + pad_string
+  while(strlen(rpeaks_cor_val_str) lt max_string_len) do rpeaks_cor_val_str = rpeaks_cor_val_str + pad_string
+  while(strlen(rpeaks_cor_emin_str) lt max_string_len) do rpeaks_cor_emin_str = rpeaks_cor_emin_str + pad_string
+  while(strlen(rpeaks_cor_emax_str) lt max_string_len) do rpeaks_cor_emax_str = rpeaks_cor_emax_str + pad_string
+  while(strlen(rpeakg_cor_val_str) lt max_string_len) do rpeakg_cor_val_str = rpeakg_cor_val_str + pad_string
+  while(strlen(rpeakg_cor_emin_str) lt max_string_len) do rpeakg_cor_emin_str = rpeakg_cor_emin_str + pad_string
+  while(strlen(rpeakg_cor_emax_str) lt max_string_len) do rpeakg_cor_emax_str = rpeakg_cor_emax_str + pad_string
+
 
   ; #############################################
   ; # INPUT PARAMETERS 7 (conversions and constants to calculate derived quantities)
@@ -563,7 +586,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) -- Optional
   ; ##########################################################################################
   iter_input_switch = 0
-  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 && n_elements(iter_autoexit) eq 1 && n_elements(use_nice) eq 1 && n_elements(nice_value) eq 1 then begin
+  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 && n_elements(iter_rpeak_mode) eq 1 && n_elements(iter_autoexit) eq 1 && n_elements(use_nice) eq 1 && n_elements(nice_value) eq 1 then begin
     iter_input_switch = 1 ; use so don't need to repeat test
 
 
@@ -575,13 +598,14 @@ pro make_input_file, input_file_filepath   $ ; general variables
     iter_filter_str = strcompress(string(iter_filter))
     iter_bwo_str = strcompress(string(iter_bwo))
     iter_len_conv_str = strcompress(string(iter_len_conv))
+    iter_rpeak_mode_str = strcompress(string(iter_rpeak_mode))
     iter_autoexit_str = strcompress(string(iter_autoexit))
     use_nice_str = strcompress(string(use_nice))
     nice_value_str = strcompress(string(nice_value))
 
 
 
-    max_string_len = max([strlen(use_guess_str), strlen(initial_guess_str), strlen(iter_criterion_str), strlen(iter_crit_len_str), strlen(iter_nmax_str), strlen(iter_filter_str), strlen(iter_bwo_str), strlen(iter_len_conv_str), strlen(iter_autoexit_str), strlen(max_string_len), strlen(use_nice_str), strlen(nice_value_str)])
+    max_string_len = max([strlen(use_guess_str), strlen(initial_guess_str), strlen(iter_criterion_str), strlen(iter_crit_len_str), strlen(iter_nmax_str), strlen(iter_filter_str), strlen(iter_bwo_str), strlen(iter_len_conv_str), strlen(iter_rpeak_mode_str), strlen(iter_autoexit_str), strlen(max_string_len), strlen(use_nice_str), strlen(nice_value_str)])
     max_string_len = max([max_string_len,22])
 
 
@@ -593,6 +617,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
     while(strlen(iter_filter_str) lt max_string_len) do iter_filter_str = iter_filter_str + pad_string
     while(strlen(iter_bwo_str) lt max_string_len) do iter_bwo_str = iter_bwo_str + pad_string
     while(strlen(iter_len_conv_str) lt max_string_len) do iter_len_conv_str = iter_len_conv_str + pad_string
+    while(strlen(iter_rpeak_mode_str) lt max_string_len) do iter_rpeak_mode_str = iter_rpeak_mode_str + pad_string
     while(strlen(iter_autoexit_str) lt max_string_len) do iter_autoexit_str = iter_autoexit_str + pad_string
     while(strlen(use_nice_str) lt max_string_len) do use_nice_str = use_nice_str + pad_string
     while(strlen(nice_value_str) lt max_string_len) do nice_value_str = nice_value_str + pad_string
@@ -757,14 +782,20 @@ pro make_input_file, input_file_filepath   $ ; general variables
 
 
 
-  printf, inp_lun, '# INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)''
+  printf, inp_lun, '# INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)'
   printf, inp_lun, 'use_unfilt_ims  ', use_unfilt_ims_str, '# Calculate the diffuse fraction of [0] starfile and gasfile, the images used for the fitting process [1] star_unfilt_file and gas_unfilt_file, pass-through images (in the case of iterative diffuse filtering to calculate diffuse fraction of the unfiltered images)'
   printf, inp_lun, 'diffuse_quant   ', diffuse_quant_str,  '# Calculate the diffuse fraction of [0] flux, [1] power'
   printf, inp_lun, 'f_filter_type   ', f_filter_type_str,  '# Filter type choice for Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
   printf, inp_lun, 'bw_order        ', bw_order_str,       '# The order of the butterworth filter (Must be an integer. Only relevant if f_filter_type = 0 [butterworth] and diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
   printf, inp_lun, 'filter_len_conv ', filter_len_conv_str,'# conversion factor for Fourier filtering cut_length (cut_length = lambda * filter_len_conv)'
   printf, inp_lun, 'emfrac_cor_mode ', emfrac_cor_mode_str,'# Apply corrections to measured fgmc and fcl [0] apply no correction [1] apply correction for flux loss from signal regions [2] apply correction for the filling factor, zeta, only [3] apply both corrections (flux loss from signal regions and filling factor, zeta)'
-
+  printf, inp_lun, 'rpeak_cor_mode  ', rpeak_cor_mode_str,   '# [0] use measured r_peaks [1] use supplied values of rpeaks_cor_val and rpeakg_cor_val'
+  printf, inp_lun, 'rpeaks_cor_val  ', rpeaks_cor_val_str,   '# value of r_peak_star to use when correcting for flux_loss. Only used if emfrac_cor_mode = 1 or 3 and rpeak_cor_mode = 2'
+  printf, inp_lun, 'rpeaks_cor_emin ', rpeaks_cor_emin_str, '# downwards error of r_peak_star to use when correcting for flux_loss. Only used if emfrac_cor_mode = 1 or 3 and rpeak_cor_mode = 2'
+  printf, inp_lun, 'rpeaks_cor_emax ', rpeaks_cor_emax_str, '# upwards error of r_peak_star to use when correcting for flux_loss. Only used if emfrac_cor_mode = 1 or 3 and rpeak_cor_mode = 2'
+  printf, inp_lun, 'rpeakg_cor_val  ', rpeakg_cor_val_str,   '# value of r_peak_gas to use when correcting for flux_loss. Only used if emfrac_cor_mode = 1 or 3 and rpeak_cor_mode = 2'
+  printf, inp_lun, 'rpeakg_cor_emin ', rpeakg_cor_emin_str, '# downwards error of r_peak_gas to use when correcting for flux_loss. Only used if emfrac_cor_mode = 1 or 3 and rpeak_cor_mode = 2'
+  printf, inp_lun, 'rpeakg_cor_emax ', rpeakg_cor_emax_str, '# upwards error of r_peak_gas to use when correcting for flux_loss. Only used if emfrac_cor_mode = 1 or 3 and rpeak_cor_mode = 2'
 
   printf, inp_lun, '# INPUT PARAMETERS 7 (conversions and constants to calculate derived quantities)'
   printf, inp_lun, 'convstar        ', convstar_str,       '# Log of multiplication factor to convert the pixel value in starfile to a SFR in Msun/yr (if maptypes=1 or maptypes=3) or to a gas mass in Msun (if maptypes=2)'
@@ -784,7 +815,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'std_gas         ', std_gas_str,        '# The measured standard deviation of gasfile'
 
   if iter_input_switch eq 1 then begin ; create input file for iteration
-    printf, inp_lun, '# INPUT PARAMETERS 9 (Fourier diffuse removal iteration)''
+    printf, inp_lun, '# INPUT PARAMETERS 9 (Fourier diffuse removal iteration)'
     printf, inp_lun, 'use_guess       ', use_guess_str,      '#  [0] Do not Filter images before first KL14 run and ignore parameter: "initial_guess" [1] Filter images with initial guess of lambda before first KL14 run'
     printf, inp_lun, 'initial_guess   ', initial_guess_str,  '#  Length in pc of the initial estimate of lambda with which to filter the images'
     printf, inp_lun, 'iter_criterion  ', iter_criterion_str, '#  Fractional difference between lambda and previous lambda value(s) that triggers an end to the iteration process.'
@@ -793,7 +824,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
     printf, inp_lun, 'iter_filter     ', iter_filter_str,    '#  Filter type choice for iterative Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter (Only relevant if diffuse_quant = 1 [flux], but a dummy value should be supplied anyway)'
     printf, inp_lun, 'iter_bwo        ', iter_bwo_str,       '#  The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_bwo = 0 [butterworth], but a dummy value should be supplied anyway)'
     printf, inp_lun, 'iter_len_conv   ', iter_len_conv_str,  '#  conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)'
-    printf, inp_lun, 'iter_autoexit   ', iter_autoexit_str,  '# Exit IDL automatically upon successful iteration run completion (on/off)''
+    printf, inp_lun, 'iter_rpeak_mode ', iter_rpeak_mode_str,'# [0] use mode specified by rpeak_cor_mode [1] use rpeak values from iter0'
+    printf, inp_lun, 'iter_autoexit   ', iter_autoexit_str,  '# Exit IDL automatically upon successful iteration run completion (on/off)'
     printf, inp_lun, 'use_nice        ', use_nice_str,       '# (on/off) Use the "nice" command when spawning KL14 runs to the terminal to adjust the process priority. Note that this may not work depending on the system configuration'
     printf, inp_lun, 'nice_value      ', nice_value_str,     '# Value of the priority adjustment must be an integer between -20 (the highest) to 19 (the lowest). (Note this varies according to the implementation of nice)'
 

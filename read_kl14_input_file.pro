@@ -12,10 +12,10 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   npixmin, nsigma, logrange_s, logspacing_s,logrange_g, logspacing_g, nlinlevel_s, nlinlevel_g, $ ;variable names of expected input parameters (3)
   tstariso, tstariso_errmin, tstariso_errmax, tgasmini,tgasmaxi, tovermini, $ ;variable names of expected input parameters (4)
   nmc, ndepth, ntry, nphysmc, $ ;variable names of expected input parameters (5)
-  use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, $ ;variable names of expected input parameters (6)
+  use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $ ;variable names of expected input parameters (6)
   convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
   use_stds, std_star, std_star3, std_gas, $ ;variable names of expected input parameters (8)
-  use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (9)
+  use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (9)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;READ INPUT FILE AND VERIFY;
@@ -55,14 +55,14 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   expected_params3=['npixmin','nsigma','logrange_s','logspacing_s','logrange_g','logspacing_g','nlinlevel_s','nlinlevel_g'] ;variable names of expected input parameters (3)
   expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
   expected_params5=['nmc','ndepth','ntry','nphysmc'] ;variable names of expected input parameters (5)
-  expected_params6=['use_unfilt_ims','diffuse_quant','filter_len_conv','emfrac_cor_mode','f_filter_type','bw_order'] ;variable names of expected input parameters (6)
+  expected_params6=['use_unfilt_ims','diffuse_quant','filter_len_conv','emfrac_cor_mode','f_filter_type','bw_order', 'rpeak_cor_mode', 'rpeaks_cor_val', 'rpeaks_cor_emin', 'rpeaks_cor_emax', 'rpeakg_cor_val', 'rpeakg_cor_emin', 'rpeakg_cor_emax'] ;variable names of expected input parameters (6)
   expected_params7=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','momratetomass'] ;variable names of expected input parameters (7)
   expected_params8=['use_stds','std_star','std_star3','std_gas'] ;variable names of expected input parameters (8)
   expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6,expected_params7,expected_params8] ;variable names of expected input parameters (all)
 
   n_min_vars = n_elements([expected_flags,expected_filenames,expected_masknames,expected_unfiltered,expected_params]) + 1 ; plus 1 for input file
   ; check for optional input parameters:
-  expected_params9=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_autoexit', 'use_nice', 'nice_value'] ;variable names of expected input parameters (9)
+  expected_params9=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_rpeak_mode','iter_autoexit', 'use_nice', 'nice_value'] ;variable names of expected input parameters (9)
   if n_params() eq (n_min_vars + n_elements(expected_params9)) then begin
     expected_params = [expected_params,expected_params9]
   endif else if n_params() gt n_min_vars then begin

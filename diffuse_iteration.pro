@@ -24,10 +24,10 @@ pro diffuse_iteration, master_inputfile
     npixmin, nsigma, logrange_s, logspacing_s,logrange_g, logspacing_g, nlinlevel_s, nlinlevel_g, $ ;variable names of expected input parameters (3)
     tstariso, tstariso_errmin, tstariso_errmax, tgasmini,tgasmaxi, tovermini, $ ;variable names of expected input parameters (4)
     nmc, ndepth, ntry, nphysmc, $ ;variable names of expected input parameters (5)
-    use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, $ ;variable names of expected input parameters (6)
+    use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $ ;variable names of expected input parameters (6)
     convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
     use_stds, std_star, std_star3, std_gas, $ ;variable names of expected input parameters (8)
-    use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (9)
+    use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (9)
 
 
   ; ******************************************************
@@ -300,37 +300,49 @@ pro diffuse_iteration, master_inputfile
      , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
      , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
      , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
-     , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
+     , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode, rpeak_cor_mode = rpeak_cor_mode, rpeaks_cor_val = rpeaks_cor_val, rpeaks_cor_emin = rpeaks_cor_emin, rpeaks_cor_emax = rpeaks_cor_emax, rpeakg_cor_val = rpeakg_cor_val, rpeakg_cor_emin = rpeakg_cor_emin, rpeakg_cor_emax = rpeakg_cor_emax $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
      , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $ ; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
      , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas ; # INPUT PARAMETERS 8 (sensitivity)
 
-     ; **********************
-     ; * call KL14
-     ; **********************
-     spawn_string = 'idl kl14.pro -arg ' + input_file_filepath
+    ; **********************
+    ; * call KL14
+    ; **********************
+    spawn_string = 'idl kl14.pro -arg ' + input_file_filepath
 
 
-     if n_elements(use_nice) eq 1 && use_nice eq 1 then spawn_string = 'nice -n ' + string(nice_value) + ' '+ spawn_string
+    if n_elements(use_nice) eq 1 && use_nice eq 1 then spawn_string = 'nice -n ' + string(nice_value) + ' '+ spawn_string
 
 
-     spawn, spawn_string
-     ; **********************
-     ; * get variables
-     ; **********************
-     output_filename = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_output.dat', /remove_all)
+    spawn, spawn_string
+    ; **********************
+    ; * get variables
+    ; **********************
+    output_filename = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_output.dat', /remove_all)
 
-     if log10_output eq 1 then de_log = 1 else de_log = 0
-     read_kl14_tablerow, output_filename, output_name_vec, output_value_vec, de_log = de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
+    if log10_output eq 1 then de_log = 1 else de_log = 0
+    read_kl14_tablerow, output_filename, output_name_vec, output_value_vec, de_log = de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
 
 
 
-     for vv = 0, n_elements(output_var_names)-1, 1 do begin
-       key_name = output_var_names[vv] ; name of the variable to search for
-       s_ind = where(strcmp(vals_tag_names,key_name, /fold_case))
-       output_vals_struct.(s_ind)[iter_num] = tablerow_var_search(key_name, output_name_vec, output_value_vec)
+    for vv = 0, n_elements(output_var_names)-1, 1 do begin
+     key_name = output_var_names[vv] ; name of the variable to search for
+     s_ind = where(strcmp(vals_tag_names,key_name, /fold_case))
+     output_vals_struct.(s_ind)[iter_num] = tablerow_var_search(key_name, output_name_vec, output_value_vec)
 
-     endfor
+    endfor
 
+    ; ********************************************
+    ; * check if rpeak from iter0 should be used for rpeak corrections
+    ; ********************************************
+    if iter_rpeak_mode eq 1 && iter_num eq 0 then begin
+      rpeak_cor_mode = 1
+      rpeaks_cor_val = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakstar', /fold_case)))[iter_num]
+      rpeaks_cor_emin = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakstar_errmin', /fold_case)))[iter_num]
+      rpeaks_cor_emax = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakstar_errmax', /fold_case)))[iter_num]
+      rpeakg_cor_val = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakgas', /fold_case)))[iter_num]
+      rpeakg_cor_emin = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakgas_errmin', /fold_case)))[iter_num]
+      rpeakg_cor_emax = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakgas_errmax', /fold_case)))[iter_num]
+    endif
 
     ; ********************************************
     ; * handle interactive peak ID

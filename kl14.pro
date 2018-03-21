@@ -40,6 +40,10 @@
 .com peaks2d
 .com derivefunc
 .com fitKL14
+.com unity_symmetric_sigmoidal
+.com fourier_flux_loss_correction
+.com lin_unity_intercept
+.com fourier_zeta_correction
 .com derivephys
 .com plotfits
 .com plotfits_files
