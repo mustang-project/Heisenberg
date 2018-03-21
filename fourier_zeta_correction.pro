@@ -1,5 +1,5 @@
 ;----------------------------------------------------------------------------------------
-function fourier_zeta_correction, kernel, zeta, measured_flux_fraction
+function fourier_zeta_correction, kernel, eta
 ;----------------------------------------------------------------------------------------
 ; apply correction for
 ;--(dependencies)------------------------------------------------------------------------
@@ -18,7 +18,8 @@ function fourier_zeta_correction, kernel, zeta, measured_flux_fraction
   if kernel eq 'butterworth' || kernel eq 'b' then begin
     qzeta = 1.0 ; not yet implemented
   endif else if kernel eq 'gaussian' || kernel eq 'gauss' || kernel eq 'g' then begin
-    qzeta = 1.0 ; not yet implemented
+    slope = -1.3157485
+    qzeta = lin_unity_intercept(eta,slope)
   endif else if kernel eq 'ideal' || kernel eq 'i' then begin
     qzeta = 1.0 ; not yet implemented
   endif

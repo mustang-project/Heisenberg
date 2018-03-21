@@ -1234,6 +1234,8 @@ if write_output then begin
                 'fgmc','fgmc_errmin','fgmc_errmax', $
                 'qconstar','qconstar_errmin','qconstar_errmax', $
                 'qcongas','qcongas_errmin','qcongas_errmax', $
+                'etastar','etastar_errmin','etastar_errmax', $
+                'etagas','etagas_errmin','etagas_errmax', $
                 'qzetastar','qzetastar_errmin','qzetastar_errmax', $
                 'qzetagas','qzetagas_errmin','qzetagas_errmax', $
                 ; 'fdiffstar','fdiffstar_errmin','fdiffstar_errmax', $
@@ -1253,7 +1255,7 @@ if write_output then begin
                 'etaavg','etaavg_errmin','etaavg_errmax', $
                 'chie','chie_errmin','chie_errmax', $
                 'chip','chip_errmin','chip_errmax']
-        derunit=['Myr','Myr','','','','','','','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
+        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1281,7 +1283,9 @@ if write_output then begin
                     derad+' '+derqty(69)+', '+derqty(70)+', '+derqty(71)+' ['+derunit(23)+']', $
                     derad+' '+derqty(72)+', '+derqty(73)+', '+derqty(74)+' ['+derunit(24)+']', $
                     derad+' '+derqty(75)+', '+derqty(76)+', '+derqty(77)+' ['+derunit(25)+']', $
-                    derad+' '+derqty(78)+', '+derqty(79)+', '+derqty(80)+' ['+derunit(26)+']']
+                    derad+' '+derqty(78)+', '+derqty(79)+', '+derqty(80)+' ['+derunit(26)+']', $
+                    derad+' '+derqty(81)+', '+derqty(82)+', '+derqty(83)+' ['+derunit(27)+']', $
+                    derad+' '+derqty(84)+', '+derqty(85)+', '+derqty(86)+' ['+derunit(28)+']']
     endif else begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
                 'ttotal','ttotal_errmin','ttotal_errmax', $
@@ -1296,6 +1300,8 @@ if write_output then begin
                 'fgmc','fgmc_errmin','fgmc_errmax', $
                 'qconstar','qconstar_errmin','qconstar_errmax', $
                 'qcongas','qcongas_errmin','qcongas_errmax', $
+                'etastar','etastar_errmin','etastar_errmax', $
+                'etagas','etagas_errmin','etagas_errmax', $
                 'qzetastar','qzetastar_errmin','qzetastar_errmax', $
                 'qzetagas','qzetagas_errmin','qzetagas_errmax', $
                 ;add: fdiffstar
@@ -1307,7 +1313,7 @@ if write_output then begin
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
                 'vfb','vfb_errmin','vfb_errmax']
-        derunit=['Myr','Myr','','','','','','','','','','','','','','','pc','pc','km s^-1']
+        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1327,7 +1333,9 @@ if write_output then begin
                     derad+' '+derqty(45)+', '+derqty(46)+', '+derqty(47)+' ['+derunit(15)+']', $
                     derad+' '+derqty(48)+', '+derqty(49)+', '+derqty(50)+' ['+derunit(16)+']', $
                     derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
-                    derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']']
+                    derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']', $
+                    derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
+                    derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']']
     endelse
 
     auxqty=['npeak_star','npeak_gas', $

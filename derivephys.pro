@@ -152,8 +152,11 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
       qcongas = 1.0d0
     endelse
     if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
-      qzetastar = fourier_zeta_correction(filter_choice, zetastar, fcl)
-      qzetagas = fourier_zeta_correction(filter_choice, zetagas, fgmc)
+      etastar = (tstar/(tgas + tstar)) * zetastar ; corrected zeta for timeline
+      etagas = (tgas/(tgas + tstar)) * zetagas ; corrected zeta for timeline
+
+      qzetastar = fourier_zeta_correction(filter_choice, etastar)
+      qzetagas = fourier_zeta_correction(filter_choice, etagas)
 
       fcl  /=  qzetastar ; zeta correction
       fgmc  /= qzetagas ; zeta correction
@@ -220,6 +223,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     ; diffuse fraction corrections
     qconstarmc = dblarr(nphysmc)
     qcongasmc = dblarr(nphysmc)
+    etastarmc = dblarr(nphysmc)
+    etagasmc = dblarr(nphysmc)
     qzetastarmc = dblarr(nphysmc)
     qzetagasmc = dblarr(nphysmc)
 
@@ -315,8 +320,10 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
           qcongasmc[i] = 1.0d0
         endelse
         if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
-          qzetastarmc[i] = fourier_zeta_correction(filter_choice, zetastarmc[i], fclmc[i])
-          qzetagasmc[i] = fourier_zeta_correction(filter_choice, zetagasmc[i], fgmcmc[i])
+          etastarmc[i] = (tstarmc[i]/(tgasmc[i] + tstarmc[i])) * zetastarmc[i] ; corrected zeta for timeline
+          etagasmc[i] = (tgasmc[i]/(tgasmc[i] + tstarmc[i])) * zetagasmc[i]
+          qzetastarmc[i] = fourier_zeta_correction(filter_choice, etastarmc[i])
+          qzetagasmc[i] = fourier_zeta_correction(filter_choice, etagasmc[i])
 
           fclmc[i]  /=  qzetastarmc[i] ; zeta correction
           fgmcmc[i]  /= qzetagasmc[i] ; zeta correction
@@ -341,13 +348,13 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                  [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
                  [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
                  [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chipmc], $
-                 [fclmc],[fgmcmc],[qconstarmc],[qcongasmc],[qzetastarmc],[qzetagasmc]]
+                 [fclmc],[fgmcmc],[qconstarmc],[qcongasmc],[etastarmc],[etagasmc],[qzetastarmc],[qzetagasmc]]
 
     endif else begin
         quantmc=[[tgasmc],[tovermc],[lambdamc], $
                  [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
                  [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
-                 [fclmc],[fgmcmc],[qconstarmc],[qcongasmc],[qzetastarmc],[qzetagasmc]]
+                 [fclmc],[fgmcmc],[qconstarmc],[qcongasmc],[etastarmc],[etagasmc],[qzetastarmc],[qzetagasmc]]
     endelse
     ; if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then quantmc=[[quantmc], [qconstarmc],[qcongasmc]]
     ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then  quantmc=[[quantmc], [qzetastarmc],[qzetagasmc]]
@@ -437,6 +444,12 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     dqcongasmc = f_getdvar(qcongasmc)
     ; endif
     ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+    etastarmc = etastarmc[sort(etastarmc)]
+    detastarmc = f_getdvar(etastarmc)
+    etagasmc = etagasmc[sort(etagasmc)]
+    detagasmc = f_getdvar(etagasmc)
+
+
     qzetastarmc = qzetastarmc[sort(qzetastarmc)]
     dqzetastarmc = f_getdvar(qzetastarmc)
     qzetagasmc = qzetagasmc[sort(qzetagasmc)]
@@ -526,6 +539,13 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     qcongas_errmax=dummy[2]
     ; endif
     ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+    dummy=f_pdftovalues(etastarmc,detastarmc,cumdistr,etastar) ; get errors for qzetastar
+    etastar_errmin=dummy[1]
+    etastar_errmax=dummy[2]
+    dummy=f_pdftovalues(etagasmc,detagasmc,cumdistr,etagas) ; get errors for qzetagas
+    etagas_errmin=dummy[1]
+    etagas_errmax=dummy[2]
+
     dummy=f_pdftovalues(qzetastarmc,dqzetastarmc,cumdistr,qzetastar) ; get errors for qzetastar
     qzetastar_errmin=dummy[1]
     qzetastar_errmax=dummy[2]
@@ -701,6 +721,21 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     ; endif
 
     ; if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
+    dummy=f_createpdf(etastarmc,detastarmc,cumdistr,ntry)
+    etastararr=dummy(*,0)
+    detastar=dummy(*,1)
+    probetastar=dummy(*,2)
+    report=f_plotdistr(etastararr,detastar,probetastar,etastar,etastar_errmin,etastar_errmax,galaxy,figdir,'etastar','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_writepdf(alog10(etastararr),alog10(detastar),alog10(probetastar),galaxy,outputdir,'etastar','# log10(etastar), log10(detastar), log10(PDF)')
+
+
+    dummy=f_createpdf(etagasmc,detagasmc,cumdistr,ntry)
+    etagasarr=dummy(*,0)
+    detagas=dummy(*,1)
+    probetagas=dummy(*,2)
+    report=f_plotdistr(etagasarr,detagas,probetagas,etagas,etagas_errmin,etagas_errmax,galaxy,figdir,'etagas','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_writepdf(alog10(etagasarr),alog10(detagas),alog10(probetagas),galaxy,outputdir,'etagas','# log10(etagas), log10(detagas), log10(PDF)')
+
     dummy=f_createpdf(qzetastarmc,dqzetastarmc,cumdistr,ntry)
     qzetastararr=dummy(*,0)
     dqzetastar=dummy(*,1)
@@ -732,6 +767,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                 fgmc, fgmc_errmin, fgmc_errmin, $
                 qconstar,qconstar_errmin,qconstar_errmax, $
                 qcongas,qcongas_errmin,qcongas_errmax, $
+                etastar,etastar_errmin,etastar_errmax, $
+                etagas,etagas_errmin,etagas_errmax, $
                 qzetastar,qzetastar_errmin,qzetastar_errmax, $
                 qzetagas,qzetagas_errmin,qzetagas_errmax, $
                 zetastar,zetastar_errmin,zetastar_errmax, $
