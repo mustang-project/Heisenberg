@@ -754,7 +754,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     qconstararr=dummy(*,0)
     dqconstar=dummy(*,1)
     probqconstar=dummy(*,2)
-    report=f_plotdistr(qconstararr,dqconstar,probqconstar,qconstar,qconstar_errmin,qconstar_errmax,galaxy,figdir,'qconstar','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_plotdistr(qconstararr,dqconstar,probqconstar,qconstar,qconstar_errmin,qconstar_errmax,galaxy,figdir,'qconstar','!6Q!Dcon,star!N','',0)  ;'!7f!6!Dcl!N' = f_cl
     report=f_writepdf(alog10(qconstararr),alog10(dqconstar),alog10(probqconstar),galaxy,outputdir,'qconstar','# log10(qconstar), log10(dqconstar), log10(PDF)')
 
 
@@ -762,7 +762,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     qcongasarr=dummy(*,0)
     dqcongas=dummy(*,1)
     probqcongas=dummy(*,2)
-    report=f_plotdistr(qcongasarr,dqcongas,probqcongas,qcongas,qcongas_errmin,qcongas_errmax,galaxy,figdir,'qcongas','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_plotdistr(qcongasarr,dqcongas,probqcongas,qcongas,qcongas_errmin,qcongas_errmax,galaxy,figdir,'qcongas','!6Q!Dcon,gas!N','',0)  ;'!7f!6!Dcl!N' = f_cl
     report=f_writepdf(alog10(qcongasarr),alog10(dqcongas),alog10(probqcongas),galaxy,outputdir,'qcongas','# log10(qcongas), log10(dqcongas), log10(PDF)')
     ; endif
 
@@ -771,7 +771,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     etastararr=dummy(*,0)
     detastar=dummy(*,1)
     probetastar=dummy(*,2)
-    report=f_plotdistr(etastararr,detastar,probetastar,etastar,etastar_errmin,etastar_errmax,galaxy,figdir,'etastar','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_plotdistr(etastararr,detastar,probetastar,etastar,etastar_errmin,etastar_errmax,galaxy,figdir,'etastar','!7g!6!Dstar!N','',0)  ;'!7f!6!Dcl!N' = f_cl
     report=f_writepdf(alog10(etastararr),alog10(detastar),alog10(probetastar),galaxy,outputdir,'etastar','# log10(etastar), log10(detastar), log10(PDF)')
 
 
@@ -779,14 +779,14 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     etagasarr=dummy(*,0)
     detagas=dummy(*,1)
     probetagas=dummy(*,2)
-    report=f_plotdistr(etagasarr,detagas,probetagas,etagas,etagas_errmin,etagas_errmax,galaxy,figdir,'etagas','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_plotdistr(etagasarr,detagas,probetagas,etagas,etagas_errmin,etagas_errmax,galaxy,figdir,'etagas','!7g!6!Dgas!N','',0)  ;'!7f!6!Dcl!N' = f_cl
     report=f_writepdf(alog10(etagasarr),alog10(detagas),alog10(probetagas),galaxy,outputdir,'etagas','# log10(etagas), log10(detagas), log10(PDF)')
 
     dummy=f_createpdf(qzetastarmc,dqzetastarmc,cumdistr,ntry)
     qzetastararr=dummy(*,0)
     dqzetastar=dummy(*,1)
     probqzetastar=dummy(*,2)
-    report=f_plotdistr(qzetastararr,dqzetastar,probqzetastar,qzetastar,qzetastar_errmin,qzetastar_errmax,galaxy,figdir,'qzetastar','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_plotdistr(qzetastararr,dqzetastar,probqzetastar,qzetastar,qzetastar_errmin,qzetastar_errmax,galaxy,figdir,'qzetastar','!6Q!D!7f!6,star!N','',0)  ;'!7f!6!Dcl!N' = f_cl
     report=f_writepdf(alog10(qzetastararr),alog10(dqzetastar),alog10(probqzetastar),galaxy,outputdir,'qzetastar','# log10(qzetastar), log10(dqzetastar), log10(PDF)')
 
 
@@ -794,7 +794,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     qzetagasarr=dummy(*,0)
     dqzetagas=dummy(*,1)
     probqzetagas=dummy(*,2)
-    report=f_plotdistr(qzetagasarr,dqzetagas,probqzetagas,qzetagas,qzetagas_errmin,qzetagas_errmax,galaxy,figdir,'qzetagas','!8f!6!Dcl!N','',0)  ;'!7f!6!Dcl!N' = f_cl
+    report=f_plotdistr(qzetagasarr,dqzetagas,probqzetagas,qzetagas,qzetagas_errmin,qzetagas_errmax,galaxy,figdir,'qzetagas','!6Q!D!7f!6,gas!N','',0)  ;'!7f!6!Dcl!N' = f_cl
     report=f_writepdf(alog10(qzetagasarr),alog10(dqzetagas),alog10(probqzetagas),galaxy,outputdir,'qzetagas','# log10(qzetagas), log10(dqzetagas), log10(PDF)')
     ; endif
 
