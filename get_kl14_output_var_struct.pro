@@ -47,6 +47,12 @@ function get_kl14_output_var_struct, map_units
     {name:'surfcongas', errors:1, plot_title_name:'surfcongas',units:''}, $
     {name:'fcl', errors:1, plot_title_name:'fcl',units:''}, $
     {name:'fgmc', errors:1, plot_title_name:'fgmc',units:''}, $
+    {name:'qconstar',errors:1, plot_title_name:'!6Q!Dcon,star!N',units:''}, $
+    {name:'qcongas',errors:1, plot_title_name:'!6Q!Dcon,gas!N',units:''}, $
+    {name:'etastar',errors:1, plot_title_name:'!7g!6!Dstar!N',units:''}, $
+    {name:'etagas',errors:1, plot_title_name:'!7g!6!Dgas!N',units:''}, $
+    {name:'qzetastar',errors:1, plot_title_name:'!6Q!D!7f!6,star!N',units:''}, $
+    {name:'qzetagas',errors:1, plot_title_name:'!6Q!D!7f!6,gas!N',units:''}, $
     {name:'zetastar', errors:1, plot_title_name:'zetastar',units:''}, $
     {name:'zetagas', errors:1, plot_title_name:'zetagas',units:''}, $
     {name:'rpeakstar', errors:1, plot_title_name:'rpeakstar',units:''}, $
