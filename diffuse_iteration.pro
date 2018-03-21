@@ -310,7 +310,7 @@ pro diffuse_iteration, master_inputfile
     spawn_string = 'idl kl14.pro -arg ' + input_file_filepath
 
 
-    if n_elements(use_nice) eq 1 && use_nice eq 1 then spawn_string = 'nice -n ' + string(nice_value) + ' '+ spawn_string
+    if n_elements(use_nice) eq 1 && use_nice eq 1 then spawn_string = 'nice -n ' + string(fix(nice_value)) + ' '+ spawn_string
 
 
     spawn, spawn_string
