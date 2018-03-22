@@ -160,11 +160,11 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
 
       if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
-        etastar = (tstar/(tgas + tstar)) * zetastar ; zeta corrected for timeline. i.e. peak density in image
-        etagas = (tgas/(tgas + tstar)) * zetagas ; zeta corrected for timeline. i.e. peak density in image
+        etastar = sqrt(tstar/ttotal) * zetastar ; zeta corrected for timeline. i.e. peak density in image
+        etagas = sqrt(tgas/ttotal) * zetagas ; zeta corrected for timeline. i.e. peak density in image
       endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
-        etastar = ((tstar/(tgas + tstar)) * zetastar) / (rpeakstar/rpeaks_cor_val) ; eta with correction for flux loss from signal regions
-        etagas = ((tgas/(tgas + tstar)) * zetagas) / (rpeakgas/rpeakg_cor_val) ; eta with correction for flux loss from signal regions
+        etastar = (sqrt(tstar/ttotal) * zetastar) / (rpeakstar/rpeaks_cor_val) ; eta with correction for flux loss from signal regions
+        etagas = (sqrt(tgas/ttotal) * zetagas) / (rpeakgas/rpeakg_cor_val) ; eta with correction for flux loss from signal regions
       endif
 
       qzetastar = fourier_zeta_correction(filter_choice, etastar)
@@ -361,11 +361,11 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
 
           if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
-            etastarmc[i] = (tstarmc[i]/(tgasmc[i] + tstarmc[i])) * zetastarmc[i] ; corrected zeta for timeline
-            etagasmc[i] = (tgasmc[i]/(tgasmc[i] + tstarmc[i])) * zetagasmc[i]
+            etastarmc[i] = sqrt(tstarmc[i]/ttotalmc[i]) * zetastarmc[i] ; corrected zeta for timeline
+            etagasmc[i] = sqrt(tgasmc[i]/ttotalmc [i]) * zetagasmc[i]
           endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
-            etastarmc[i] = ((tstarmc[i]/(tgasmc[i] + tstarmc[i])) * zetastarmc[i]) / (rpeakstarmc[i]/rpeakscormc[i]) ; eta with correction for flux loss from signal regions
-            etagasmc[i] = ((tgasmc[i]/(tgasmc[i] + tstarmc[i])) * zetagasmc[i])  / (rpeakgasmc[i]/rpeakgcormc[i]) ; eta with correction for flux loss from signal regions
+            etastarmc[i] = (sqrt(tstarmc[i]/ttotalmc[i]) * zetastarmc[i]) / (rpeakstarmc[i]/rpeakscormc[i]) ; eta with correction for flux loss from signal regions
+            etagasmc[i] = (sqrt(tgasmc[i]/ttotalmc[i]) * zetagasmc[i])  / (rpeakgasmc[i]/rpeakgcormc[i]) ; eta with correction for flux loss from signal regions
           endif
 
           qzetastarmc[i] = fourier_zeta_correction(filter_choice, etastarmc[i])

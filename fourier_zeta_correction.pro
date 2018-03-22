@@ -18,8 +18,10 @@ function fourier_zeta_correction, kernel, eta
   if kernel eq 'butterworth' || kernel eq 'b' then begin
     qzeta = 1.0 ; not yet implemented
   endif else if kernel eq 'gaussian' || kernel eq 'gauss' || kernel eq 'g' then begin
-    slope = -1.3157485
-    qzeta = lin_unity_intercept(eta,slope)
+    intercept = 1.0439514d0
+    slope = -1.1516489d0
+    qzeta = (slope * eta) + intercept
+    if qzeta gt 1.0d0 then qzeta = 1.0d0
   endif else if kernel eq 'ideal' || kernel eq 'i' then begin
     qzeta = 1.0 ; not yet implemented
   endif
