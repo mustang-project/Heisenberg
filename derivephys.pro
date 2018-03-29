@@ -378,6 +378,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
           qzetagasmc[i] = 1.0d0
         endelse
 
+        if min(finite([fclmc[i], fgmcmc[i], qconstarmc[i], qcongasmc[i], etastarmc[i], etagasmc[i], qzetastarmc[i], qzetagasmc[i] ])) eq 0 then redo=1
 
 
         if redo eq 1 then begin ;if any Infinity or NaN has been found, redo draw
