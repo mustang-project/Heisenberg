@@ -36,6 +36,12 @@ function f_vfb,tover,lambda ;Feedback-driven expansion velocity of ejecta
     return,vfb
 end
 
+function f_vfbr,tover,rpeakgas ;Feedback-driven evaporation velocity of residual gas
+    COMMON astrconst
+    vfbr=rpeakgas*pc/(tover*myr)/kms ;v in km/s
+    return,vfbr
+end
+
 function f_etainst,tgas,tover,esf ;Instantaneous mass loading factor
     COMMON numbers
     etainst=max([(1.-esf)*tgas/(esf*tover),tiny])
@@ -55,10 +61,25 @@ function f_chie,tover,esf,vfb,psie ;Feedback energy efficiency
     return,chie
 end
 
+function f_chier,tover,esf,vfbr,psie ;Feedback energy efficiency using region radius
+    COMMON numbers
+    COMMON astrconst
+    chier=max([(1.-esf)*(vfbr*kms)^2./(2.*esf*(tover*myr)*psie),tiny])
+    return,chier
+end
+
 function f_chip,tover,esf,vfb,psip ;Feedback momentum efficiency
     COMMON numbers
     COMMON physconst
     COMMON astrconst
     chip=max([(1.-esf)*(vfb*kms)/(esf*(tover*myr)*psip),tiny])
     return,chip
+end
+
+function f_chipr,tover,esf,vfbr,psip ;Feedback momentum efficiency using region radius
+    COMMON numbers
+    COMMON physconst
+    COMMON astrconst
+    chipr=max([(1.-esf)*(vfbr*kms)/(esf*(tover*myr)*psip),tiny])
+    return,chipr
 end
