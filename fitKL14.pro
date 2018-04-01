@@ -219,7 +219,7 @@ function f_plotdistr,array,darray,pdf,value,errmin,errmax,galaxy,figdir,varstrin
     cumpdf=total(pdf*darray,/cumulative)
     ylabcum='!8p!6(<'+symstring+')'
     device,filename=figdir+galaxy+'_cumdistr_'+varstring+'.eps',xsize=12,ysize=9,/color,bits_per_pixel=8,/encapsulated
-    plot,array,cumpdf,/nodata,/xlog,xtitle=xlab,ytitle=ylab,xr=arrange,xstyle=1
+    plot,array,cumpdf,/nodata,/xlog,xtitle=xlab,ytitle=ylab,xr=arrange,yr=[0,1],xstyle=1
     oplot,array,cumpdf
     oplot,[1,1]*value,[0,1],linestyle=2
     oplot,[1,1]*value-errmin,[0,1],linestyle=1
