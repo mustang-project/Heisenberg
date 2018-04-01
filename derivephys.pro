@@ -65,6 +65,7 @@ function f_createpdf,array,darray,cumpdf,nnew
         for i=0L,nnew-1 do newarray(i)=array(0)+(i-nnew)/2*tiny
         pdf(*)=(nnew*tiny)^(-1.)
     endelse
+    if min(pdf) lt 0. then pdf(where(pdf lt 0.))=0.
     if finite(total(pdf)) eq 0 then stop
     return,[[newarray],[newdarray],[pdf]]
 end
@@ -75,9 +76,9 @@ function f_writecorr,matrix,complete,galaxy,outputdir
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
     printf,lun,'# This symmetric array lists the correlation coefficients for quantities that are, from left to right AND from top to bottom, in the order:'
     if complete then begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chier, chip, chipr'
     endif else begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr'
     endelse
     printf,lun,''
     n=n_elements(matrix(0,*))
@@ -97,9 +98,9 @@ function f_writecov,matrix,complete,galaxy,outputdir
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
     printf,lun,'# This symmetric array lists the covariances for quantities that are, from left to right AND from top to bottom, in the order:'
     if complete then begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chip'
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chier, chip, chipr'
     endif else begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb'
+        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr'
     endelse
     printf,lun,''
     n=n_elements(matrix(0,*))
@@ -132,6 +133,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     rpeakstar=f_rpeak(zetastar,lambda)
     rpeakgas=f_rpeak(zetagas,lambda)
     vfb=f_vfb(tover,lambda)
+    vfbr=f_vfbr(tover,rpeakgas)
     if complete then begin
         tdepl=surfgas/surfsfr/1.d9
         esf=f_esf(tgas,tdepl,fcl,fgmc)
@@ -140,7 +142,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         etainst=f_etainst(tgas,tover,esf)
         etaavg=f_etaavg(esf)
         chie=f_chie(tover,esf,vfb,psie)
+        chier=f_chier(tover,esf,vfbr,psie)
         chip=f_chip(tover,esf,vfb,psip)
+        chipr=f_chipr(tover,esf,vfbr,psip)
     endif
     
     restore,filename=arrdir+'probnorm.sav'
@@ -179,6 +183,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     rpeakstarmc=dblarr(nphysmc)+rpeakstar
     rpeakgasmc=dblarr(nphysmc)+rpeakgas
     vfbmc=dblarr(nphysmc)+vfb
+    vfbrmc=dblarr(nphysmc)+vfbr
     if complete then begin
         tdeplmc=dblarr(nphysmc)+tdepl
         esfmc=dblarr(nphysmc)+esf
@@ -187,7 +192,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         etainstmc=dblarr(nphysmc)+etainst
         etaavgmc=dblarr(nphysmc)+etaavg
         chiemc=dblarr(nphysmc)+chie
+        chiermc=dblarr(nphysmc)+chier
         chipmc=dblarr(nphysmc)+chip
+        chiprmc=dblarr(nphysmc)+chipr
     endif
     
     nredo=0
@@ -248,7 +255,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         rpeakstarmc(i)=f_rpeak(zetastarmc(i),lambdamc(i))
         rpeakgasmc(i)=f_rpeak(zetagasmc(i),lambdamc(i))
         vfbmc(i)=f_vfb(tovermc(i),lambdamc(i))
-        if min(finite([tstarisomc(i),tgasmc(i),tovermc(i),lambdamc(i),tstarmc(i),ttotalmc(i),betastarmc(i),betagasmc(i),rpeakstarmc(i),rpeakgasmc(i),zetastarmc(i),zetagasmc(i),vfbmc(i)])) eq 0 then redo=1
+        vfbrmc(i)=f_vfbr(tovermc(i),rpeakgasmc(i))
+        if min(finite([tstarisomc(i),tgasmc(i),tovermc(i),lambdamc(i),tstarmc(i),ttotalmc(i),betastarmc(i),betagasmc(i),rpeakstarmc(i),rpeakgasmc(i),zetastarmc(i),zetagasmc(i),vfbmc(i),vfbrmc(i)])) eq 0 then redo=1
         if complete then begin
             tdeplmc(i)=surfgasmc(i)/surfsfrmc(i)/1.d9
             esfmc(i)=f_esf(tgasmc(i),tdeplmc(i),fcl,fgmc)
@@ -257,8 +265,10 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             etainstmc(i)=f_etainst(tgasmc(i),tovermc(i),esfmc(i))
             etaavgmc(i)=f_etaavg(esfmc(i))
             chiemc(i)=f_chie(tovermc(i),esfmc(i),vfbmc(i),psie)
+            chiermc(i)=f_chier(tovermc(i),esfmc(i),vfbrmc(i),psie)
             chipmc(i)=f_chip(tovermc(i),esfmc(i),vfbmc(i),psip)
-            if min(finite([surfsfrmc(i),surfgasmc(i),tdeplmc(i),esfmc(i),mdotsfmc(i),mdotfbmc(i),etainstmc(i),etaavgmc(i),chiemc(i),chipmc(i)])) eq 0 then redo=1
+            chiprmc(i)=f_chipr(tovermc(i),esfmc(i),vfbrmc(i),psip)
+            if min(finite([surfsfrmc(i),surfgasmc(i),tdeplmc(i),esfmc(i),mdotsfmc(i),mdotfbmc(i),etainstmc(i),etaavgmc(i),chiemc(i),chiermc(i),chipmc(i),chiprmc(i)])) eq 0 then redo=1
         endif
         
         if redo eq 1 then begin ;if any Infinity or NaN has been found, redo draw
@@ -273,12 +283,12 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     if complete then begin
         quantmc=[[tgasmc],[tovermc],[lambdamc], $
                  [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
-                 [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc], $
-                 [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chipmc]]
+                 [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc],[vfbrmc], $
+                 [surfsfrmc],[surfgasmc],[tdeplmc],[esfmc],[mdotsfmc],[mdotfbmc],[etainstmc],[etaavgmc],[chiemc],[chiermc],[chipmc],[chiprmc]]
     endif else begin
         quantmc=[[tgasmc],[tovermc],[lambdamc], $
                  [tstarmc],[ttotalmc],[betastarmc],[betagasmc], $
-                 [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc]]
+                 [surfglobalsmc],[surfglobalgmc],[surfsmc],[surfgmc],[rpeakstarmc],[rpeakgasmc],[zetastarmc],[zetagasmc],[vfbmc],[vfbrmc]]
     endelse
     nquant=n_elements(quantmc(0,*))
     corrquant=dblarr(nquant,nquant)
@@ -332,6 +342,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     drpeakgasmc=f_getdvar(rpeakgasmc)
     vfbmc=vfbmc(sort(vfbmc))
     dvfbmc=f_getdvar(vfbmc)
+    vfbrmc=vfbrmc(sort(vfbrmc))
+    dvfbrmc=f_getdvar(vfbrmc)
     if complete then begin
         tdeplmc=tdeplmc(sort(tdeplmc))
         dtdeplmc=f_getdvar(tdeplmc)
@@ -347,8 +359,12 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         detaavgmc=f_getdvar(etaavgmc)
         chiemc=chiemc(sort(chiemc))
         dchiemc=f_getdvar(chiemc)
+        chiermc=chiermc(sort(chiermc))
+        dchiermc=f_getdvar(chiermc)
         chipmc=chipmc(sort(chipmc))
         dchipmc=f_getdvar(chipmc)
+        chiprmc=chiprmc(sort(chiprmc))
+        dchiprmc=f_getdvar(chiprmc)
     endif
     
     ;get error bars on best-fitting values
@@ -398,6 +414,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     dummy=f_pdftovalues(vfbmc,dvfbmc,cumdistr,vfb)
     vfb_errmin=dummy(1)
     vfb_errmax=dummy(2)
+    dummy=f_pdftovalues(vfbrmc,dvfbrmc,cumdistr,vfbr)
+    vfbr_errmin=dummy(1)
+    vfbr_errmax=dummy(2)
     if complete then begin
         dummy=f_pdftovalues(tdeplmc,dtdeplmc,cumdistr,tdepl)
         tdepl_errmin=dummy(1)
@@ -420,9 +439,15 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         dummy=f_pdftovalues(chiemc,dchiemc,cumdistr,chie)
         chie_errmin=dummy(1)
         chie_errmax=dummy(2)
+        dummy=f_pdftovalues(chiermc,dchiermc,cumdistr,chier)
+        chier_errmin=dummy(1)
+        chier_errmax=dummy(2)
         dummy=f_pdftovalues(chipmc,dchipmc,cumdistr,chip)
         chip_errmin=dummy(1)
         chip_errmax=dummy(2)
+        dummy=f_pdftovalues(chiprmc,dchiprmc,cumdistr,chipr)
+        chipr_errmin=dummy(1)
+        chipr_errmax=dummy(2)
     endif
             
     ;plot PDFs and write tables
@@ -517,6 +542,12 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     probvfb=dummy(*,2)
     report=f_plotdistr(vfbarr,dvfb,probvfb,vfb,vfb_errmin,vfb_errmax,galaxy,figdir,'vfb','!8v!6!Dfb!N','!6km s!U-1!N',0)
     report=f_writepdf(alog10(vfbarr),alog10(dvfb),alog10(probvfb),galaxy,outputdir,'vfb','# log10(vfb[km s^-1]), log10(dvfb[km s^-1]), log10(PDF[km^-1 s])')
+    dummy=f_createpdf(vfbrmc,dvfbrmc,cumdistr,ntry)
+    vfbrarr=dummy(*,0)
+    dvfbr=dummy(*,1)
+    probvfbr=dummy(*,2)
+    report=f_plotdistr(vfbrarr,dvfbr,probvfbr,vfbr,vfbr_errmin,vfbr_errmax,galaxy,figdir,'vfbr','!8v!6!Dfb,!8r!6!N','!6km s!U-1!N',0)
+    report=f_writepdf(alog10(vfbrarr),alog10(dvfbr),alog10(probvfbr),galaxy,outputdir,'vfbr','# log10(vfbr[km s^-1]), log10(dvfbr[km s^-1]), log10(PDF[km^-1 s])')
     if complete then begin
         dummy=f_createpdf(tdeplmc,dtdeplmc,cumdistr,ntry)
         tdeplarr=dummy(*,0)
@@ -560,12 +591,24 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         probchie=dummy(*,2)
         report=f_plotdistr(chiearr,dchie,probchie,chie,chie_errmin,chie_errmax,galaxy,figdir,'chie','!7v!6!Dfb,!8E!6!N','',0)
         report=f_writepdf(alog10(chiearr),alog10(dchie),alog10(probchie),galaxy,outputdir,'chie','# log10(chie), log10(dchie), log10(PDF)')
+        dummy=f_createpdf(chiermc,dchiermc,cumdistr,ntry)
+        chierarr=dummy(*,0)
+        dchier=dummy(*,1)
+        probchier=dummy(*,2)
+        report=f_plotdistr(chierarr,dchier,probchier,chier,chier_errmin,chier_errmax,galaxy,figdir,'chier','!7v!6!Dfb,!8E,r!6!N','',0)
+        report=f_writepdf(alog10(chierarr),alog10(dchier),alog10(probchier),galaxy,outputdir,'chier','# log10(chier), log10(dchier), log10(PDF)')
         dummy=f_createpdf(chipmc,dchipmc,cumdistr,ntry)
         chiparr=dummy(*,0)
         dchip=dummy(*,1)
         probchip=dummy(*,2)
         report=f_plotdistr(chiparr,dchip,probchip,chip,chip_errmin,chip_errmax,galaxy,figdir,'chip','!7v!6!Dfb,!8p!6!N','',0)
         report=f_writepdf(alog10(chiparr),alog10(dchip),alog10(probchip),galaxy,outputdir,'chip','# log10(chip), log10(dchip), log10(PDF)')
+        dummy=f_createpdf(chiprmc,dchiprmc,cumdistr,ntry)
+        chiprarr=dummy(*,0)
+        dchipr=dummy(*,1)
+        probchipr=dummy(*,2)
+        report=f_plotdistr(chiprarr,dchipr,probchipr,chipr,chipr_errmin,chipr_errmax,galaxy,figdir,'chipr','!7v!6!Dfb,!8p,r!6!N','',0)
+        report=f_writepdf(alog10(chiprarr),alog10(dchipr),alog10(probchipr),galaxy,outputdir,'chipr','# log10(chipr), log10(dchipr), log10(PDF)')
     endif
     
     returnarr = [tgas,tgas_errmin,tgas_errmax, $
@@ -582,7 +625,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                 zetagas,zetagas_errmin,zetagas_errmax, $
                 rpeakstar,rpeakstar_errmin,rpeakstar_errmax, $
                 rpeakgas,rpeakgas_errmin,rpeakgas_errmax, $
-                vfb,vfb_errmin,vfb_errmax]
+                vfb,vfb_errmin,vfb_errmax, $
+                vfbr,vfbr_errmin,vfbr_errmax]
     
     if complete then returnarr = [returnarr, $
                                   tdepl,tdepl_errmin,tdepl_errmax, $
@@ -592,7 +636,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                                   etainst,etainst_errmin,etainst_errmax, $
                                   etaavg,etaavg_errmin,etaavg_errmax, $
                                   chie,chie_errmin,chie_errmax, $
-                                  chip,chip_errmin,chip_errmax]
+                                  chier,chier_errmin,chier_errmax, $
+                                  chip,chip_errmin,chip_errmax, $
+                                  chipr,chipr_errmin,chipr_errmax]
 
     return,returnarr
         

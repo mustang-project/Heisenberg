@@ -1133,6 +1133,7 @@ if write_output then begin
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
                 'vfb','vfb_errmin','vfb_errmax', $
+                'vfbr','vfbr_errmin','vfbr_errmax', $
                 'tdepl','tdepl_errmin','tdepl_errmax', $
                 'esf','esf_errmin','esf_errmax', $
                 'mdotsf','mdotsf_errmin','mdotsf_errmax', $
@@ -1140,8 +1141,10 @@ if write_output then begin
                 'etainst','etainst_errmin','etainst_errmax', $
                 'etaavg','etaavg_errmin','etaavg_errmax', $
                 'chie','chie_errmin','chie_errmax', $
-                'chip','chip_errmin','chip_errmax']
-        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
+                'chier','chier_errmin','chier_errmax', $
+                'chip','chip_errmin','chip_errmax', $
+                'chipr','chipr_errmin','chipr_errmax']
+        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','','','']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1163,7 +1166,10 @@ if write_output then begin
                     derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
                     derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']', $
                     derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
-                    derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']']
+                    derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']', $
+                    derad+' '+derqty(63)+', '+derqty(64)+', '+derqty(65)+' ['+derunit(21)+']', $
+                    derad+' '+derqty(66)+', '+derqty(67)+', '+derqty(68)+' ['+derunit(22)+']', $
+                    derad+' '+derqty(69)+', '+derqty(70)+', '+derqty(71)+' ['+derunit(23)+']']
     endif else begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
                 'ttotal','ttotal_errmin','ttotal_errmax', $
@@ -1177,8 +1183,9 @@ if write_output then begin
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
-                'vfb','vfb_errmin','vfb_errmax']
-        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1']
+                'vfb','vfb_errmin','vfb_errmax', $
+                'vfbr','vfbr_errmin','vfbr_errmax']
+        derunit=['Myr','Myr','','','','','','','','','pc','pc','km s^-1','km s^-1']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1192,7 +1199,8 @@ if write_output then begin
                     derad+' '+derqty(27)+', '+derqty(28)+', '+derqty(29)+' ['+derunit(9)+']', $
                     derad+' '+derqty(30)+', '+derqty(31)+', '+derqty(32)+' ['+derunit(10)+']', $
                     derad+' '+derqty(33)+', '+derqty(34)+', '+derqty(35)+' ['+derunit(11)+']', $
-                    derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']']
+                    derad+' '+derqty(36)+', '+derqty(37)+', '+derqty(38)+' ['+derunit(12)+']', $
+                    derad+' '+derqty(39)+', '+derqty(40)+', '+derqty(41)+' ['+derunit(13)+']']
     endelse
 
     auxqty=['npeak_star','npeak_gas', $
