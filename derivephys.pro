@@ -236,9 +236,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         lambdamc(i)=10.^interpol(alog10(lambdaarr),problambdacumtemp,randomarr(irnd))
         irnd+=1
         if complete then begin
-            surfsfrmc(i)=surfsfr+gaussarr(igauss)*surfsfr_err
+            surfsfrmc(i)=10.^(alog10(surfsfr)+gaussarr(igauss)*surfsfr_err/surfsfr/alog(10.))
             igauss+=1
-            surfgasmc(i)=surfgas+gaussarr(igauss)*surfgas_err
+            surfgasmc(i)=10.^(alog10(surfgas)+gaussarr(igauss)*surfgas_err/surfgas/alog(10.))
             igauss+=1
         endif
         
