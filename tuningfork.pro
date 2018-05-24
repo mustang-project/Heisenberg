@@ -580,6 +580,7 @@ if id_peaks then begin
     starpeaks(*,3)=starpeaks(sortpeaks,3)
     if use_star2 then istarmax=n_elements(starpeaks(*,0))-1 else istarmax=max(where(starpeaks(*,2) gt nsigma*sensstar+offstar)) ;last peak with intensity larger than the sensitivity limit
     starpeaks=starpeaks(0:istarmax,*) ;reject stellar peaks with stellar flux lower than sensitivity limit
+    save,filename=arrdir+'starpeaks.sav',starpeaks
 
     ;IDENTIFY PEAKS IN GAS MAP
     if loglevels then begin
@@ -599,25 +600,28 @@ if id_peaks then begin
     gaspeaks(*,3)=gaspeaks(sortpeaks,3)
     if use_gas2 then igasmax=n_elements(gaspeaks(*,0))-1 else igasmax=max(where(gaspeaks(*,2) gt nsigma*sensgas+offgas)) ;last peak with intensity larger than the sensitivity limit
     gaspeaks=gaspeaks(0:igasmax,*) ;reject gas peaks with gas flux lower than sensitivity limit
+    save,filename=arrdir+'gaspeaks.sav',gaspeaks
+endif else begin
+    restore,filename=arrdir+'starpeaks.sav'
+    restore,filename=arrdir+'gaspeaks.sav'
+endelse
+peaks=[starpeaks,gaspeaks]
+sz=size(peaks)
+sz_s=size(starpeaks)
+sz_g=size(gaspeaks)
+npeaks=sz(1) ;total number of all peaks
+nstarpeaks=sz_s(1) ;total number of stellar peaks
+ngaspeaks=sz_g(1) ;total number of gas peaks
 
-    peaks=[starpeaks,gaspeaks]
-    sz=size(peaks)
-    sz_s=size(starpeaks)
-    sz_g=size(gaspeaks)
-    npeaks=sz(1) ;total number of all peaks
-    nstarpeaks=sz_s(1) ;total number of stellar peaks
-    ngaspeaks=sz_g(1) ;total number of gas peaks
-
-    includepeak=mask_arr(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
-    inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
-    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
-    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
-    peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
-    peakmeanradius=mean(peakradius(inclpeaks))
-    lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
-    lambda_map_star=2.*sqrt(totalarea/nincludepeak_star/!pi) ;geometric lambda from map area assuming points are randomly distributed
-    lambda_map_gas=2.*sqrt(totalarea/nincludepeak_gas/!pi) ;geometric lambda from map area assuming points are randomly distributed
-endif
+includepeak=mask_arr(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
+inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
+inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
+inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
+peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
+peakmeanradius=mean(peakradius(inclpeaks))
+lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
+lambda_map_star=2.*sqrt(totalarea/nincludepeak_star/!pi) ;geometric lambda from map area assuming points are randomly distributed
+lambda_map_gas=2.*sqrt(totalarea/nincludepeak_gas/!pi) ;geometric lambda from map area assuming points are randomly distributed
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
