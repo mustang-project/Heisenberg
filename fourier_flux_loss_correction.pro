@@ -17,6 +17,10 @@ function fourier_flux_loss_correction, kernel, cut_ratio
 
   if kernel eq 'butterworth' || kernel eq 'b' then begin
     qcon = 1.0 ; not yet implemented
+
+    ; 1st order B: -0.0381051      1.30460      4.44501
+    ; 2nd order B: 0.00191006      2.37707      3.43289
+
   endif else if kernel eq 'gaussian' || kernel eq 'gauss' || kernel eq 'g' then begin
     a = -0.0159072
     b = 1.68958
