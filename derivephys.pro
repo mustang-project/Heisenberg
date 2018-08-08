@@ -253,8 +253,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
 
 
     nredo=0
-    nredomax=floor(nphysmc/3.)
-    ; nredomax=floor(nphysmc*10.)
+    ; nredomax=floor(nphysmc/3.)
+    ; *** NOTE: increase nredomax to compensate for increased parameter list
+    nredomax=floor(nphysmc*10.)
 
     nrnd=3*(nphysmc+nredomax)
     randomarr=randomu(systime(1),nrnd)
