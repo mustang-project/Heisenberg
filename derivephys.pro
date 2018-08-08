@@ -163,8 +163,15 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         etastar = sqrt(tstar/ttotal) * zetastar ; zeta corrected for timeline. i.e. peak density in image
         etagas = sqrt(tgas/ttotal) * zetagas ; zeta corrected for timeline. i.e. peak density in image
       endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
-        etastar = (sqrt(tstar/ttotal) * zetastar) / (rpeakstar/rpeaks_cor_val) ; eta with correction for flux loss from signal regions
-        etagas = (sqrt(tgas/ttotal) * zetagas) / (rpeakgas/rpeakg_cor_val) ; eta with correction for flux loss from signal regions
+        ; old method
+        ; ; etastar = (sqrt(tstar/ttotal) * zetastar) / (rpeakstar/rpeaks_cor_val) ; eta with correction for flux loss from signal regions
+        ; ; etagas = (sqrt(tgas/ttotal) * zetagas) / (rpeakgas/rpeakg_cor_val) ; eta with correction for flux loss from signal regions
+        ; new method
+        etastar = (sqrt(tstar/ttotal) * 2.0* (rpeaks_cor_val/lambda))
+        etagas = (sqrt(tgas/ttotal) * 2.0* (rpeakg_cor_val/lambda))
+
+
+
       endif
 
       qzetastar = fourier_zeta_correction(filter_choice, etastar)
@@ -247,6 +254,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
 
     nredo=0
     nredomax=floor(nphysmc/3.)
+    ; nredomax=floor(nphysmc*10.)
+
     nrnd=3*(nphysmc+nredomax)
     randomarr=randomu(systime(1),nrnd)
     gaussarr=randomn(systime(1),nrnd)
@@ -255,8 +264,14 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
 
     tstariso_rerr=0.5*(tstariso_rerrmin+tstariso_rerrmax)
     if rpeak_cor_mode eq 1 then begin
-       rpeakscor_rerr=0.5*(rpeaks_cor_emin+rpeaks_cor_emax)
-       rpeakgcor_rerr=0.5*(rpeakg_cor_emin+rpeakg_cor_emax)
+      rpeaks_cor_remin = rpeaks_cor_emin / rpeaks_cor_val
+      rpeaks_cor_remax = rpeaks_cor_emax / rpeaks_cor_val
+       rpeakscor_rerr=0.5*(rpeaks_cor_remin+rpeaks_cor_remax)
+
+
+       rpeakg_cor_remin = rpeakg_cor_emin / rpeakg_cor_val
+       rpeakg_cor_remax = rpeakg_cor_emax / rpeakg_cor_val
+       rpeakgcor_rerr=0.5*(rpeakg_cor_remin+rpeakg_cor_remax)
      endif
     for i=0L,nphysmc-1 do begin ;do Monte Carlo error propagation
         redo=0
@@ -364,8 +379,17 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
             etastarmc[i] = sqrt(tstarmc[i]/ttotalmc[i]) * zetastarmc[i] ; corrected zeta for timeline
             etagasmc[i] = sqrt(tgasmc[i]/ttotalmc [i]) * zetagasmc[i]
           endif else if rpeak_cor_mode eq 1 then begin ; use supplied rpeak value
-            etastarmc[i] = (sqrt(tstarmc[i]/ttotalmc[i]) * zetastarmc[i]) / (rpeakstarmc[i]/rpeakscormc[i]) ; eta with correction for flux loss from signal regions
-            etagasmc[i] = (sqrt(tgasmc[i]/ttotalmc[i]) * zetagasmc[i])  / (rpeakgasmc[i]/rpeakgcormc[i]) ; eta with correction for flux loss from signal regions
+            ; old model:
+            ; etastarmc[i] = (sqrt(tstarmc[i]/ttotalmc[i]) * zetastarmc[i]) / (rpeakstarmc[i]/rpeakscormc[i]) ; eta with correction for flux loss from signal regions
+            ; etagasmc[i] = (sqrt(tgasmc[i]/ttotalmc[i]) * zetagasmc[i])  / (rpeakgasmc[i]/rpeakgcormc[i]) ; eta with correction for flux loss from signal regions
+
+            ; new model:
+            ; etastar = (sqrt(tstar/ttotal) * 2rpeak/lambda)
+
+
+            etastarmc[i] = (sqrt(tstarmc[i]/ttotalmc[i]) * 2.0 * (rpeakstarmc[i]/lambdamc[i]) ) ; eta with correction for flux loss from signal regions
+            etagasmc[i] = (sqrt(tgasmc[i]/ttotalmc[i]) * 2.0 * (rpeakgasmc[i]/lambdamc[i])) ; eta with correction for flux loss from signal regions
+
           endif
 
           qzetastarmc[i] = fourier_zeta_correction(filter_choice, etastarmc[i])
@@ -576,6 +600,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     dummy=f_pdftovalues(fgmcmc,dfgmcmc,cumdistr,fgmc)
     fgmc_errmin=dummy[1]
     fgmc_errmax=dummy[2]
+
     ;
     ; if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
     dummy=f_pdftovalues(qconstarmc,dqconstarmc,cumdistr,qconstar) ; get errors for qconstar
@@ -810,8 +835,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                 surfglobalg_fit,surfglobalg_errmin,surfglobalg_errmax, $
                 surfs_fit,surfs_errmin,surfs_errmax, $
                 surfg_fit,surfg_errmin,surfg_errmax, $
-                fcl, fcl_errmin, fcl_errmin, $
-                fgmc, fgmc_errmin, fgmc_errmin, $
+                fcl, fcl_errmin, fcl_errmax, $
+                fgmc, fgmc_errmin, fgmc_errmax, $
                 qconstar,qconstar_errmin,qconstar_errmax, $
                 qcongas,qcongas_errmin,qcongas_errmax, $
                 etastar,etastar_errmin,etastar_errmax, $
