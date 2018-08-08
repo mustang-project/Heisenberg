@@ -77,7 +77,15 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
   image_xsize      = image_dimensions[0]
   image_ysize      = image_dimensions[1]
 
-  if size(cut_length, /type) eq 4 then begin
+
+  ; deal with integer cut lengths to prevent errors, convert to double to be safe
+  ; and protect original input variable
+  ; this assumes the desired cut lengths in pixels is an integer with fewer than
+  ; ~15 significant digits (limit of double precision significance)
+  if is_an_integer(cut_length) eq 1 then cut_length_temp = double(cut_length) else cut_length_temp = cut_length
+
+
+  if size(cut_length_temp, /type) eq 4 then begin
     image_xvect = findgen((image_xsize - 1)/2) + 1
     image_yvect = findgen((image_ysize - 1)/2) + 1
 
@@ -88,7 +96,7 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
     one_freq = 1.0e0
     freq_double = 0
 
-  endif else if size(cut_length, /type) eq 5 then begin
+  endif else if size(cut_length_temp, /type) eq 5 then begin
     image_xvect = dindgen((image_xsize - 1)/2) + 1
     image_yvect = dindgen((image_ysize - 1)/2) + 1
 
@@ -135,7 +143,7 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
   ; ************************************************
   ; calculate filter
   ; ************************************************
-  cut_freq = one_freq/cut_length  ; 1/cut_length one_freq takes account of double/single precision
+  cut_freq = one_freq/cut_length_temp  ; 1/cut_length one_freq takes account of double/single precision
 
   kchoice = strcompress(strlowcase(kernel),/remove_all)
   pchoice = strcompress(strlowcase(pass),/remove_all)
