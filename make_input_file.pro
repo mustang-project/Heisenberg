@@ -19,7 +19,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
                    , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode, rpeak_cor_mode = rpeak_cor_mode, rpeaks_cor_val = rpeaks_cor_val, rpeaks_cor_emin = rpeaks_cor_emin, rpeaks_cor_emax = rpeaks_cor_emax, rpeakg_cor_val = rpeakg_cor_val, rpeakg_cor_emin = rpeakg_cor_emin, rpeakg_cor_emax = rpeakg_cor_emax $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
                    , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
-                   , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
+                   , use_stds = use_stds, std_star1 = std_star1, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
                    ; ################################################################################################################################################################################################################################################################
                    , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_rpeak_mode = iter_rpeak_mode, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
 
@@ -561,12 +561,12 @@ pro make_input_file, input_file_filepath   $ ; general variables
 
 
   if n_elements(use_stds) ne 1 then use_stds =  0
-  if n_elements(std_star) ne 1 then std_star =  0.1
+  if n_elements(std_star1) ne 1 then std_star1 =  0.1
   if n_elements(std_star3) ne 1 then std_star3 =  0.1
   if n_elements(std_gas) ne 1 then std_gas =  0.1
 
   use_stds_str = strcompress(string(use_stds))
-  std_star_str = strcompress(string(std_star))
+  std_star_str = strcompress(string(std_star1))
   std_star3_str = strcompress(string(std_star3))
   std_gas_str = strcompress(string(std_gas))
 
