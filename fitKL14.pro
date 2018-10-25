@@ -98,7 +98,7 @@ end
 function f_writepdf,array,darray,probarray,galaxy,outputdir,varstring,commentstring ;write table with PDF to file
     openw,lun,outputdir+galaxy+'_PDF_'+varstring+'.dat',/get_lun
     printf,lun,'# 1D Probability distribution function of '+varstring+' for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this PDF was calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how this PDF was calculated'
     printf,lun,'# IMPORTANT: this PDF uses a coarser grid than the PDF used to calculate the best-fitting values in the PDF figures'
     printf,lun,'# IMPORTANT: rounding errors may therefore cause small differences when using this file to reproduce the PDF figures'
     printf,lun,commentstring
@@ -119,7 +119,7 @@ end
 function f_writetf_model,xarray,yarraystar,yarraygas,galaxy,outputdir,commentstring ;write table with tuningfork model line to file
     openw,lun,outputdir+galaxy+'_tuningfork_model.dat',/get_lun
     printf,lun,'# Best-fitting model output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how this model was calculated'
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(xarray)
@@ -138,7 +138,7 @@ end
 function f_writetf_obs,xarraystar,xarraygas,yarraystar,yarraygas,errbarstar,errbargas,errfitstar,errfitgas,galaxy,outputdir,commentstring ;write table with tuningfork observational data points to file
     openw,lun,outputdir+galaxy+'_tuningfork_obs.dat',/get_lun
     printf,lun,'# Observational data point output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these data points were calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how these data points were calculated'
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(xarraystar)
@@ -162,7 +162,7 @@ end
 function f_writetab,farray,array,galaxy,outputdir,filename,description,commentstring ;write table to file
     openw,lun,outputdir+galaxy+'_'+filename+'.dat',/get_lun
     printf,lun,'# '+description+' output for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this model was calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how this model was calculated'
     printf,lun,commentstring
     printf,lun,''
     n=n_elements(farray)
