@@ -650,7 +650,7 @@ if calc_ap_flux then begin
     report=f_writetab(starflux[peak_res,inclgas],gasflux[peak_res,inclgas],galaxy,outputdir,'gaspeakflux','Stellar and gas fluxes in apertures focused on gas peaks','# starflux[gas], gasflux[gas]')
 endif
 
-stop
+
 ;;;;;;;;;;;
 ;PLOT MAPS;
 ;;;;;;;;;;;
