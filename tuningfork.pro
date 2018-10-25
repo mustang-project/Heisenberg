@@ -646,9 +646,11 @@ if calc_ap_flux then begin
             endif
         endfor
     endfor
+    report=f_writetab(starflux[peak_res,inclstar],gasflux[peak_res,inclstar],galaxy,outputdir,'starpeakflux','Stellar and gas fluxes in apertures focused on stellar peaks','# starflux[star], gasflux[star]')
+    report=f_writetab(starflux[peak_res,inclgas],gasflux[peak_res,inclgas],galaxy,outputdir,'gaspeakflux','Stellar and gas fluxes in apertures focused on gas peaks','# starflux[gas], gasflux[gas]')
 endif
 
-
+stop
 ;;;;;;;;;;;
 ;PLOT MAPS;
 ;;;;;;;;;;;
@@ -1262,7 +1264,7 @@ if write_output then begin
 
     openw,lun,outputdir+galaxy+'_tablerow.dat',/get_lun
     printf,lun,'# Best-fitting values and derived quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these numbers were calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how these numbers were calculated'
     printf,lun,'# IMPORTANT: all values represent log10(listed quantity)'
     for i=0,nfit-1 do printf,lun,'# '+colstrings(i)+fitstrings(i)
     if map_units gt 0 then begin
@@ -1283,7 +1285,7 @@ if write_output then begin
     printf,lun,'#                                                                                                                      #'
     printf,lun,'#                                      FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                                      #'
     printf,lun,'# Best-fitting values and derived quantities generated with the Kruijssen & Longmore (2014) uncertainty principle code #'
-    printf,lun,'#           IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these numbers were calculated           #'
+    printf,lun,'#           IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how these numbers were calculated           #'
     printf,lun,'#                                                                                                                      #'
     printf,lun,'#                                                  BEGIN OUTPUT FILE                                                   #'
     printf,lun,'#                                                                                                                      #'

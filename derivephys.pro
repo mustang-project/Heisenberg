@@ -11,7 +11,8 @@ function f_getdvar,var ;Note: input must be positive and real
         if i eq 0 then dvar(i)=min([2.*var(i),var(i+1)-var(i)]) ;make sure that var-0.5*dvar cannot be negative
         if i eq nvar-1 then dvar(i)=var(i)-var(i-1)
         if i gt 0 and i lt nvar-1 then dvar(i)=.5*(var(i+1)-var(i-1))
-        if dvar(i) eq 0. then dvar(i)=tiny
+        if dvar(i) lt tiny then dvar(i)=tiny
+        if dvar(i) gt huge then dvar(i)=huge
     endfor
     return,dvar
 end
@@ -25,8 +26,10 @@ function f_createpdf,array,darray,cumpdf,nnew
     darray=darray[use] ;update difference array
     norig=n_elements(array) ;new number of elements
     cumpdf=cumpdf[use]*norig0/norig ;update cumulative pdf and rescale to unity
-    minval=min(array)-.5*darray(0) ;assume linearly-symmetric bins as input
-    maxval=max(array)+.5*darray(norig-1) ;assume linearly-symmetric bins as input
+    if darray(0) lt tiny then usedmin=darray(min(where(darray gt tiny))) else usedmin=darray(0)
+    minval=min(array)-.5*usedmin ;assume linearly-symmetric bins as input
+    if darray(norig-1) gt huge then usedmax=darray(max(where(darray lt huge))) else usedmax=darray(norig-1)
+    maxval=max(array)+.5*usedmax ;assume linearly-symmetric bins as input
     pdf=dblarr(nnew)
     if minval le 0. then logrange=0 else logrange=1
     if minval ne maxval then begin
@@ -73,7 +76,7 @@ end
 function f_writecorr,matrix,complete,galaxy,outputdir
     openw,lun,outputdir+galaxy+'_correlation_matrix.dat',/get_lun
     printf,lun,'# 2D correlation coefficient matrix between all constrained quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how this matrix was calculated'
     printf,lun,'# This symmetric array lists the correlation coefficients for quantities that are, from left to right AND from top to bottom, in the order:'
     if complete then begin
         printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chier, chip, chipr'
@@ -95,7 +98,7 @@ end
 function f_writecov,matrix,complete,galaxy,outputdir
     openw,lun,outputdir+galaxy+'_covariance_matrix.dat',/get_lun
     printf,lun,'# 2D covariance matrix between all constrained quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how this matrix was calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how this matrix was calculated'
     printf,lun,'# This symmetric array lists the covariances for quantities that are, from left to right AND from top to bottom, in the order:'
     if complete then begin
         printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, chie, chier, chip, chipr'
