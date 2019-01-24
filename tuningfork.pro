@@ -509,7 +509,7 @@ if sensitivity then begin
     disp=sqrt(mean(sensstarlist(use)^2.)-mean(sensstarlist(use))^2.)
     binwidth=disp/nbins
     set_plot,window_plot
-    histoplot,sensstarlist(use),histdata=hist,locations=bins,binsize=binwidth
+    histoplot_update,sensstarlist(use),histdata=hist,locations=bins,binsize=binwidth
     set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)
@@ -528,7 +528,7 @@ if sensitivity then begin
         disp=sqrt(mean(sensstarlist3(use)^2.)-mean(sensstarlist3(use))^2.)
         binwidth=disp/nbins
         set_plot,window_plot
-        histoplot,sensstarlist3(use),histdata=hist,locations=bins,binsize=binwidth
+        histoplot_update,sensstarlist3(use),histdata=hist,locations=bins,binsize=binwidth
         set_plot,'x'
         binmid=bins+0.5*binwidth
         fit=gaussfit(binmid,hist,vars,nterms=3)
@@ -547,7 +547,7 @@ if sensitivity then begin
     disp=sqrt(mean(sensgaslist(use)^2.)-mean(sensgaslist(use))^2.)
     binwidth=disp/nbins
     set_plot,window_plot
-    histoplot,sensgaslist(use),histdata=hist,locations=bins,binsize=binwidth
+    histoplot_update,sensgaslist(use),histdata=hist,locations=bins,binsize=binwidth
     set_plot,'x'
     binmid=bins+0.5*binwidth
     fit=gaussfit(binmid,hist,vars,nterms=3)

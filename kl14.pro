@@ -55,7 +55,7 @@
 .com mask_tool.pro
 .com f_error.pro
 .com f_string.pro
-
+.com histoplot_update.pro
 
 if keyword_set(COMMAND_LINE_ARGS()) then inputfile=COMMAND_LINE_ARGS() $
                                     else read,' please specify the full/absolute path of the input file (enter 0 to stop autorun): ',inputfile
