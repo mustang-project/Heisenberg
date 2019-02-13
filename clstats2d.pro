@@ -168,10 +168,16 @@ if(edge eq 1) then flag="X"
 if(edge eq 2) then flag="Y"
 if(edge eq 3) then flag="XY"
 
+; prevent error if too many pixels identified peak
+ndigits = min_int_print_digits(npix)
+ndigits = max([ndigits, 6])
+ndig_str = strcompress('i' + string(ndigits), /remove_all)
+
+
 if not(keyword_set(silent)) then $
-  print,format='(i6,2(2x,i5),3x,e18.6,3(2x,f8.4),x,e18.6,2x,i6,x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
+  print,format='(i6,2(2x,i5),3x,e18.6,3(2x,f8.4),x,e18.6,2x,' + ndig_str + ',x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
 if keyword_set(log) then $
-  printf,1,format='(i6,2(2x,i5),3x,e18.6,3(2x,f8.4),x,e18.6,2x,i6,x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
+  printf,1,format='(i6,2(2x,i5),3x,e18.6,3(2x,f8.4),x,e18.6,2x,' + ndig_str + ',x,a4)',ncl,i0,j0,peak,sx,sy,radius,sumflux,npix,flag
 
 return
 end
