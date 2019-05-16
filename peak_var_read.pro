@@ -12,7 +12,7 @@ function peak_var_read, var_name, original_value, global_var = global_var
 
     var_in = strcompress(var_in, /remove_all)
 
-    if var_in eq 'no' || var_in eq 'n' then begin
+    if strmatch(var_in, 'no', /fold_case) || strmatch(var_in, 'n', /fold_case)  then begin
       var_out = original_value
       inp_break = 1
     endif else if valid_num(var_in, val) eq 1 then begin
