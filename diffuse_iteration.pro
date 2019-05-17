@@ -371,6 +371,13 @@ pro diffuse_iteration, master_inputfile
     nlinlevel_g = nlinlevel_g_vec[iter_num]
 
 
+    ; check if peak_ID values have been finalised by the user
+    peak_id_final_check = tablerow_var_search('finalised', peak_name_vec, peak_value_vec)
+    if peak_id_final_check eq 1 then peak_find_tui = 0 ; disable peak_ID if user has finalised
+
+
+
+
     ; ************************************************
     ; *** KL14 output .dat files
     ; ************************************************

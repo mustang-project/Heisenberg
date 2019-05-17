@@ -151,8 +151,44 @@ pro interactive_peak_find, peak_find_tui, $
         endelse
         if run_stars eq 1 || run_gas eq 1 then run_test = 1 else print, "No peakfinding variables are different to the variables of the previous peakfinding run. Please change at least one variable if you want to rerun."
       endwhile
+
     endelse
   endwhile
+
+
+  if peak_find_tui eq 1 then begin
+    ; test to see if the user whishes to repeat interactive peak finding in future steps
+    final_break_test = 0
+    while(final_break_test eq 0) do begin ; start peak_finding
+      print, "Do you want to finalise peak finding parameters for future iterations? Type 'Yes' or 'No' "
+      print, " 'Yes' = do not adjust peak finding in future iterations, 'No' = continue to adjust peak finding in future iterations "
+      finaltest =''
+      beep
+      read, finaltest
+      finaltest = strlowcase(finaltest)
+      if finaltest eq 'y' || finaltest eq 'yes' then begin
+        finalised = 1
+        print, 'interactive peakfinding will be disabled in future iterations'
+        final_break_test = 1
+
+      endif else  if finaltest eq 'n' || finaltest eq 'no' then begin
+        finalised = 0
+        print, 'interactive peakfinding will continue to be enabled in future iterations'
+        final_break_test = 1
+
+      endif else begin
+        print, "Incorect string entered. Type 'Yes' or 'No' "
+      endelse
+    endwhile
+  endif
+
+
+
+
+
+
+
+
 
   ; write out final parameters
   peak_report_file = outputdir+galaxy+ '_interactive_peak_ID_report.dat'
@@ -166,6 +202,8 @@ pro interactive_peak_find, peak_find_tui, $
   printf, peak_lun, 'logspacing_g     ', logspacing_g
   printf, peak_lun, 'nlinlevel_s      ', nlinlevel_s
   printf, peak_lun, 'nlinlevel_g      ', nlinlevel_g
+  if n_elements(finalised) eq 0 then finalised = 0 ; if not already set then = 0
+  printf, peak_lun, 'finalised        ', finalised
   free_lun, peak_lun
 
 
