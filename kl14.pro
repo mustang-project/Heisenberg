@@ -6,12 +6,13 @@
  PRINT,'Loading all necessary procedures and functions....'
 
 
- COMMON numbers,tiny,huge
+ COMMON numbers,tiny,huge,dynrange
  COMMON physconst,kboltz,ggravity,hplanck,clight,mhydrogen,sigmaboltz
  COMMON astrconst,kpc,pc,msun,lsun,yr,myr,kms
 
  tiny = 1.d-99
  huge = 9.d99
+ dynrange = 1.d10
 
                                 ; set physical constants (SI)
 

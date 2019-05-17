@@ -112,7 +112,7 @@ if loglevels then begin ;set number of logarithmic contour levels for peak ident
     nlevels_g=logrange_g/logspacing_g+1 ;number of gas contour levels
 endif else begin ;set number of linear contour levels for peak identification
     nlevels_s=nlinlevels_s ;number of stellar contour levels
-    nlevels_g=nlinlevels_s ;number of gas contour levels
+    nlevels_g=nlinlevels_g ;number of gas contour levels
 endelse
 if tstar_incl eq 0 then tovermaxi=tgasmaxi else tovermaxi=min([tstariso,tgasmaxi])
 
@@ -605,6 +605,8 @@ if calc_ap_flux then begin
             endif
         endfor
     endfor
+    report=f_writetab(starflux[peak_res,inclstar],gasflux[peak_res,inclstar],galaxy,outputdir,'starpeakflux','Stellar and gas fluxes in apertures focused on stellar peaks','# starflux[star], gasflux[star]')
+    report=f_writetab(starflux[peak_res,inclgas],gasflux[peak_res,inclgas],galaxy,outputdir,'gaspeakflux','Stellar and gas fluxes in apertures focused on gas peaks','# starflux[gas], gasflux[gas]')
 endif
 
 
@@ -1171,6 +1173,10 @@ if derive_phys then begin
                    surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
                    lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units,emfrac_cor_mode, filter_choice,filter_len_conv, $
                    rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax)
+    fit[2:3]=der[1:2]
+    fit[5:6]=der[4:5]
+    der=der[6:n_elements(der)-1]
+
     aux=[nincludepeak_star,nincludepeak_gas,lap_min]
 endif
 
@@ -1249,6 +1255,7 @@ if write_output then begin
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
                 'vfb','vfb_errmin','vfb_errmax', $
+                'vfbr','vfbr_errmin','vfbr_errmax', $
                 'tdepl','tdepl_errmin','tdepl_errmax', $
                 'esf','esf_errmin','esf_errmax', $
                 'mdotsf','mdotsf_errmin','mdotsf_errmax', $
@@ -1256,8 +1263,10 @@ if write_output then begin
                 'etainst','etainst_errmin','etainst_errmax', $
                 'etaavg','etaavg_errmin','etaavg_errmax', $
                 'chie','chie_errmin','chie_errmax', $
-                'chip','chip_errmin','chip_errmax']
-        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','']
+                'chier','chier_errmin','chier_errmax', $
+                'chip','chip_errmin','chip_errmax', $
+                'chipr','chipr_errmin','chipr_errmax']
+        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','','','']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1287,7 +1296,11 @@ if write_output then begin
                     derad+' '+derqty(75)+', '+derqty(76)+', '+derqty(77)+' ['+derunit(25)+']', $
                     derad+' '+derqty(78)+', '+derqty(79)+', '+derqty(80)+' ['+derunit(26)+']', $
                     derad+' '+derqty(81)+', '+derqty(82)+', '+derqty(83)+' ['+derunit(27)+']', $
-                    derad+' '+derqty(84)+', '+derqty(85)+', '+derqty(86)+' ['+derunit(28)+']']
+                    derad+' '+derqty(84)+', '+derqty(85)+', '+derqty(86)+' ['+derunit(28)+']', $
+                    derad+' '+derqty(87)+', '+derqty(88)+', '+derqty(89)+' ['+derunit(29)+']', $
+                    derad+' '+derqty(90)+', '+derqty(91)+', '+derqty(92)+' ['+derunit(30)+']', $
+                    derad+' '+derqty(93)+', '+derqty(94)+', '+derqty(95)+' ['+derunit(31)+']']
+
     endif else begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
                 'ttotal','ttotal_errmin','ttotal_errmax', $
@@ -1314,8 +1327,9 @@ if write_output then begin
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
                 'rpeakgas','rpeakgas_errmin','rpeakgas_errmax', $
-                'vfb','vfb_errmin','vfb_errmax']
-        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1']
+                'vfb','vfb_errmin','vfb_errmax', $
+                'vfbr','vfbr_errmin','vfbr_errmax']
+        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1','km s^-1']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1337,7 +1351,8 @@ if write_output then begin
                     derad+' '+derqty(51)+', '+derqty(52)+', '+derqty(53)+' ['+derunit(17)+']', $
                     derad+' '+derqty(54)+', '+derqty(55)+', '+derqty(56)+' ['+derunit(18)+']', $
                     derad+' '+derqty(57)+', '+derqty(58)+', '+derqty(59)+' ['+derunit(19)+']', $
-                    derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']']
+                    derad+' '+derqty(60)+', '+derqty(61)+', '+derqty(62)+' ['+derunit(20)+']', $
+                    derad+' '+derqty(63)+', '+derqty(64)+', '+derqty(65)+' ['+derunit(21)+']']
     endelse
 
     auxqty=['npeak_star','npeak_gas', $
@@ -1395,7 +1410,7 @@ if write_output then begin
 
     openw,lun,outputdir+galaxy+'_tablerow.dat',/get_lun
     printf,lun,'# Best-fitting values and derived quantities for run '+galaxy+', generated with the Kruijssen & Longmore (2014) uncertainty principle code'
-    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these numbers were calculated'
+    printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how these numbers were calculated'
     printf,lun,'# IMPORTANT: all values represent log10(listed quantity)'
     for i=0,nfit-1 do printf,lun,'# '+colstrings(i)+fitstrings(i)
     if map_units gt 0 then begin
@@ -1417,7 +1432,7 @@ if write_output then begin
     printf,lun,'#                                                                                                                      #'
     printf,lun,'#                                      FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                                      #'
     printf,lun,'# Best-fitting values and derived quantities generated with the Kruijssen & Longmore (2014) uncertainty principle code #'
-    printf,lun,'#           IMPORTANT: see Paper II (Kruijssen et al. 2017) for details on how these numbers were calculated           #'
+    printf,lun,'#           IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how these numbers were calculated           #'
     printf,lun,'#                                                                                                                      #'
     printf,lun,'#                                                  BEGIN OUTPUT FILE                                                   #'
     printf,lun,'#                                                                                                                      #'
