@@ -27,7 +27,8 @@ pro diffuse_iteration, master_inputfile
     use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $ ;variable names of expected input parameters (6)
     convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
     use_stds, std_star, std_star3, std_gas, $ ;variable names of expected input parameters (8)
-    use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (9)
+    use_noisecut, noisethresh_s, noisethresh_g, $ ;variable names of expected input parameters (9)
+    use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (10)
 
 
   ; ******************************************************
@@ -153,10 +154,15 @@ pro diffuse_iteration, master_inputfile
       base_starfile, $ ; input image by filename
       filtered_image_path = filtered_starfile ; output file for the filtered image
 
-    star_arr = readfits(filtered_starfile, star_hdr)
-    szero_list = where(star_arr lt 0.0e0, szero_count)
-    if szero_count ne 0 then star_arr[szero_list] = 0.0
-    writefits, filtered_starfile, star_arr, star_hdr
+    filtered_starfile = strcompress(datadir + starfile,/remove_all)
+    if n_elements(use_noisecut) eq 1 && use_noisecut eq 1 then begin
+      iter_image_postprocess, filtered_starfile, filtered_starfile, noisethresh_s, /zero_negatives
+    endif else iter_image_postprocess, filtered_starfile, filtered_starfile, /zero_negatives
+
+    ; star_arr = readfits(filtered_starfile, star_hdr)
+    ; szero_list = where(star_arr lt 0.0e0, szero_count)
+    ; if szero_count ne 0 then star_arr[szero_list] = 0.0
+    ; writefits, filtered_starfile, star_arr, star_hdr
 
 
 
@@ -168,10 +174,16 @@ pro diffuse_iteration, master_inputfile
       base_gasfile, $ ; input image by filename
       filtered_image_path = filtered_gasfile ; output file for the filtered image
 
-    gas_arr = readfits(filtered_gasfile, gas_hdr)
-    gzero_list = where(gas_arr lt 0.0e0, gzero_count)
-    if gzero_count ne 0 then gas_arr[gzero_list] = 0.0
-    writefits, filtered_gasfile, gas_arr, gas_hdr
+    filtered_gasfile = strcompress(datadir + gasfile,/remove_all)
+    if n_elements(use_noisecut) eq 1 && use_noisecut eq 1 then begin
+      iter_image_postprocess, filtered_gasfile, filtered_gasfile, noisethresh_g, /zero_negatives
+    endif else iter_image_postprocess, filtered_gasfile, filtered_gasfile, /zero_negatives
+
+
+    ; gas_arr = readfits(filtered_gasfile, gas_hdr)
+    ; gzero_list = where(gas_arr lt 0.0e0, gzero_count)
+    ; if gzero_count ne 0 then gas_arr[gzero_list] = 0.0
+    ; writefits, filtered_gasfile, gas_arr, gas_hdr
 
   endif else begin ; copy original files
     starfile = "starfile_iter0.fits"
@@ -302,7 +314,8 @@ pro diffuse_iteration, master_inputfile
      , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
      , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode, rpeak_cor_mode = rpeak_cor_mode, rpeaks_cor_val = rpeaks_cor_val, rpeaks_cor_emin = rpeaks_cor_emin, rpeaks_cor_emax = rpeaks_cor_emax, rpeakg_cor_val = rpeakg_cor_val, rpeakg_cor_emin = rpeakg_cor_emin, rpeakg_cor_emax = rpeakg_cor_emax $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
      , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $ ; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
-     , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas ; # INPUT PARAMETERS 8 (sensitivity)
+     , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity)
+     , use_noisecut = use_noisecut, noisethresh_s = noisethresh_s, noisethresh_g = noisethresh_g ; # INPUT PARAMETERS 9 (noise threshold)
 
     ; **********************
     ; * call KL14
@@ -547,7 +560,11 @@ pro diffuse_iteration, master_inputfile
 
 
     filtered_starfile = strcompress(datadir + starfile,/remove_all)
-    iter_image_postprocess, raw_starfile, filtered_starfile, /zero_negatives
+    if n_elements(use_noisecut) eq 1 && use_noisecut eq 1 then begin
+      iter_image_postprocess, raw_starfile, filtered_starfile, noisethresh_s, /zero_negatives
+    endif else iter_image_postprocess, raw_starfile, filtered_starfile, /zero_negatives
+
+
 
     filtered_star_diffusefile = strcompress(datadir + star_diffusefile, /remove_all)
     writefits, filtered_star_diffusefile, readfits(base_starfile) - readfits(filtered_starfile), headfits(base_starfile) ; diffuse image
@@ -568,7 +585,11 @@ pro diffuse_iteration, master_inputfile
       negative_image_path = raw_gas_diffusefile ; output file for the negative image
 
     filtered_gasfile = strcompress(datadir + gasfile,/remove_all)
-    iter_image_postprocess, raw_gasfile, filtered_gasfile, /zero_negatives
+    if n_elements(use_noisecut) eq 1 && use_noisecut eq 1 then begin
+      iter_image_postprocess, raw_gasfile, filtered_gasfile, noisethresh_g, /zero_negatives
+    endif else iter_image_postprocess, raw_gasfile, filtered_gasfile, /zero_negatives
+
+
 
     filtered_gas_diffusefile = strcompress(datadir + gas_diffusefile, /remove_all)
     writefits, filtered_gas_diffusefile, readfits(base_gasfile) - readfits(filtered_gasfile), headfits(base_gasfile) ; diffuse image

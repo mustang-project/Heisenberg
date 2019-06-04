@@ -20,6 +20,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode, rpeak_cor_mode = rpeak_cor_mode, rpeaks_cor_val = rpeaks_cor_val, rpeaks_cor_emin = rpeaks_cor_emin, rpeaks_cor_emax = rpeaks_cor_emax, rpeakg_cor_val = rpeakg_cor_val, rpeakg_cor_emin = rpeakg_cor_emin, rpeakg_cor_emax = rpeakg_cor_emax $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
                    , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
                    , use_stds = use_stds, std_star1 = std_star1, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
+                   , use_noisecut = use_noisecut, noisethresh_s = noisethresh_s, noisethresh_g = noisethresh_g $ ; # INPUT PARAMETERS 9 (noise threshold)
                    ; ################################################################################################################################################################################################################################################################
                    , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_rpeak_mode = iter_rpeak_mode, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
 
@@ -579,6 +580,25 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while(strlen(std_gas_str) lt max_string_len) do std_gas_str = std_gas_str + pad_string
 
 
+  ; #############################################
+  ; # INPUT PARAMETERS 9 (noise threshold)
+  ; #############################################
+
+
+  if n_elements(use_noisecut) ne 1 then use_noisecut =  0
+  if n_elements(noisethresh_s) ne 1 then noisethresh_s =  0.1
+  if n_elements(noisethresh_g) ne 1 then noisethresh_g =  0.1
+
+  use_noisecut_str = strcompress(string(use_noisecut))
+  noisethresh_s_str = strcompress(string(noisethresh_s))
+  noisethresh_g_str = strcompress(string(noisethresh_g))
+
+  max_string_len = max([strlen(use_noisecut_str), strlen(noisethresh_s_str), strlen(noisethresh_g_str)]) + comment_sep_length
+  max_string_len = max([max_string_len,22])
+
+  while(strlen(use_noisecut_str) lt max_string_len) do use_noisecut_str = use_noisecut_str + pad_string
+  while(strlen(use_noisecut_str) lt max_string_len) do use_noisecut_str = use_noisecut_str + pad_string
+  while(strlen(noisethresh_g_str) lt max_string_len) do noisethresh_g_str = noisethresh_g_str + pad_string
 
 
 
@@ -814,8 +834,16 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'std_star3       ', std_star3_str,      '# The measured standard deviation of starfile3 (only used of use_star3 = 1)'
   printf, inp_lun, 'std_gas         ', std_gas_str,        '# The measured standard deviation of gasfile'
 
+
+  printf, inp_lun, '# INPUT PARAMETERS 9 (noise threshold)'
+  printf, inp_lun, 'use_noisecut    ', use_noisecut_str,       '# [0] calculate standard deviations of images [1] Use supplied standard deviation measurements'
+  printf, inp_lun, 'noisethresh_s   ', noisethresh_s_str,       '# The measured standard deviation of starfile'
+  printf, inp_lun, 'noisethresh_g   ', noisethresh_g_str,      '# The measured standard deviation of starfile3 (only used of use_star3 = 1)'
+  printf, inp_lun, 'std_gas         ', std_gas_str,        '# The measured standard deviation of gasfile'
+
+
   if iter_input_switch eq 1 then begin ; create input file for iteration
-    printf, inp_lun, '# INPUT PARAMETERS 9 (Fourier diffuse removal iteration)'
+    printf, inp_lun, '# INPUT PARAMETERS 10 (Fourier diffuse removal iteration)'
     printf, inp_lun, 'use_guess       ', use_guess_str,      '#  [0] Do not Filter images before first KL14 run and ignore parameter: "initial_guess" [1] Filter images with initial guess of lambda before first KL14 run'
     printf, inp_lun, 'initial_guess   ', initial_guess_str,  '#  Length in pc of the initial estimate of lambda with which to filter the images'
     printf, inp_lun, 'iter_criterion  ', iter_criterion_str, '#  Fractional difference between lambda and previous lambda value(s) that triggers an end to the iteration process.'
