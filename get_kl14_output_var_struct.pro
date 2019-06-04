@@ -57,7 +57,8 @@ function get_kl14_output_var_struct, map_units
     {name:'zetagas', errors:1, plot_title_name:'zetagas',units:''}, $
     {name:'rpeakstar', errors:1, plot_title_name:'rpeakstar',units:''}, $
     {name:'rpeakgas', errors:1, plot_title_name:'rpeakgas',units:''}, $
-    {name:'vfb', errors:1, plot_title_name:'vfb',units:''}]
+    {name:'vfb', errors:1, plot_title_name:'vfb',units:''}, $
+    {name:'vfbr', errors:1, plot_title_name:'vfbr',units:''}]
 
   ; ********************************************
   ; get derived quantities (part 2: variables only present in output if map_units gt 0)
@@ -70,7 +71,9 @@ function get_kl14_output_var_struct, map_units
       {name:'etainst', errors:1, plot_title_name:'etainst',units:''}, $
       {name:'etaavg', errors:1, plot_title_name:'etaavg',units:''}, $
       {name:'chie', errors:1, plot_title_name:'chie',units:''}, $
-      {name:'chip', errors:1, plot_title_name:'chip',units:''}]
+      {name:'chier', errors:1, plot_title_name:'chier',units:''}, $
+      {name:'chip', errors:1, plot_title_name:'chip',units:''}, $
+      {name:'chipr', errors:1, plot_title_name:'chip',units:''}]
 
   endif
 
