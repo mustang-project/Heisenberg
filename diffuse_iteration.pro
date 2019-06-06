@@ -98,30 +98,14 @@ pro diffuse_iteration, master_inputfile
   ; ********************************
   ; CONVOLVE TO COMMON BEAM!!!!
   ; ********************************
-
-
-  getrot, master_starhdr, rotation, cdelt_var ; get cdelt value ; only single precision
-  if n_elements(cdelt_var) eq 2 && abs(abs(cdelt_var[0]) - abs(cdelt_var[1])) le astr_tolerance then begin
-    master_star_cdelt = mean(abs(cdelt_var))
-  endif else begin
-    print, "star image not square"
-    stop
-  endelse
-
   inclination_radians = inclination * !dtor ; inclination in radians
 
+
+  master_star_cdelt = get_platescale(master_starhdr, astr_tolerance)
   master_star_pix_to_pc = distance * tan(!dtor*master_star_cdelt)/sqrt(cos(inclination_radians))
 
 
-
-  getrot, master_gashdr, rotation, cdelt_var ; get cdelt value ; only single precision
-  if n_elements(cdelt_var) eq 2 && abs(abs(cdelt_var[0]) - abs(cdelt_var[1])) le astr_tolerance then begin
-    master_gas_cdelt = mean(abs(cdelt_var))
-  endif else begin
-    print, "gas image not square"
-    stop
-  endelse
-
+  master_gas_cdelt = get_platescale(master_gashdr, astr_tolerance)
   master_gas_pix_to_pc = distance*tan(!dtor*master_gas_cdelt)/sqrt(cos(inclination_radians))
 
   ; ******************************************************

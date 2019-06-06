@@ -70,15 +70,7 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
     image_double = 1
   endif
 
-
-  getrot, image_hdr, rotation, cdelt_var ; get cdelt value ; only single precision
-  if n_elements(cdelt_var) eq 2 && abs(abs(cdelt_var[0]) - abs(cdelt_var[1])) le astr_tolerance then begin
-    cdelt = mean(abs(cdelt_var))
-  endif else begin
-    print, "image not square"
-    stop
-  endelse
-
+  cdelt = get_platescale(image_hdr, astr_tolerance)
 
   pix_to_pc = distance*tan(!dtor*cdelt)/sqrt(cos(inclination))
 

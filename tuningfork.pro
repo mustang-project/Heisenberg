@@ -142,8 +142,7 @@ mask_tool, starfiletot $ ;image variables
     , header_output = starmaphdr $
     , convert = convert_masks, /run_without_masks
 
-cdeltstar=abs(sxpar(starmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdeltstar = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
+cdeltstar=get_platescale(starmaphdr, astr_tolerance)
 beamfits=sqrt(sxpar(starmaphdr, 'BMAJ', count=ct)*sxpar(starmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 databeam=beamtest
@@ -162,8 +161,7 @@ if use_star2 then begin
         , header_output = starmaphdr2 $
         , convert = convert_masks, /run_without_masks
 
-        cdeltstar2=abs(sxpar(starmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdeltstar2 = abs(sxpar(starmaphdr2,'CD1_1'))  ;try alternative CDELT
+        cdeltstar2=get_platescale(starmaphdr2, astr_tolerance)
         beamfits=sqrt(sxpar(starmaphdr2, 'BMAJ', count=ct)*sxpar(starmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -186,8 +184,7 @@ if use_star3 then begin
         , header_output = starmaphdr3 $
         , convert = convert_masks, /run_without_masks
 
-        cdeltstar3=abs(sxpar(starmaphdr3,'CDELT1',count=ct))
-        if ct eq 0 then cdeltstar3 = abs(sxpar(starmaphdr3,'CD1_1'))  ;try alternative CDELT
+        cdeltstar3=get_platescale(starmaphdr3, astr_tolerance)
         beamfits=sqrt(sxpar(starmaphdr3, 'BMAJ', count=ct)*sxpar(starmaphdr3, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif
@@ -206,8 +203,7 @@ mask_tool, gasfiletot $ ;image variables
     , header_output = gasmaphdr $
     , convert = convert_masks, /run_without_masks
 
-cdeltgas=abs(sxpar(gasmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdeltgas = abs(sxpar(gasmaphdr,'CD1_1'))  ;try alternative CDELT
+cdeltgas=get_platescale(gasmaphdr, astr_tolerance)
 beamfits=sqrt(sxpar(gasmaphdr, 'BMAJ', count=ct)*sxpar(gasmaphdr, 'BMIN', count=ct))
 beamtest=max([beamtest,beamfits])
 databeam=max([databeam,beamfits])
@@ -226,8 +222,7 @@ if use_gas2 then begin
         , header_output = gasmaphdr2 $
         , convert = convert_masks, /run_without_masks
 
-        cdeltgas2=abs(sxpar(gasmaphdr2,'CDELT1',count=ct))
-        if ct eq 0 then cdeltgas2 = abs(sxpar(gasmaphdr2,'CD1_1'))  ;try alternative CDELT
+        cdeltgas2=get_platescale(gasmaphdr2, astr_tolerance)
         beamfits=sqrt(sxpar(gasmaphdr2, 'BMAJ', count=ct)*sxpar(gasmaphdr2, 'BMIN', count=ct))
         beamtest=max([beamtest,beamfits])
 endif else begin
@@ -266,33 +261,33 @@ if regrid then begin
     if mask_images then regriddir = maskeddir else regriddir = resdir ;if images are masked, get them from corresponding directory
     if diffuse_frac && beamtest gt databeam then f_error,'Maximum beam of all images (inlcuding starmap2, starmap3 and gasmap2) is larger than the maximum beam of the two main images (starmap and gasmap). This will affect the resolution avaliable for Fourier filtering in the calculation of fcl and fgmc'
     if diffuse_frac then targetres=beammaxpc<apertures(peak_res) else targetres=apertures(peak_res) ; if calculating diffuse fraction then preserve at least worst beam resolution to maximise fourier resolution, else cut resolution to smallest aperture
-    starmap=smoothfits(distance,inclination,targetres,starfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+    starmap=smoothfits(distance,inclination,targetres,starfile,regriddir,griddir,max_sample,astr_tolerance,tophat=0,regrid=regrid)
     starfileshort=strmid(starfile,0,strpos(starfile,'.fits')) ;short name without extension
     starfile2short=strmid(starfile2,0,strpos(starfile2,'.fits')) ;short name without extension
     starfiletot=griddir+starfile ;Halpha map (total)
     starmap=readfits(starfiletot,hdr,/silent) ;read Halpha map
     starmaphdr=hdr ;header of Halpha map
     if use_star2 then begin
-        starmap2=smoothfits(distance,inclination,targetres,starfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+        starmap2=smoothfits(distance,inclination,targetres,starfile2,regriddir,griddir,max_sample,astr_tolerance,tophat=0,regrid=regrid)
         starfiletot2=griddir+starfile2 ;Halpha peak map
         starmap2=readfits(starfiletot2,hdr,/silent) ;read Halpha peak map
         starmaphdr2=hdr ;header of Halpha peak map
     endif
     if use_star3 then begin
-        starmap3=smoothfits(distance,inclination,targetres,starfile3,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+        starmap3=smoothfits(distance,inclination,targetres,starfile3,regriddir,griddir,max_sample,astr_tolerance,tophat=0,regrid=regrid)
         starfile3short=strmid(starfile3,0,strpos(starfile3,'.fits')) ;short name without extension
         starfiletot3=griddir+starfile3 ;FUV map
         starmap3=readfits(starfiletot3,hdr,/silent) ;read FUV map
         starmaphdr3=hdr ;header of FUV map
     endif
-    gasmap=smoothfits(distance,inclination,targetres,gasfile,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+    gasmap=smoothfits(distance,inclination,targetres,gasfile,regriddir,griddir,max_sample,astr_tolerance,tophat=0,regrid=regrid)
     gasfileshort=strmid(gasfile,0,strpos(gasfile,'.fits')) ;short name without extension
     gasfile2short=strmid(gasfile2,0,strpos(gasfile2,'.fits')) ;short name without extension
     gasfiletot=griddir+gasfile ;moment zero CO map (velocity mask for better flux estimate)
     gasmap=readfits(gasfiletot,hdr,/silent) ;read moment zero CO map
     gasmaphdr=hdr ;moment zero CO header
     if use_gas2 then begin
-        gasmap2=smoothfits(distance,inclination,targetres,gasfile2,regriddir,griddir,max_sample,tophat=0,regrid=regrid)
+        gasmap2=smoothfits(distance,inclination,targetres,gasfile2,regriddir,griddir,max_sample,astr_tolerance,tophat=0,regrid=regrid)
         gasfiletot2=griddir+gasfile2 ;moment zero CO map (signal mask for better peak ID)
         gasmap2=readfits(gasfiletot2,hdr,/silent) ;read moment zero CO peak map
         gasmaphdr2=hdr ;moment zero CO peak header
@@ -305,8 +300,7 @@ if regrid then begin
     centre=[centrefracx*(nx-1),centrefracy*(ny-1)] ;pixel coordinates of the galaxy centre in the regridded stellar map
 endif else centre=centre_orig
 
-cdelt=abs(sxpar(starmaphdr,'CDELT1',count=ct))
-if ct eq 0 then cdelt = abs(sxpar(starmaphdr,'CD1_1'))  ;try alternative CDELT
+cdelt=get_platescale(starmaphdr, astr_tolerance)
 pixtopc=distance*tan(!dtor*cdelt)/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
 if sqrt(2.)*pixtopc gt apertures(naperture-2) then f_error,'less than 2 aperture sizes exceed inclination-corrected pixel diagonal'
 if sqrt(2.)*pixtopc gt apertures(peak_res) then begin
@@ -436,21 +430,21 @@ endif
 
 if smoothen then begin
     print,' ==> smoothing data'
-    peakidstar=smoothfits(distance,inclination,apertures(peak_res),starfile2,griddir,peakdir,max_sample,tophat=0) ;generate Gaussian psf-smoothened Ha map for peak ID
-    peakidgas=smoothfits(distance,inclination,apertures(peak_res),gasfile2,griddir,peakdir,max_sample,tophat=0) ;generate Gaussian psf-smoothened gas map for peak ID
+    peakidstar=smoothfits(distance,inclination,apertures(peak_res),starfile2,griddir,peakdir,max_sample,astr_tolerance,tophat=0) ;generate Gaussian psf-smoothened Ha map for peak ID
+    peakidgas=smoothfits(distance,inclination,apertures(peak_res),gasfile2,griddir,peakdir,max_sample,astr_tolerance,tophat=0) ;generate Gaussian psf-smoothened gas map for peak ID
     smoothstar=dblarr([naperture,size(peakidstar,/dimensions)]) ;create Ha map array for different resolutions
     if use_star3 then smoothstar3=dblarr([naperture,size(peakidstar,/dimensions)]) ;create FUV map array for different resolutions
     smoothgas=dblarr([naperture,size(peakidstar,/dimensions)]) ;create gas map array for different resolutions
     smoothmask=dblarr([naperture,size(peakidstar,/dimensions)]) ;create total mask array for different resolutions
     for i=0,naperture-1 do begin ;generate smoothened maps
-        smoothstartemp=smoothfits(distance,inclination,apertures(i),starfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened Ha map
-        smoothgastemp=smoothfits(distance,inclination,apertures(i),gasfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened gas map
-        smoothmasktemp=smoothfits(distance,inclination,apertures(i),maskfile,maskeddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened mask
+        smoothstartemp=smoothfits(distance,inclination,apertures(i),starfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,astr_tolerance,tophat=tophat) ;get smoothened Ha map
+        smoothgastemp=smoothfits(distance,inclination,apertures(i),gasfile,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,astr_tolerance,tophat=tophat) ;get smoothened gas map
+        smoothmasktemp=smoothfits(distance,inclination,apertures(i),maskfile,maskeddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,astr_tolerance,tophat=tophat) ;get smoothened mask
         smoothstar(i,*,*)=smoothstartemp
         smoothgas(i,*,*)=smoothgastemp
         smoothmask(i,*,*)=smoothmasktemp
         if use_star3 then begin
-            smoothstar3temp=smoothfits(distance,inclination,apertures(i),starfile3,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,tophat=tophat) ;get smoothened FUV map
+            smoothstar3temp=smoothfits(distance,inclination,apertures(i),starfile3,griddir,rundir+'res_'+res(i)+'pc'+path_sep(),max_sample,astr_tolerance,tophat=tophat) ;get smoothened FUV map
             smoothstar3(i,*,*)=smoothstar3temp
         endif
     endfor
