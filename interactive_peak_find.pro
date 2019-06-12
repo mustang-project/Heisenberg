@@ -186,8 +186,9 @@ pro interactive_peak_find, peak_find_tui, $
 
 
 
-
-
+  ; write out final region files without displaying in a ds9 window
+  ds9_display_peaks, peakdir, starfile2short, star_window_title, starpeaks[*,0], starpeaks[*,1], /no_disp
+  ds9_display_peaks, peakdir, gasfile2short, gas_window_title, gaspeaks[*,0], gaspeaks[*,1], /no_disp
 
 
   ; write out final parameters

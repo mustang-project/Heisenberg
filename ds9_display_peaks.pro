@@ -1,4 +1,4 @@
-pro ds9_display_peaks, peakdir, x_file2short, window_name, x, y  ; , $
+pro ds9_display_peaks, peakdir, x_file2short, window_name, x, y, no_disp = no_disp  ; , $
   ; logspacing_x,logrange_x, nlevels_x, npixmin, nsigma
 
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
@@ -16,10 +16,11 @@ pro ds9_display_peaks, peakdir, x_file2short, window_name, x, y  ; , $
     free_lun, peaks_lun
   endif
 
-
-  image_path = strcompress(peakdir + x_file2short + '.fits', /remove_all )
-  spawn_command = 'ds9 ' + image_path + ' -regions load ' + region_filename + ' -title ' + window_name + ' & '
-  spawn, spawn_command
+  if n_elements(no_disp) ne 1 then begin
+    image_path = strcompress(peakdir + x_file2short + '.fits', /remove_all )
+    spawn_command = 'ds9 ' + image_path + ' -regions load ' + region_filename + ' -title ' + window_name + ' & '
+    spawn, spawn_command
+  endif
 
 
 end
