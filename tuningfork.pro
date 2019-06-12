@@ -557,24 +557,31 @@ if id_peaks then begin
       ; ########################################################################
       starpeaks, gaspeaks ; output variables with peaks
 
-    peaks=[starpeaks,gaspeaks]
-    sz=size(peaks)
-    sz_s=size(starpeaks)
-    sz_g=size(gaspeaks)
-    npeaks=sz(1) ;total number of all peaks
-    nstarpeaks=sz_s(1) ;total number of stellar peaks
-    ngaspeaks=sz_g(1) ;total number of gas peaks
 
-    includepeak=mask_arr(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
-    inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
-    inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
-    inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
-    peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
-    peakmeanradius=mean(peakradius(inclpeaks))
-    lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
-    lambda_map_star=2.*sqrt(totalarea/nincludepeak_star/!pi) ;geometric lambda from map area assuming points are randomly distributed
-    lambda_map_gas=2.*sqrt(totalarea/nincludepeak_gas/!pi) ;geometric lambda from map area assuming points are randomly distributed
-endif
+    save,filename=arrdir+'starpeaks.sav',starpeaks
+    save,filename=arrdir+'gaspeaks.sav',gaspeaks
+endif else begin
+    restore,filename=arrdir+'starpeaks.sav'
+    restore,filename=arrdir+'gaspeaks.sav'
+endelse
+
+peaks=[starpeaks,gaspeaks]
+sz=size(peaks)
+sz_s=size(starpeaks)
+sz_g=size(gaspeaks)
+npeaks=sz(1) ;total number of all peaks
+nstarpeaks=sz_s(1) ;total number of stellar peaks
+ngaspeaks=sz_g(1) ;total number of gas peaks
+
+includepeak=mask_arr(peaks(*,0),peaks(*,1)) eq 1 ;set to 1 when peak is in included pixel, otherwise set to 0
+inclpeaks=where(includepeak ne 0,nincludepeak) ;include peak? only if within specified radius interval
+inclstar=where(includepeak(0:nstarpeaks-1) ne 0,nincludepeak_star) ;included stellar peaks
+inclgas=where(includepeak(nstarpeaks:npeaks-1) ne 0,nincludepeak_gas)+nstarpeaks ;included gas peaks
+peakradius=sqrt(pixdistxpc(peaks(*,0),peaks(*,1))^2.+pixdistypc(peaks(*,0),peaks(*,1))^2.)
+peakmeanradius=mean(peakradius(inclpeaks))
+lambda_map=2.*sqrt(totalarea/nincludepeak/!pi) ;geometric lambda from map area assuming points are randomly distributed
+lambda_map_star=2.*sqrt(totalarea/nincludepeak_star/!pi) ;geometric lambda from map area assuming points are randomly distributed
+lambda_map_gas=2.*sqrt(totalarea/nincludepeak_gas/!pi) ;geometric lambda from map area assuming points are randomly distributed
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
