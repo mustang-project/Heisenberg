@@ -2,7 +2,7 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
   use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
   mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
-  set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, use_X11, log10_output, $;variable names of expected flags (4)
+  set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
   datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
   maskdir, star_ext_mask, star_int_mask, gas_ext_mask,gas_int_mask, star_ext_mask2 ,star_int_mask2, gas_ext_mask2, gas_int_mask2, star_ext_mask3, star_int_mask3, $ ;variable names of expected mask filenames
   unfiltdir, star_unfilt_file, gas_unfilt_file, $
@@ -13,10 +13,10 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   tstariso, tstariso_errmin, tstariso_errmax, tgasmini,tgasmaxi, tovermini, $ ;variable names of expected input parameters (4)
   nmc, ndepth, ntry, nphysmc, $ ;variable names of expected input parameters (5)
   use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $ ;variable names of expected input parameters (6)
-  convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
+  convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, star_tot_val, star_tot_err, gas_tot_val, gas_tot_err, $ ;variable names of expected input parameters (7)
   use_stds, std_star, std_star3, std_gas, $ ;variable names of expected input parameters (8)
   use_noisecut, noisethresh_s, noisethresh_g, $ ;variable names of expected input parameters (9)
-  use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (10)
+  use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_tot_mode_s, iter_tot_mode_g, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (10)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;READ INPUT FILE AND VERIFY;
@@ -44,7 +44,7 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','diffuse_frac','derive_phys','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
   expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
   expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
-  expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','use_X11','log10_output'] ;variable names of expected flags (4)
+  expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','star_tot_mode','gas_tot_mode','use_X11','log10_output'] ;variable names of expected flags (4)
   expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 
   expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
@@ -57,16 +57,16 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   expected_params4=['tstariso','tstariso_errmin','tstariso_errmax','tgasmini','tgasmaxi','tovermini'] ;variable names of expected input parameters (4)
   expected_params5=['nmc','ndepth','ntry','nphysmc'] ;variable names of expected input parameters (5)
   expected_params6=['use_unfilt_ims','diffuse_quant','filter_len_conv','emfrac_cor_mode','f_filter_type','bw_order', 'rpeak_cor_mode', 'rpeaks_cor_val', 'rpeaks_cor_emin', 'rpeaks_cor_emax', 'rpeakg_cor_val', 'rpeakg_cor_emin', 'rpeakg_cor_emax'] ;variable names of expected input parameters (6)
-  expected_params7=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','momratetomass'] ;variable names of expected input parameters (7)
+  expected_params7=['convstar','convstar_rerr','convgas','convgas_rerr','convstar3','convstar3_rerr','lighttomass','momratetomass','star_tot_val','star_tot_err','gas_tot_val','gas_tot_err'] ;variable names of expected input parameters (7)
   expected_params8=['use_stds','std_star','std_star3','std_gas'] ;variable names of expected input parameters (8)
   expected_params9=['use_noisecut','noisethresh_s','noisethresh_g'] ;variable names of expected input parameters (9)
   expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6,expected_params7,expected_params8,expected_params9] ;variable names of expected input parameters (all)
 
   n_min_vars = n_elements([expected_flags,expected_filenames,expected_masknames,expected_unfiltered,expected_params]) + 1 ; plus 1 for input file
   ; check for optional input parameters:
-  expected_params10=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_rpeak_mode','iter_autoexit', 'use_nice', 'nice_value'] ;variable names of expected input parameters (9)
+  expected_params10=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_rpeak_mode','iter_tot_mode_s','iter_tot_mode_g','iter_autoexit', 'use_nice', 'nice_value'] ;variable names of expected input parameters (9)
   if n_params() eq (n_min_vars + n_elements(expected_params10)) then begin
-    expected_params = [expected_params,expected_params9]
+    expected_params = [expected_params,expected_params10]
   endif else if n_params() gt n_min_vars then begin
     f_error,['Incorrect number of parameters supplied to read_kl14_input_file']
   endif

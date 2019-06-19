@@ -12,17 +12,16 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , mask_images = mask_images, regrid = regrid, smoothen = smoothen, sensitivity = sensitivity, id_peaks = id_peaks, calc_ap_flux = calc_ap_flux, generate_plot = generate_plot, get_distances = get_distances, calc_obs = calc_obs, calc_fit = calc_fit, diffuse_frac = diffuse_frac, derive_phys = derive_phys, write_output = write_output, cleanup = cleanup, autoexit = autoexit $ ; FLAGS 1 (keywords)'
                    , use_star2 = use_star2, use_gas2 = use_gas2, use_star3 = use_star3 $ ;  FLAGS 2 keywords
                    , mstar_ext1 = mstar_ext, mstar_int1 = mstar_int, mgas_ext1 = mgas_ext, mgas_int1 = mgas_int, mstar_ext2 = mstar_ext2, mstar_int2 = mstar_int2, mgas_ext2 = mgas_ext2, mgas_int2 = mgas_int2, mstar_ext3 = mstar_ext3, mstar_int3 = mstar_int3, convert_masks = convert_masks, cut_radius = cut_radius $ ; # FLAGS 3 (masking-related options) keywords ; note mstar_ext1 = mstar_ext etc. prevents ambigious keyword error
-                   , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11, log10_output = log10_output $ ; # FLAGS 4 (choose analysis options)
-
+                   , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, star_tot_mode = star_tot_mode, gas_tot_mode = gas_tot_mode,  use_X11 = use_X11, log10_output = log10_output $ ; # FLAGS 4 (choose analysis options)
                    , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
                    , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
                    , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
                    , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode, rpeak_cor_mode = rpeak_cor_mode, rpeaks_cor_val = rpeaks_cor_val, rpeaks_cor_emin = rpeaks_cor_emin, rpeaks_cor_emax = rpeaks_cor_emax, rpeakg_cor_val = rpeakg_cor_val, rpeakg_cor_emin = rpeakg_cor_emin, rpeakg_cor_emax = rpeakg_cor_emax $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
-                   , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
+                   , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass, star_tot_val = star_tot_val, star_tot_err = star_tot_err, gas_tot_val = gas_tot_val, gas_tot_err = gas_tot_err $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
                    , use_stds = use_stds, std_star1 = std_star1, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity) ; star_std1 prevents ambigious keywords
                    , use_noisecut = use_noisecut, noisethresh_s = noisethresh_s, noisethresh_g = noisethresh_g $ ; # INPUT PARAMETERS 9 (noise threshold)
                    ; ################################################################################################################################################################################################################################################################
-                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_rpeak_mode = iter_rpeak_mode, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
+                   , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_rpeak_mode = iter_rpeak_mode, iter_tot_mode_s = iter_tot_mode_s, iter_tot_mode_g = iter_tot_mode_g, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
 
 
 
@@ -273,6 +272,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
   if n_elements(tstar_incl) ne 1 then tstar_incl = 0
   if n_elements(peak_prof) ne 1 then peak_prof = 2
   if n_elements(map_units) ne 1 then map_units = 1
+  if n_elements(star_tot_mode) ne 1 then star_tot_mode = 0
+  if n_elements(gas_tot_mode) ne 1 then star_tot_mode = 0
   if n_elements(use_X11) ne 1 then use_X11 = 1
   if n_elements(log10_output) ne 1 then log10_output = 1
 
@@ -285,11 +286,13 @@ pro make_input_file, input_file_filepath   $ ; general variables
   tstar_incl_str = strcompress(string(tstar_incl))
   peak_prof_str = strcompress(string(peak_prof))
   map_units_str = strcompress(string(map_units))
+  star_tot_mode_str = strcompress(string(star_tot_mode))
+  gas_tot_mode_str = strcompress(string(gas_tot_mode))
   use_X11_str = strcompress(string(use_X11))
   log10_output_str = strcompress(string(log10_output))
 
 
-  max_string_len = max([strlen(set_centre_str), strlen(tophat_str), strlen(loglevels_str), strlen(peak_find_tui_str), strlen(flux_weight_str), strlen(calc_ap_area_str), strlen(tstar_incl_str), strlen(peak_prof_str), strlen(map_units_str), strlen(use_X11_str), strlen(log10_output_str)]) + comment_sep_length
+  max_string_len = max([strlen(set_centre_str), strlen(tophat_str), strlen(loglevels_str), strlen(peak_find_tui_str), strlen(flux_weight_str), strlen(calc_ap_area_str), strlen(tstar_incl_str), strlen(peak_prof_str), strlen(map_units_str), strlen(star_tot_mode_str), strlen(gas_tot_mode_str), strlen(use_X11_str), strlen(log10_output_str)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
 
@@ -302,6 +305,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while(strlen(tstar_incl_str) lt max_string_len) do tstar_incl_str = tstar_incl_str + pad_string
   while(strlen(peak_prof_str) lt max_string_len) do peak_prof_str = peak_prof_str + pad_string
   while(strlen(map_units_str) lt max_string_len) do map_units_str = map_units_str + pad_string
+  while(strlen(star_tot_mode_str) lt max_string_len) do star_tot_mode_str = star_tot_mode_str + pad_string
+  while(strlen(gas_tot_mode_str) lt max_string_len) do gas_tot_mode_str = gas_tot_mode_str + pad_string
   while(strlen(use_X11_str) lt max_string_len) do use_X11_str = use_X11_str + pad_string
   while(strlen(log10_output_str) lt max_string_len) do log10_output_str = log10_output_str + pad_string
 
@@ -532,6 +537,10 @@ pro make_input_file, input_file_filepath   $ ; general variables
   if n_elements(convstar3_rerr) ne 1 then convstar3_rerr =  0.
   if n_elements(lighttomass) ne 1 then lighttomass =  0.002
   if n_elements(momratetomass) ne 1 then momratetomass =  5.e-10
+  if n_elements(star_tot_val) ne 1 then star_tot_val =  1.0
+  if n_elements(star_tot_err) ne 1 then star_tot_err =  0.1
+  if n_elements(gas_tot_val) ne 1 then gas_tot_val =  1.0e9
+  if n_elements(gas_tot_err) ne 1 then gas_tot_err =  1.0e8
 
   convstar_str = strcompress(string(convstar))
   convstar_rerr_str = strcompress(string(convstar_rerr))
@@ -541,8 +550,12 @@ pro make_input_file, input_file_filepath   $ ; general variables
   convstar3_rerr_str = strcompress(string(convstar3_rerr))
   lighttomass_str = strcompress(string(lighttomass))
   momratetomass_str = strcompress(string(momratetomass))
+  star_tot_val_str = strcompress(string(star_tot_val))
+  star_tot_err_str = strcompress(string(star_tot_err))
+  gas_tot_val_str = strcompress(string(gas_tot_val))
+  gas_tot_err_str = strcompress(string(gas_tot_err))
 
-  max_string_len = max([strlen(convstar_str), strlen(convstar_rerr_str), strlen(convgas_str), strlen(convgas_rerr_str), strlen(convstar3_str), strlen(convstar3_rerr_str), strlen(lighttomass_str), strlen(momratetomass_str)]) + comment_sep_length
+  max_string_len = max([strlen(convstar_str), strlen(convstar_rerr_str), strlen(convgas_str), strlen(convgas_rerr_str), strlen(convstar3_str), strlen(convstar3_rerr_str), strlen(lighttomass_str), strlen(momratetomass_str), strlen(star_tot_val_str), strlen(star_tot_err_str), strlen(gas_tot_val_str), strlen(gas_tot_err_str)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
   while(strlen(convstar_str) lt max_string_len) do convstar_str = convstar_str + pad_string
@@ -553,6 +566,10 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while(strlen(convstar3_rerr_str) lt max_string_len) do convstar3_rerr_str = convstar3_rerr_str + pad_string
   while(strlen(lighttomass_str) lt max_string_len) do lighttomass_str = lighttomass_str + pad_string
   while(strlen(momratetomass_str) lt max_string_len) do momratetomass_str = momratetomass_str + pad_string
+  while(strlen(star_tot_val_str) lt max_string_len) do star_tot_val_str = star_tot_val_str + pad_string
+  while(strlen(star_tot_err_str) lt max_string_len) do star_tot_err_str = star_tot_err_str + pad_string
+  while(strlen(gas_tot_val_str) lt max_string_len) do gas_tot_val_str = gas_tot_val_str + pad_string
+  while(strlen(gas_tot_err_str) lt max_string_len) do gas_tot_err_str = gas_tot_err_str + pad_string
 
 
 
@@ -606,7 +623,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) -- Optional
   ; ##########################################################################################
   iter_input_switch = 0
-  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 && n_elements(iter_rpeak_mode) eq 1 && n_elements(iter_autoexit) eq 1 && n_elements(use_nice) eq 1 && n_elements(nice_value) eq 1 then begin
+  if n_elements(use_guess) eq 1 && n_elements(initial_guess) eq 1 && n_elements(iter_criterion) eq 1 && n_elements(iter_crit_len) eq 1 && n_elements(iter_nmax) eq 1 && n_elements(iter_filter) eq 1 && n_elements(iter_bwo) eq 1 && n_elements(iter_len_conv) eq 1 && n_elements(iter_rpeak_mode) eq 1 && n_elements(iter_tot_mode_s) eq 1 && n_elements(iter_tot_mode_g) eq 1  && n_elements(iter_autoexit) eq 1 && n_elements(use_nice) eq 1 && n_elements(nice_value) eq 1 then begin
     iter_input_switch = 1 ; use so don't need to repeat test
 
 
@@ -619,13 +636,15 @@ pro make_input_file, input_file_filepath   $ ; general variables
     iter_bwo_str = strcompress(string(iter_bwo))
     iter_len_conv_str = strcompress(string(iter_len_conv))
     iter_rpeak_mode_str = strcompress(string(iter_rpeak_mode))
+    iter_tot_mode_s_str = strcompress(string(iter_tot_mode_s))
+    iter_tot_mode_g_str = strcompress(string(iter_tot_mode_g))
     iter_autoexit_str = strcompress(string(iter_autoexit))
     use_nice_str = strcompress(string(use_nice))
     nice_value_str = strcompress(string(nice_value))
 
 
 
-    max_string_len = max([strlen(use_guess_str), strlen(initial_guess_str), strlen(iter_criterion_str), strlen(iter_crit_len_str), strlen(iter_nmax_str), strlen(iter_filter_str), strlen(iter_bwo_str), strlen(iter_len_conv_str), strlen(iter_rpeak_mode_str), strlen(iter_autoexit_str), strlen(max_string_len), strlen(use_nice_str), strlen(nice_value_str)])
+    max_string_len = max([strlen(use_guess_str), strlen(initial_guess_str), strlen(iter_criterion_str), strlen(iter_crit_len_str), strlen(iter_nmax_str), strlen(iter_filter_str), strlen(iter_bwo_str), strlen(iter_len_conv_str), strlen(iter_tot_mode_s_str), strlen(iter_tot_mode_g_str), strlen(iter_rpeak_mode_str), strlen(iter_autoexit_str), strlen(max_string_len), strlen(use_nice_str), strlen(nice_value_str)])
     max_string_len = max([max_string_len,22])
 
 
@@ -638,6 +657,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
     while(strlen(iter_bwo_str) lt max_string_len) do iter_bwo_str = iter_bwo_str + pad_string
     while(strlen(iter_len_conv_str) lt max_string_len) do iter_len_conv_str = iter_len_conv_str + pad_string
     while(strlen(iter_rpeak_mode_str) lt max_string_len) do iter_rpeak_mode_str = iter_rpeak_mode_str + pad_string
+    while(strlen(iter_tot_mode_s_str) lt max_string_len) do iter_tot_mode_s_str = iter_tot_mode_s_str + pad_string
+    while(strlen(iter_tot_mode_g_str) lt max_string_len) do iter_tot_mode_g_str = iter_tot_mode_g_str + pad_string
     while(strlen(iter_autoexit_str) lt max_string_len) do iter_autoexit_str = iter_autoexit_str + pad_string
     while(strlen(use_nice_str) lt max_string_len) do use_nice_str = use_nice_str + pad_string
     while(strlen(nice_value_str) lt max_string_len) do nice_value_str = nice_value_str + pad_string
@@ -743,6 +764,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'tstar_incl      ', tstar_incl_str,     '# [0, DEFAULT] Reference time-scale tstariso does not include the overlap phase (tstar=tstariso+tover); [1] tstariso includes the overlap phase (tstar=tstariso)'
   printf, inp_lun, 'peak_prof       ', peak_prof_str,      '# [0] Model independent regions as points; [1] Model independent regions as constant-surface density discs; [2, DEFAULT] Model independent regions as two-dimensional Gaussians'
   printf, inp_lun, 'map_units       ', map_units_str,      '# [0] Unknown, do not calculate derived quantities; [1, DEFAULT] star=SFR and gas=gas; [2] star=gas1 and gas=gas2; [3] star=SFR1 and gas=SFR2'
+  printf, inp_lun, 'star_tot_mode   ', star_tot_mode_str,  '# [0, DEFAULT] Use sfr/gas mass total for the stellar map calculated on the input map [1] use values of sfr/gas mass specified with the parameter star_tot_val'
+  printf, inp_lun, 'gas_tot_mode    ', gas_tot_mode_str,   '# [0, DEFAULT] Use sfr/gas mass total for the gas map calculated on the input map [1] use values of sfr/gas mass specified with the parameter gas_tot_val'
   printf, inp_lun, 'use_X11         ', use_X11_str,        '# [0] Not allowed to create X11 windows; [1] Allowed to create X11 windows'
   printf, inp_lun, 'log10_output    ', log10_output_str,   '# [0] Values of output parameters in output file: galaxy_output.dat are written a double precision floating point numbers [1] Values of output parameters in output file: galaxy_output.dat are written with as log10(value)'
 
@@ -826,7 +849,10 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'convstar3_rerr  ', convstar3_rerr_str, '# Relative error (sigma_x/x) of convstar3'
   printf, inp_lun, 'lighttomass     ', lighttomass_str,    '# Light-to-mass ratio of a desired feedback mechanism in m^2 s^-3 (default 0.002 is SNe)'
   printf, inp_lun, 'momratetomass   ', momratetomass_str,  '# Momentum output rate per unit mass of a desired feedback mechanism in m s^-2 (default 5.e-10 is SNe+winds)'
-
+  printf, inp_lun, 'star_tot_val    ', star_tot_val_str,   '# input value of the total sfr/gas mass of the star map (only used if star_tot_mode = 1)'
+  printf, inp_lun, 'star_tot_err    ', star_tot_err_str,   '# Error on the input value of the total sfr/gas mass of the star map (only used if star_tot_mode = 1)'
+  printf, inp_lun, 'gas_tot_val     ', gas_tot_val_str,    '# input value of the total sfr/gas mass of the gas map (only used if gas_tot_mode = 1)'
+  printf, inp_lun, 'gas_tot_err     ', gas_tot_err_str,    '# Error on the input value of the total sfr/gas mass of the gas map (only used if star_tot_mode = 1)'
 
   printf, inp_lun, '# INPUT PARAMETERS 8 (sensitivity)'
   printf, inp_lun, 'use_stds        ', use_stds_str,       '# [0] calculate standard deviations of images [1] Use supplied standard deviation measurements'
@@ -853,6 +879,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
     printf, inp_lun, 'iter_bwo        ', iter_bwo_str,       '#  The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_bwo = 0 [butterworth], but a dummy value should be supplied anyway)'
     printf, inp_lun, 'iter_len_conv   ', iter_len_conv_str,  '#  conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)'
     printf, inp_lun, 'iter_rpeak_mode ', iter_rpeak_mode_str,'# [0] use mode specified by rpeak_cor_mode [1] use rpeak values from iter0'
+    printf, inp_lun, 'iter_tot_mode_s', iter_tot_mode_s_str, '# [0, DEFAULT] Use the sfr/gas mass total for the stellar map calculated on the input map of each iteration [1] Use the sfr/gas mass total for the stellar map calculated on the initial iteration for all subsequent iterations [2] Use the sfr/gas mass total for the stellar map specified by the parameter star_tot_val for all iterations'
+    printf, inp_lun, 'iter_tot_mode_g', iter_tot_mode_g_str, '# [0, DEFAULT] Use the sfr/gas mass total for the gas map calculated on the input map of each iteration [1] Use the sfr/gas mass total for the gas map calculated on the initial iteration for all subsequent iterations [2] Use the sfr/gas mass total for the gas map specified by the parameter star_tot_val for all iterations'
     printf, inp_lun, 'iter_autoexit   ', iter_autoexit_str,  '# Exit IDL automatically upon successful iteration run completion (on/off)'
     printf, inp_lun, 'use_nice        ', use_nice_str,       '# (on/off) Use the "nice" command when spawning KL14 runs to the terminal to adjust the process priority. Note that this may not work depending on the system configuration'
     printf, inp_lun, 'nice_value      ', nice_value_str,     '# Value of the priority adjustment must be an integer between -20 (the highest) to 19 (the lowest). (Note this varies according to the implementation of nice)'

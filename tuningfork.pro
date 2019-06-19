@@ -75,7 +75,7 @@ read_kl14_input_file, inputfile, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
   use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
   mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
-  set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, use_X11, log10_output, $;variable names of expected flags (4)
+  set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
   datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
   maskdir, star_ext_mask, star_int_mask, gas_ext_mask,gas_int_mask, star_ext_mask2 ,star_int_mask2, gas_ext_mask2, gas_int_mask2, star_ext_mask3, star_int_mask3, $ ;variable names of expected mask filenames
   unfiltdir, star_unfilt_file, gas_unfilt_file, $
@@ -85,7 +85,7 @@ read_kl14_input_file, inputfile, $ ; input_file_filepath
   tstariso, tstariso_errmin, tstariso_errmax, tgasmini,tgasmaxi, tovermini, $ ;variable names of expected input parameters (4)
   nmc, ndepth, ntry, nphysmc, $ ;variable names of expected input parameters (5)
   use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $ ;variable names of expected input parameters (6)
-  convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
+  convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, star_tot_val, star_tot_err, gas_tot_val, gas_tot_err, $ ;variable names of expected input parameters (7)
   use_stds, std_star, std_star3, std_gas
 
 if use_X11 then begin ;set window properties
@@ -403,24 +403,58 @@ if regrid then begin
     endif else f_error,['for masks to be propogated between images, all images must share the same astrometry','set regrid=1 in the parameter file to regrid images']
 endif
 if map_units eq 1 then begin
-    sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
-    sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
-    mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
+    if star_tot_mode eq 1 then begin
+        sfr_galaxy=star_tot_val
+        sfr_galaxy_err=star_tot_err
+    endif else begin
+        sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
+        sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
+    endelse
+
+    if gas_tot_mode eq 1 then begin
+        mgas_galaxy=gas_tot_val
+        mgas_galaxy_err=gas_tot_err
+    endif else begin
+        mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
+        mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
+    endelse
+
     tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.))/1.d9 ;gas depletion time + 1sigma
     if tgasmaxi gt tdeplmax*1.d3 then tgasmaxi=tdeplmax*1.d3 ;tgas cannot exceed the gas depletion time
 endif
 if map_units eq 2 then begin
-    mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
-    mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
-    mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
-    mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
+    if star_tot_mode eq 1 then begin
+        mgas_galaxy1=star_tot_val
+        mgas_galaxy1_err=star_tot_err
+    endif else begin
+        mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
+        mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
+    endelse
+
+    if gas_tot_mode eq 1 then begin
+        mgas_galaxy2=gas_tot_val
+        mgas_galaxy2_err=gas_tot_err
+    endif else begin
+      mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
+      mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
+    endelse
 endif
 if map_units eq 3 then begin
-    sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
-    sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
-    sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
-    sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
+    if star_tot_mode eq 1 then begin
+        sfr_galaxy1=star_tot_val
+        sfr_galaxy1_err=star_tot_err
+    endif else begin
+        sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
+        sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
+    endelse
+
+    if gas_tot_mode eq 1 then begin
+        sfr_galaxy2=gas_tot_val
+        sfr_galaxy2_err=gas_tot_err
+    endif else begin
+      sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
+      sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
+    endelse
 endif
 
 

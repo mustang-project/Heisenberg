@@ -15,7 +15,7 @@ pro diffuse_iteration, master_inputfile
     mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
     use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
     mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
-    set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, use_X11, log10_output, $;variable names of expected flags (4)
+    set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
     datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
     maskdir, star_ext_mask, star_int_mask, gas_ext_mask,gas_int_mask, star_ext_mask2 ,star_int_mask2, gas_ext_mask2, gas_int_mask2, star_ext_mask3, star_int_mask3, $ ;variable names of expected mask filenames
     unfiltdir, star_unfilt_file, gas_unfilt_file, $
@@ -25,11 +25,10 @@ pro diffuse_iteration, master_inputfile
     tstariso, tstariso_errmin, tstariso_errmax, tgasmini,tgasmaxi, tovermini, $ ;variable names of expected input parameters (4)
     nmc, ndepth, ntry, nphysmc, $ ;variable names of expected input parameters (5)
     use_unfilt_ims, diffuse_quant, filter_len_conv, emfrac_cor_mode, f_filter_type, bw_order, rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $ ;variable names of expected input parameters (6)
-    convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, $ ;variable names of expected input parameters (7)
+    convstar, convstar_rerr, convgas, convgas_rerr,convstar3, convstar3_rerr ,lighttomass, momratetomass, star_tot_val, star_tot_err, gas_tot_val, gas_tot_err, $ ;variable names of expected input parameters (7)
     use_stds, std_star, std_star3, std_gas, $ ;variable names of expected input parameters (8)
     use_noisecut, noisethresh_s, noisethresh_g, $ ;variable names of expected input parameters (9)
-    use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (10)
-
+    use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_tot_mode_s, iter_tot_mode_g, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (10)
 
   ; ******************************************************
   ; create master directory for iterations
@@ -277,6 +276,14 @@ pro diffuse_iteration, master_inputfile
   iter_num = 0
   while(iter_break eq 0 && iter_num lt iter_nmax) do begin
 
+
+    ; **********************
+    ; * ensure individual modes match the selected iteration modes
+    ; **********************
+    if iter_tot_mode_s eq 0 || iter_tot_mode_s eq 1 then star_tot_mode = 0 else if iter_tot_mode_s eq 2 then star_tot_mode = 1
+    if iter_tot_mode_g eq 0 || iter_tot_mode_g eq 1 then gas_tot_mode = 0 else if iter_tot_mode_g eq 2 then gas_tot_mode = 1
+
+
     input_file_name = strcompress(ifile_shortname + '_iter' + string(iter_num), /remove_all)
     input_file_filepath = strcompress(master_rundir + input_file_name, /remove_all)
     ; **********************
@@ -292,12 +299,12 @@ pro diffuse_iteration, master_inputfile
      , unfiltdir = unfiltdir, star_unfilt_file = star_unfilt_file, gas_unfilt_file = gas_unfilt_file $ ; unfiltered image keywords
      , use_star2 = use_star2, use_gas2 = use_gas2, use_star3 = use_star3 $ ;  FLAGS 2 keywords
      , mstar_ext1 = mstar_ext, mstar_int1 = mstar_int, mgas_ext1 = mgas_ext, mgas_int1 = mgas_int, mstar_ext2 = mstar_ext2, mstar_int2 = mstar_int2, mgas_ext2 = mgas_ext2, mgas_int2 = mgas_int2, mstar_ext3 = mstar_ext3, mstar_int3 = mstar_int3, convert_masks = convert_masks, cut_radius = cut_radius $ ; # FLAGS 3 (masking-related options) keywords ; note mstar_ext1 = mstar_ext etc. prevents ambigious keyword error
-     , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, use_X11 = use_X11, log10_output = log10_output $ ; # FLAGS 4 (choose analysis options)
+     , set_centre = set_centre, tophat = tophat, loglevels = loglevels, peak_find_tui = peak_find_tui, flux_weight = flux_weight, calc_ap_area = calc_ap_area, tstar_incl = tstar_incl, peak_prof = peak_prof, map_units = map_units, star_tot_mode = star_tot_mode, gas_tot_mode = gas_tot_mode,  use_X11 = use_X11, log10_output = log10_output $ ; # FLAGS 4 (choose analysis options)
      , npixmin = npixmin, nsigma = nsigma, logrange_s = logrange_s, logspacing_s = logspacing_s, logrange_g = logrange_g, logspacing_g = logspacing_g, nlinlevel_s = nlinlevel_s, nlinlevel_g = nlinlevel_g $ ; # INPUT PARAMETERS 3 (peak identification)
      , tstariso_val = tstariso, tstariso_errmin = tstariso_errmin, tstariso_errmax = tstariso_errmax, tgasmini = tgasmini, tgasmaxi = tgasmaxi, tovermini = tovermini $ ; # INPUT PARAMETERS 4 (timeline) ; note tstariso_val = tstariso prevents ambigious keyword error
      , nmc = nmc, ndepth = ndepth, ntry = ntry, nphysmc = nphysmc $ ; # INPUT PARAMETERS 5 (fitting)
      , use_unfilt_ims, diffuse_quant, f_filter_type, bw_order, filter_len_conv, emfrac_cor_mode, rpeak_cor_mode = rpeak_cor_mode, rpeaks_cor_val = rpeaks_cor_val, rpeaks_cor_emin = rpeaks_cor_emin, rpeaks_cor_emax = rpeaks_cor_emax, rpeakg_cor_val = rpeakg_cor_val, rpeakg_cor_emin = rpeakg_cor_emin, rpeakg_cor_emax = rpeakg_cor_emax $ ; # INPUT PARAMETERS 6 (Fourier filtering for diffuse gas calculation)
-     , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass $ ; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
+     , convstar_val = convstar, convstar_rerr = convstar_rerr, convgas_val = convgas, convgas_rerr = convgas_rerr, convstar3_val = convstar3, convstar3_rerr = convstar3_rerr, lighttomass = lighttomass, momratetomass = momratetomass, star_tot_val = star_tot_val, star_tot_err = star_tot_err, gas_tot_val = gas_tot_val, gas_tot_err = gas_tot_err $; # INPUT PARAMETERS 6 (conversions and constants to calculate derived quantities) ; note convgas_val = convgas avoids % Ambiguous keyword abbreviation: CONVGAS.
      , use_stds = use_stds, std_star1 = std_star, std_star3 = std_star3, std_gas = std_gas $ ; # INPUT PARAMETERS 8 (sensitivity)
      , use_noisecut = use_noisecut, noisethresh_s = noisethresh_s, noisethresh_g = noisethresh_g ; # INPUT PARAMETERS 9 (noise threshold)
 
@@ -340,6 +347,46 @@ pro diffuse_iteration, master_inputfile
       rpeakg_cor_emin = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakgas_errmin', /fold_case)))[iter_num]
       rpeakg_cor_emax = output_vals_struct.(where(strcmp(vals_tag_names,'rpeakgas_errmax', /fold_case)))[iter_num]
     endif
+
+
+
+    ; ************************************************
+    ; *** check if star_tot_val and gas_tot_val from iter0 should be used in future iterations
+    ; ************************************************
+    if iter_tot_mode_s eq 1 && iter_num eq 0 then begin
+      star_tot_mode = 1
+      if map_units eq 1 then begin
+        star_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy', /fold_case)))[iter_num]
+        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+      endif else if map_units eq 2 then begin
+        star_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy1', /fold_case)))[iter_num]
+        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy1_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+      endif else if map_units eq 3 then begin
+        star_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy1', /fold_case)))[iter_num]
+        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy1_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+      endif
+    endif
+
+
+
+
+
+    if iter_tot_mode_g eq 1 && iter_num eq 0 then begin
+      gas_tot_mode = 1
+      if map_units eq 1 then begin
+        gas_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy', /fold_case)))[iter_num]
+        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+      endif else if map_units eq 2 then begin
+        gas_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy2', /fold_case)))[iter_num]
+        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy2_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+      endif else if map_units eq 3 then begin
+        gas_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy2', /fold_case)))[iter_num]
+        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy2_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+      endif
+    endif
+
+
+
 
     ; ********************************************
     ; * handle interactive peak ID
