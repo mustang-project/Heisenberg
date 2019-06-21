@@ -280,9 +280,10 @@ pro diffuse_iteration, master_inputfile
     ; **********************
     ; * ensure individual modes match the selected iteration modes
     ; **********************
-    if iter_tot_mode_s eq 0 || iter_tot_mode_s eq 1 then star_tot_mode = 0 else if iter_tot_mode_s eq 2 then star_tot_mode = 1
-    if iter_tot_mode_g eq 0 || iter_tot_mode_g eq 1 then gas_tot_mode = 0 else if iter_tot_mode_g eq 2 then gas_tot_mode = 1
-
+    if iter_num eq 0 then begin ; only make this check on the 1st iteration or get stuck calculating on the input map 
+      if iter_tot_mode_s eq 0 || iter_tot_mode_s eq 1 then star_tot_mode = 0 else if iter_tot_mode_s eq 2 then star_tot_mode = 1
+      if iter_tot_mode_g eq 0 || iter_tot_mode_g eq 1 then gas_tot_mode = 0 else if iter_tot_mode_g eq 2 then gas_tot_mode = 1
+    endif
 
     input_file_name = strcompress(ifile_shortname + '_iter' + string(iter_num), /remove_all)
     input_file_filepath = strcompress(master_rundir + input_file_name, /remove_all)
