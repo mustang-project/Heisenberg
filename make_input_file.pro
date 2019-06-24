@@ -614,7 +614,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
   max_string_len = max([max_string_len,22])
 
   while(strlen(use_noisecut_str) lt max_string_len) do use_noisecut_str = use_noisecut_str + pad_string
-  while(strlen(use_noisecut_str) lt max_string_len) do use_noisecut_str = use_noisecut_str + pad_string
+  while(strlen(noisethresh_s_str) lt max_string_len) do noisethresh_s_str = noisethresh_s_str + pad_string
   while(strlen(noisethresh_g_str) lt max_string_len) do noisethresh_g_str = noisethresh_g_str + pad_string
 
 
@@ -863,9 +863,9 @@ pro make_input_file, input_file_filepath   $ ; general variables
 
   printf, inp_lun, '# INPUT PARAMETERS 9 (noise threshold)'
   printf, inp_lun, 'use_noisecut    ', use_noisecut_str,       '# [0] calculate standard deviations of images [1] Use supplied standard deviation measurements'
-  printf, inp_lun, 'noisethresh_s   ', noisethresh_s_str,       '# The measured standard deviation of starfile'
+  printf, inp_lun, 'noisethresh_s   ', noisethresh_s_str,      '# The measured standard deviation of starfile'
   printf, inp_lun, 'noisethresh_g   ', noisethresh_g_str,      '# The measured standard deviation of starfile3 (only used of use_star3 = 1)'
-  printf, inp_lun, 'std_gas         ', std_gas_str,        '# The measured standard deviation of gasfile'
+  printf, inp_lun, 'std_gas         ', std_gas_str,            '# The measured standard deviation of gasfile'
 
 
   if iter_input_switch eq 1 then begin ; create input file for iteration
