@@ -71,6 +71,9 @@
 .com fourier_power_fraction_vec
 .com fourier_power_fraction
 .com power_fraction_calc
+.com get_clfind_peaks_filename
+.com fourier_overlap_correction
+.com med_peak_relative_nearest_neighbour_dist_calc
 
 .com calc_levels
 .com ds9_display_peaks

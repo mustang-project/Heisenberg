@@ -120,7 +120,10 @@ end
 function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc,tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                     surfglobals,surfglobalg,surfcontrasts,surfcontrastg,apertures_star,apertures_gas,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units, $
                     emfrac_cor_mode, filter_choice, filter_len_conv, $
-                    rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax
+                    rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $
+                    star_peakid_file, gas_peakid_file ; filenames for clumpfind peak files
+
+
 
     if map_units eq 1 then complete=1 else complete=0
 
@@ -167,7 +170,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     endif
 
 
-    if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+    if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  || emfrac_cor_mode eq 5 then begin
       cut_len_temp = filter_len_conv * lambda
 
       if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
@@ -187,12 +190,25 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
       qcongas = 1.0d0
     endelse
     if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
-
+      print, 'WARNING: corrections for the flux loss due to overlap based on zeta are depreciated switch to emfrac_cor_mode = 4 or 5'
       qzetastar = fourier_zeta_correction(filter_choice, etastar)
       qzetagas = fourier_zeta_correction(filter_choice, etagas)
 
       fcl  /=  qzetastar ; zeta correction
       fgmc  /= qzetagas ; zeta correction
+    endif else if emfrac_cor_mode eq 4 || emfrac_cor_mode eq 5  then begin
+      ; qzetastar = fourier_overlap_correction(filter_choice, star_peakid_file)
+      ; qzetagas = fourier_overlap_correction(filter_choice, gas_peakid_file)
+
+      ; print, 'WARNING: corrections for the flux loss due to overlap based on peak distance are in a testing mode'
+      ; dist_med_star = med_peak_relative_nearest_neighbour_dist_calc(star_peakid_file) ; keep to avoid repeated computation
+      ; dist_med_gas = med_peak_relative_nearest_neighbour_dist_calc(gas_peakid_file) ; keep to avoid repeated computation
+
+      qzetastar = fourier_overlap_correction(filter_choice, star_peakid_file) ; currently this is not recalculated
+      qzetagas = fourier_overlap_correction(filter_choice, gas_peakid_file) ; currently this is not recalculated
+
+      fcl  /=  qzetastar ; overlap correction
+      fgmc  /= qzetagas ; overlap correction
     endif else begin
       qzetastar = 1.0d0
       qzetagas = 1.0d0
@@ -384,7 +400,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
 
         endif
 
-        if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3  then begin
+        if emfrac_cor_mode eq 1 || emfrac_cor_mode eq 3 || emfrac_cor_mode eq 5  then begin
           cut_len_temp = filter_len_conv * lambdamc[i]
 
           ; if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
@@ -413,12 +429,24 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
           qcongasmc[i] = 1.0d0
         endelse
         if emfrac_cor_mode eq 2 || emfrac_cor_mode eq 3  then begin
-
           qzetastarmc[i] = fourier_zeta_correction(filter_choice, etastarmc[i])
           qzetagasmc[i] = fourier_zeta_correction(filter_choice, etagasmc[i])
 
           fclmc[i]  /=  qzetastarmc[i] ; zeta correction
           fgmcmc[i]  /= qzetagasmc[i] ; zeta correction
+        endif else if emfrac_cor_mode eq 4 || emfrac_cor_mode eq 5  then begin
+          ; qzetastarmc[i] = fourier_overlap_correction(filter_choice, star_peakid_file)
+          ; qzetagasmc[i] = fourier_overlap_correction(filter_choice, gas_peakid_file)
+          ;
+          ; fclmc[i]  /=  qzetastarmc[i] ; overlap correction
+          ; fgmcmc[i]  /= qzetagasmc[i] ; overlap correction
+
+
+          qzetastarmc[i] = qzetastar ; currently invariant switch to rpeak method
+          qzetagasmc[i] = qzetagas ; currently invariant switch to rpeak method
+
+          fclmc[i]  /=  qzetastarmc[i] ; overlap correction
+          fgmcmc[i]  /= qzetagasmc[i] ; overlap correction
         endif else begin
           qzetastarmc[i] = 1.0d0
           qzetagasmc[i] = 1.0d0

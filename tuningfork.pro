@@ -1195,6 +1195,10 @@ if derive_phys then begin
         surfgas=sfr_galaxy2/totalarea
         surfgas_err=sfr_galaxy2_err/totalarea
     endif
+
+    ; peak id filename for diffuse correction
+    star_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(starfile2short), /remove_all)
+    gas_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(gasfile2short), /remove_all)
     if map_units gt 0 then begin
         ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err]+tiny
 
@@ -1202,12 +1206,14 @@ if derive_phys then begin
                        tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                        surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
                        lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units, emfrac_cor_mode, filter_choice,filter_len_conv, $
-                       rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax)
+                       rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $
+                       star_peakid_file, gas_peakid_file)
     endif else der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
                    tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                    surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
                    lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units,emfrac_cor_mode, filter_choice,filter_len_conv, $
-                   rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax)
+                   rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $
+                   star_peakid_file, gas_peakid_file)
     fit[2:3]=der[1:2]
     fit[5:6]=der[4:5]
     der=der[6:n_elements(der)-1]

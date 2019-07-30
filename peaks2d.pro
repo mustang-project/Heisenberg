@@ -11,7 +11,7 @@ function peaks2d,map,levels=levels,log=log,fluxweight=fluxweight,npixmin=npixmin
     if log then clfind2d,file=map,levels=levels,/log,npixmin=npixmin else clfind2d,file=map,levels=levels,npixmin=npixmin
 
     clstats2d,file=map,log=log,/silent,fluxweight=fluxweight
-    file=map+'_peaks.dat'
+    file = get_clfind_peaks_filename(map)
     nlines=min(file_lines(file)-8)
     if nlines le 2 then begin
       if n_elements(peak_find_tui) eq 1 && peak_find_tui eq 1 then return, 'TOOFEWLINES' else  f_error,'insufficient number of peaks identified ('+f_string(nlines,0)+')' ;analysis fundamentally does not work if number of peaks is 2 or less
