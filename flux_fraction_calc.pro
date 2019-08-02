@@ -7,7 +7,10 @@ pro flux_fraction_calc, kernel, butterworth_order, pass  $ ; description of the 
                       , lambda $
                       , gas_flux_frac, star_flux_frac $
                       , gas_flux_frac_arr , star_flux_frac_arr $
-                      , save_arrays = save_arrays
+                      , save_arrays = save_arrays $
+                      , gas_noise_threshold = gas_noise_threshold $
+                      , star_noise_threshold = star_noise_threshold $
+                      , mask_file = mask_file
 ;----------------------------------------------------------------------------------------
 ; calculates the non-diffuse-fraction in a .fits image over the range of values of lambda
 ; NOTE errors and multiple cut-lengths not compatible -> innefficient multi-fft for multi-cuts
@@ -55,14 +58,19 @@ pro flux_fraction_calc, kernel, butterworth_order, pass  $ ; description of the 
     , distance, inclination, astr_tolerance $
     , fourier_length_conv $  ; fourier length conversion factor
     , cut_length $ ; lambda (minimal call without error calculation)
-    , gas_flux_frac
+    , gas_flux_frac $
+    , noise_threshold = gas_noise_threshold $
+    , mask_file = mask_file
+
 
   fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of the filter   $
     , masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
     , distance, inclination, astr_tolerance $
     , fourier_length_conv $  ; fourier length conversion factor
     , cut_length $ ; lambda (minimal call without error calculation)
-    , star_flux_frac
+    , star_flux_frac $
+    , noise_threshold = star_noise_threshold $
+    , mask_file = mask_file
 
   ; ************************************************
   ; evaluate flux fractions over lambdaarr values
@@ -76,15 +84,19 @@ pro flux_fraction_calc, kernel, butterworth_order, pass  $ ; description of the 
     , distance, inclination, astr_tolerance $
     , fourier_length_conv $  ; fourier length conversion factor
     , cut_lengths $ ; lambda (minimal call without error calculation)
-    , gas_flux_frac_arr
+    , gas_flux_frac_arr $
+    , noise_threshold = gas_noise_threshold $
+    , mask_file = mask_file
+
 
   fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of the filter   $
     , masked_path_star $ ; input image (use masked image, but not regridded/smoothened)
     , distance, inclination, astr_tolerance $
     , fourier_length_conv $  ; fourier length conversion factor
     , cut_lengths $ ; lambda (minimal call without error calculation)
-    , star_flux_frac_arr
-
+    , star_flux_frac_arr $
+    , noise_threshold = star_noise_threshold $
+    , mask_file = mask_file
 
     if save_arrays eq 1 then begin
       save, filename = array_dir + 'fgmcarr.sav', gas_flux_frac_arr ; fgmc is kl14 naming convention

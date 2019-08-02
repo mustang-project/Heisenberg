@@ -7,7 +7,9 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
                             , flux_frac, diffuse_frac $ ; output flux and diffuse fraction
                             , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
                             , diffuse_frac_errmax = diffuse_frac_errmax, diffuse_frac_errmin = diffuse_frac_errmin $ ; output diffuse fraction errors
-                            , flux_frac_errmax = flux_frac_errmax, flux_frac_errmin = flux_frac_errmin ; output flux fraction errors
+                            , flux_frac_errmax = flux_frac_errmax, flux_frac_errmin = flux_frac_errmin $ ; output flux fraction errors
+                            , noise_threshold = noise_threshold $
+                            , mask_file = mask_file
 ;----------------------------------------------------------------------------------------
 ; calculates the diffuse fraciton in a .fits image
 ; NOTE errors and multiple cut-lengths not compatible -> innefficient multi-fft for multi-cuts
@@ -81,9 +83,12 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
     pixel_cut_length_max = ((lambda + lambda_errmax)/pix_to_pc) * fourier_length_conv ; convert from pc to pixels and then apply length conversion factor
   endif
 
-
-  image_total = total(image_arr, /nan)
-
+  if n_elements(mask_file) eq 1 then begin
+    mask_arr = readfits(mask_file, mask_hdr)
+    image_total = total(image_arr*mask_arr, /nan)
+  endif else begin
+    image_total = total(image_arr, /nan)
+  endelse
   ; ************************************************
   ; cut_length = lambda
   ; ************************************************
@@ -95,6 +100,13 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
      , filtered_image_arr = filtered_image_arr $ ; filtered image output variablse
      , filtered_image_path = filtered_image_path ; filtered image output paths
 
+    if n_elements(noise_threshold) eq 1 then apply_image_threshold, filtered_image_arr, noise_threshold, /zero_negatives ; apply an image threshold
+    ; print, "cats"
+    ; stop
+    if n_elements(mask_file) eq 1 then begin
+      ; mask_arr = readfits(mask_file, mask_hdr)
+      filtered_image_arr *= mask_arr ; apply the mask
+    endif
     lambda_mid_total = total(filtered_image_arr[where(filtered_image_arr ge zero_flux)], /nan) ; total of only non_negative flux
     lambda_mid_frac = lambda_mid_total/image_total ; % remaining flux
   endif else if n_elements(pixel_cut_length_mid) gt 1 then begin
@@ -112,6 +124,11 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
         , filtered_image_arr = filtered_image_arr $ ; filtered image output variablse
         , filtered_image_path = filtered_image_path ; filtered image output paths
 
+      if n_elements(noise_threshold) eq 1 then apply_image_threshold, filtered_image_arr, noise_threshold, /zero_negatives ; apply an image threshold
+      if n_elements(mask_file) eq 1 then begin
+        ; mask_arr = readfits(mask_file, mask_hdr)
+        filtered_image_arr *= mask_arr ; apply the mask
+      endif
       lambda_mid_total = total(filtered_image_arr[where(filtered_image_arr ge zero_flux)], /nan) ; total of only non_negative flux
       lambda_mid_frac[ii] = lambda_mid_total/image_total ; % remaining flux
     endfor
@@ -131,6 +148,11 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
                       , filtered_image_arr = filtered_image_arr, filtered_image_hdr = filtered_image_hdr $ ; filtered image output variablse
                       , filtered_image_path = filtered_image_path ; filtered image output paths
 
+    if n_elements(noise_threshold) eq 1 then apply_image_threshold, filtered_image_arr, noise_threshold, /zero_negatives ; apply an image threshold
+    if n_elements(mask_file) eq 1 then begin
+      ; mask_arr = readfits(mask_file, mask_hdr)
+      filtered_image_arr *= mask_arr ; apply the mask
+    endif
     lambda_max_total = total(filtered_image_arr[where(filtered_image_arr ge zero_flux)], /nan) ; total of only non_negative flux (have to remove negative flux else lambda_max_total~0 due to removal of dc component )
     lambda_max_frac = lambda_max_total/image_total
   endif
@@ -145,6 +167,11 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
                       , filtered_image_arr = filtered_image_arr, filtered_image_hdr = filtered_image_hdr $ ; filtered image output variablse
                       , filtered_image_path = filtered_image_path ; filtered image output paths
 
+    if n_elements(noise_threshold) eq 1 then apply_image_threshold, filtered_image_arr, noise_threshold, /zero_negatives ; apply an image threshold
+    if n_elements(mask_file) eq 1 then begin
+      ; mask_arr = readfits(mask_file, mask_hdr)
+      filtered_image_arr *= mask_arr ; apply the mask
+    endif
     lambda_min_total = total(filtered_image_arr[where(filtered_image_arr ge zero_flux)], /nan) ; total of only non_negative flux
     lambda_min_frac = lambda_min_total/image_total   ; minimum signal flux left -> max diffuse flux removed
   endif

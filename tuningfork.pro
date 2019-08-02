@@ -1042,7 +1042,10 @@ if diffuse_frac eq 1 then begin
       ;
 
 
-
+      if n_elements(use_noisecut) eq 1 && use_noisecut eq 1 then begin
+        star_noise_threshold = noisethresh_s
+        gas_noise_threshold = noisethresh_g
+      endif
 
 
       flux_fraction_calc, filter_choice, bw_order, 'high' $ ; description of the filter   $
@@ -1053,7 +1056,12 @@ if diffuse_frac eq 1 then begin
        , lambda $
        ; , emfrac_cor_mode $ ; apply flux loss and/or zeta correction
        , gas_flux_frac, star_flux_frac $
-       , /save_arrays
+       , /save_arrays $
+       , gas_noise_threshold = gas_noise_threshold $
+       , star_noise_threshold = star_noise_threshold $
+       , mask_file = maskfiletot
+
+
 
      ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      ; ; 2) direct method using lambda errors ;
