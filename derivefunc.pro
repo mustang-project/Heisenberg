@@ -15,7 +15,7 @@ function f_rpeak,zeta,lambda ;Tracer peak radius
 end
 
 function f_esf,tgas,tdepl,fcl,fgmc ;Star formation efficiency per star formation event
-    esf=min([fcl*tgas/(fgmc*tdepl*1.d3),1.]) ;cannot exceed unity
+    esf=min([tgas/(fgmc*tdepl*1.d3),1.]) ;cannot exceed unity
     return,esf
 end
 
