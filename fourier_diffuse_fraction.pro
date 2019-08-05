@@ -85,6 +85,9 @@ pro fourier_diffuse_fraction, kernel, butterworth_order, pass $ ; description of
 
   if n_elements(mask_file) eq 1 then begin
     mask_arr = readfits(mask_file, mask_hdr)
+    if array_equal(size(mask_arr,/dimensions),size(image_arr,/dimensions)) ne 1 then f_error, 'diffuse fraction calculation error supplied mask file is not the same size as the image file'
+
+
     image_total = total(image_arr*mask_arr, /nan)
   endif else begin
     image_total = total(image_arr, /nan)

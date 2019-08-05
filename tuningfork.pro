@@ -252,6 +252,108 @@ fitap=fix(peak_res)+indgen(max_res-peak_res+1) ;aperture sizes used in fitting t
 lap_min=apertures(peak_res) ;size of smallest aperture
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;TEMPORARY HOTFIX
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;SYNCHRONISE MASKS FOR ALL IMAGES AND CALCULATE TOTAL GAS MASSES AND/OR STAR FORMATION RATES;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if regrid then begin
+    print,' ==> syncronising masks of maps from '+griddir
+    masksimple = 1 ; propogate masks using simple pixel by pixel comparison
+    if astrometry_equal(starmap, starmaphdr, gasmap, gasmaphdr, astr_tolerance) then begin ;check astrometry is equal
+        if use_star2 then if astrometry_equal(starmap, starmaphdr, starmap2, starmaphdr2, astr_tolerance) ne 1 then masksimple = 0
+        if use_star3 then if astrometry_equal(starmap, starmaphdr, starmap3, starmaphdr3, astr_tolerance) ne 1 then masksimple = 0
+        if use_gas2 then if astrometry_equal(starmap, starmaphdr, gasmap2, gasmaphdr2, astr_tolerance) ne 1 then masksimple = 0
+    endif else masksimple = 0
+
+    if masksimple then begin ;create array of total mask
+        mask_arr = starmap ;create array to hold masked pixels
+        mask_arr[*] = 1.0 ;1.0 = not masked (i.e. allowed through)
+
+        nan_list = where(finite(starmap, /nan), nancount) ;find masked pixels in starmap
+        if nancount gt 0 then mask_arr[nan_list] = 0.0
+        nan_list = where(finite(gasmap, /nan), nancount)  ;find masked pixels in gasmap
+        if nancount gt 0 then mask_arr[nan_list] = 0.0
+        if use_star2 then begin
+            nan_list = where(finite(starmap2, /nan), nancount)  ;find masked pixels in starmap2
+            if nancount gt 0 then mask_arr[nan_list] = 0.0
+        endif
+        if use_star3 then begin
+            nan_list = where(finite(starmap3, /nan), nancount)  ;find masked pixels in starmap3
+            if nancount gt 0 then mask_arr[nan_list] = 0.0
+        endif
+        if use_gas2 then begin
+            nan_list = where(finite(gasmap2, /nan), nancount)  ;find masked pixels in gasmap2
+            if nancount gt 0 then mask_arr[nan_list] = 0.0
+        endif
+
+        ; get temporary values that will be overwritten
+        mapdim=size(starmap)
+        nx=mapdim(1) ;number of x pixels in regridded stellar map
+        ny=mapdim(2) ; number of y pixels in regridded stellar map
+        centre=[centrefracx*(nx-1),centrefracy*(ny-1)] ;pixel coordinates of the galaxy centre in the regridded stellar map
+
+        cdelt=get_platescale(starmaphdr, astr_tolerance)
+        pixtopc=distance*tan(!dtor*cdelt)/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
+        ; get temporary values that will be overwritten
+
+
+
+        ;make radial cut
+        pixx=dblarr(nx,ny) ;array containing map x pixel indices
+        pixy=dblarr(nx,ny) ;array containing map y pixel indices
+        for i=0,nx-1 do pixx(i,*)=i
+        for i=0,ny-1 do pixy(*,i)=i
+        pixdistxpix=pixx-centre(0) ;x distance of each pixel from centre in number of pixels
+        pixdistypix=pixy-centre(1) ;y distance of each pixel from centre in number of pixels
+        pixdistxpc=(cos(-posangle)*pixdistxpix-sin(-posangle)*pixdistypix)*distance*tan(!dtor*cdelt) ;x distance of each pixel from centre in pc
+        pixdistypc=(sin(-posangle)*pixdistxpix+cos(-posangle)*pixdistypix)*distance*tan(!dtor*cdelt)/cos(inclination) ;y distance of each pixel from centre in pc
+        pixradius=sqrt(pixdistxpc^2.+pixdistypc^2.) ;distance of each pixel from centre in pc
+        inclpix=where(pixradius ge minradius and pixradius le maxradius, ninclpix, complement=exclpix, ncomplement=nexclpix) ;find included pixels, excluded pixels and number of both for the radial cut
+        pixmeanradius=mean(pixradius(inclpix)) ;mean radius of included area
+        if nexclpix gt 0 then mask_arr[exclpix] = 0.0 ;mask excluded area
+        totalarea=total(mask_arr)*pixtopc^2. ;total included area
+        starfluxtotal=total(starmap*mask_arr,/nan)*pixtopc^2. ;total SF flux in included area
+        gasfluxtotal=total(gasmap*mask_arr,/nan)*pixtopc^2. ;total gas flux in included area
+
+        ;propogate masks
+        nan_list = where(mask_arr eq 0.0, nancount) ;final mask list
+        if nancount gt 0 then starmap[nan_list] = !values.f_nan ;propogate masks
+        if nancount gt 0 then gasmap[nan_list] = !values.f_nan ;propogate masks
+        writefits, starfiletot, starmap, starmaphdr ;write out masked starmap
+        writefits, gasfiletot, gasmap, gasmaphdr ;write out masked gasmap
+        if use_star2 then begin
+            if nancount gt 0 then starmap2[nan_list] = !values.f_nan
+            writefits, starfiletot2, starmap2, starmaphdr2
+        endif
+        if use_gas2 then begin
+            if nancount gt 0 then gasmap2[nan_list] = !values.f_nan
+            writefits, gasfiletot2, gasmap2, gasmaphdr2 ;write out masked gasmap
+        endif
+        if use_star3 then begin
+            if nancount gt 0 then starmap3[nan_list] = !values.f_nan
+            writefits, starfiletot3, starmap3, starmaphdr3 ;write out masked starmap
+        endif
+
+        ;write out mask file
+        maskfile = 'totalmask.fits' ;filename for the mask
+        diffusetempdir=rundir+'hotfixdir'+path_sep() ;temporary hotfix directory
+        dummy=file_search(diffusetempdir,count=ct) ;check if maskeddir exists
+        if ct eq 0 then spawn,'mkdir '+diffusetempdir ;if not, create it
+        temp_maskfiletot = diffusetempdir + maskfile
+        temp_maskmaphdr = starmaphdr ;use the starmap header
+        writefits, temp_maskfiletot, mask_arr, temp_maskmaphdr ;save a fits image of synchronised mask to maskeddir, which is needed to create smoothmask and work out the area of the mask
+
+    endif else f_error,['for masks to be propogated between images, all images must share the same astrometry','set regrid=1 in the parameter file to regrid images']
+endif
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;TEMPORARY HOTFIX
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 ;;;;;;;;;;;;;
 ;REGRID MAPS;
 ;;;;;;;;;;;;;
@@ -1059,7 +1161,8 @@ if diffuse_frac eq 1 then begin
        , /save_arrays $
        , gas_noise_threshold = gas_noise_threshold $
        , star_noise_threshold = star_noise_threshold $
-       , mask_file = maskfiletot
+       ; , mask_file = maskfiletot
+       , mask_file = temp_maskfiletot
 
 
 
