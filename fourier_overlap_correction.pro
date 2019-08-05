@@ -18,9 +18,13 @@ function fourier_overlap_correction, kernel, peak_id_file_path, dist_stat_pass =
   if kernel eq 'butterworth' || kernel eq 'b' then begin
     qover = 1.0 ; not yet implemented
   endif else if kernel eq 'gaussian' || kernel eq 'gauss' || kernel eq 'g' then begin
-    a = -0.090760350
-    b = 3.0986142
-    c = 1.6054474
+    ; a = -0.090760350
+    ; b = 3.0986142
+    ; c = 1.6054474
+     a = -0.00928315
+     b = 3.43946
+     c = 1.71499
+
 
     if n_elements(dist_stat_pass) eq 1 then dist_stat = dist_stat_pass else dist_stat = med_peak_relative_nearest_neighbour_dist_calc(peak_id_file_path)
     qover = unity_symmetric_sigmoidal(dist_stat,a,b,c)
