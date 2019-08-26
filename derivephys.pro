@@ -204,8 +204,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
       ; dist_med_star = med_peak_relative_nearest_neighbour_dist_calc(star_peakid_file) ; keep to avoid repeated computation
       ; dist_med_gas = med_peak_relative_nearest_neighbour_dist_calc(gas_peakid_file) ; keep to avoid repeated computation
 
-      qzetastar = fourier_overlap_correction(filter_choice, star_peakid_file) ; currently this is not recalculated
-      qzetagas = fourier_overlap_correction(filter_choice, gas_peakid_file) ; currently this is not recalculated
+      qzetastar = fourier_overlap_correction(filter_choice, star_peakid_file, qover_sigma = qzetastar_sigma) ; currently this is not recalculated
+      qzetagas = fourier_overlap_correction(filter_choice, gas_peakid_file, qover_sigma = qzetagas_sigma) ; currently this is not recalculated
 
       fcl  /=  qzetastar ; overlap correction
       fgmc  /= qzetagas ; overlap correction
@@ -442,8 +442,11 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
           ; fgmcmc[i]  /= qzetagasmc[i] ; overlap correction
 
 
-          qzetastarmc[i] = qzetastar ; currently invariant switch to rpeak method
-          qzetagasmc[i] = qzetagas ; currently invariant switch to rpeak method
+          ; qzetastarmc[i] = qzetastar ; currently invariant switch to rpeak method
+          ; qzetagasmc[i] = qzetagas ; currently invariant switch to rpeak method
+
+          qzetastarmc[i] = qzetastar + (gaussarr[igauss] * qzetastar_sigma)
+          qzetagasmc[i] = qzetagas + (gaussarr[igauss] * qzetagas_sigma)
 
           fclmc[i]  /=  qzetastarmc[i] ; overlap correction
           fgmcmc[i]  /= qzetagasmc[i] ; overlap correction
