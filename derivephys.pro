@@ -290,9 +290,13 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     ; *** NOTE: increase nredomax to compensate for increased parameter list
     nredomax=floor(nphysmc*10.)
 
-    nrnd=3*(nphysmc+nredomax)
+    nrand_gauss_factor = 3 ; for tstariso, surfsfr and surfgas
+    if rpeak_cor_mode eq 1 then nrand_gauss_factor += 2 ; for rpeakscor, rpeakgcor
+    if emfrac_cor_mode eq 4 || emfrac_cor_mode eq 5  then nrand_gauss_factor += 2 ; for qzetastar, qzetagas
+    nrnd=3*(nphysmc+nredomax) ; 3 = for tgas, tover and lambda
+    nrnd_gauss = nrand_gauss_factor*(nphysmc+nredomax)
     randomarr=randomu(systime(1),nrnd)
-    gaussarr=randomn(systime(1),nrnd)
+    gaussarr=randomn(systime(1),nrnd_gauss)
     irnd=long(0)
     igauss=long(0)
 
@@ -379,7 +383,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
 
         if rpeak_cor_mode eq 1 then begin
           rpeakscormc[i]=rpeaks_cor_val+gaussarr(igauss)*rpeakscor_rerr*rpeaks_cor_val
+          igauss+=1
           rpeakgcormc[i]=rpeakg_cor_val+gaussarr(igauss)*rpeakgcor_rerr*rpeakg_cor_val
+          igauss+=1
         endif
 
         ; calculate eta(star/gas)mc regardless of whether it is needed to calculate qzeta(star/gas)mc - it is always needed for error calculations
@@ -446,7 +452,9 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
           ; qzetagasmc[i] = qzetagas ; currently invariant switch to rpeak method
 
           qzetastarmc[i] = qzetastar + (gaussarr[igauss] * qzetastar_sigma)
+          igauss+=1
           qzetagasmc[i] = qzetagas + (gaussarr[igauss] * qzetagas_sigma)
+          igauss+=1
 
           fclmc[i]  /=  qzetastarmc[i] ; overlap correction
           fgmcmc[i]  /= qzetagasmc[i] ; overlap correction
