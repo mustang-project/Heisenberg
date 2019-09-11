@@ -25,7 +25,7 @@ pro make_input_file, input_file_filepath   $ ; general variables
 
 
 
-  openw, inp_lun, input_file_filepath, width = 350, /get_lun
+  openw, inp_lun, input_file_filepath, width = 450, /get_lun
 
 
   pad_string = ' '
@@ -865,8 +865,6 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, 'use_noisecut    ', use_noisecut_str,       '# [0] calculate standard deviations of images [1] Use supplied standard deviation measurements'
   printf, inp_lun, 'noisethresh_s   ', noisethresh_s_str,      '# The measured standard deviation of starfile'
   printf, inp_lun, 'noisethresh_g   ', noisethresh_g_str,      '# The measured standard deviation of starfile3 (only used of use_star3 = 1)'
-  printf, inp_lun, 'std_gas         ', std_gas_str,            '# The measured standard deviation of gasfile'
-
 
   if iter_input_switch eq 1 then begin ; create input file for iteration
     printf, inp_lun, '# INPUT PARAMETERS 10 (Fourier diffuse removal iteration)'
