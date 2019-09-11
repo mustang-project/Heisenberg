@@ -1,6 +1,6 @@
 ;----------------------------------------------------------------------------------------
 function fourier_overlap_correction, kernel, peak_id_file_path, dist_stat_pass = dist_stat_pass, $
-  qover_sigma = qover_sigma
+  qover_sigma = qover_sigma, dist_stat_sigma_pass = dist_stat_sigma_pass
 ;----------------------------------------------------------------------------------------
 ; calculate the corrective factor to apply to the measured compact fraction due
 ; to flux loss as a result of overlapping peaks
@@ -23,34 +23,25 @@ function fourier_overlap_correction, kernel, peak_id_file_path, dist_stat_pass =
   if kernel eq 'butterworth' || kernel eq 'b' then begin
     qover = 1.0 ; not yet implemented
   endif else if kernel eq 'gaussian' || kernel eq 'gauss' || kernel eq 'g' then begin
-    ; ; a = -0.090760350
-    ; ; b = 3.0986142
-    ; ; c = 1.6054474
-    ;  a = -0.00928315
-    ;  b = 3.43946
-    ;  c = 1.71499
-    ;
-
     a = -0.35443467
     b = 3.1018254
     c = 1.40684605
     d = 0.98407271
 
 
+    if n_elements(dist_stat_pass) eq 1 then dist_stat = dist_stat_pass else dist_stat = med_peak_relative_nearest_neighbour_dist_calc(peak_id_file_path, dist_med_sigma = dist_stat_sigma)
 
-    if n_elements(dist_stat_pass) eq 1 then dist_stat = dist_stat_pass else dist_stat = med_peak_relative_nearest_neighbour_dist_calc(peak_id_file_path)
-    ; qover = unity_symmetric_sigmoidal(dist_stat,a,b,c)
     qover = symmetric_sigmoidal(dist_stat,a,b,c,d)
 
     if qover gt 1.0d0 then qover = 1.0d0
 
-
+    ; covariance matrix for the fitting parameters a,b,c and d:
     covariance_matrix = [[ 2.15940168e-01, 4.86565784e-02, 1.02120890e-01, -1.36567146e-04], $
      [ 4.86565784e-02, 1.30124103e-02, 2.41226648e-02, -3.82292032e-05], $
      [ 1.02120890e-01, 2.41226648e-02, 4.89232032e-02, -6.81607721e-05], $
      [-1.36567146e-04, -3.82292032e-05, -6.81607721e-05, 1.22697461e-07]]
 
-    qover_sigma = fourier_overlap_sigma_calc(dist_stat, a, b, c, d, covariance_matrix)
+    qover_sigma = fourier_overlap_sigma_calc(dist_stat, a, b, c, d, covariance_matrix, dist_stat_sigma)
 
 
   endif else if kernel eq 'ideal' || kernel eq 'i' then begin
