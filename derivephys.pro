@@ -121,7 +121,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
                     surfglobals,surfglobalg,surfcontrasts,surfcontrastg,apertures_star,apertures_gas,psie,psip,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units, $
                     emfrac_cor_mode, filter_choice, filter_len_conv, $
                     rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $
-                    star_peakid_file, gas_peakid_file ; filenames for clumpfind peak files
+                    star_peakid_file, gas_peakid_file, mask_arr ; filenames for clumpfind peak files
 
 
 
@@ -204,8 +204,8 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
       ; dist_med_star = med_peak_relative_nearest_neighbour_dist_calc(star_peakid_file) ; keep to avoid repeated computation
       ; dist_med_gas = med_peak_relative_nearest_neighbour_dist_calc(gas_peakid_file) ; keep to avoid repeated computation
 
-      qzetastar = fourier_overlap_correction(filter_choice, star_peakid_file, qover_sigma = qzetastar_sigma) ; currently this is not recalculated
-      qzetagas = fourier_overlap_correction(filter_choice, gas_peakid_file, qover_sigma = qzetagas_sigma) ; currently this is not recalculated
+      qzetastar = fourier_overlap_correction(filter_choice, star_peakid_file, qover_sigma = qzetastar_sigma, mask_arr = mask_arr) ; currently this is not recalculated
+      qzetagas = fourier_overlap_correction(filter_choice, gas_peakid_file, qover_sigma = qzetagas_sigma, mask_arr = mask_arr) ; currently this is not recalculated
 
       fcl  /=  qzetastar ; overlap correction
       fgmc  /= qzetagas ; overlap correction

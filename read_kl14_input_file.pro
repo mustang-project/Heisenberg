@@ -1,6 +1,6 @@
 pro read_kl14_input_file, input_file, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
-  use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
+  use_star2 ,use_gas2 ,use_star3, peaksdir, $  ;variable names of expected flags (2)
   mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
   set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
   datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
@@ -42,7 +42,7 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   free_lun,lun ;make the logical unit available again
 
   expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','diffuse_frac','derive_phys','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
-  expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
+  expected_flags2=['use_star2','use_gas2','use_star3','peaksdir'] ;variable names of expected flags (2)
   expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
   expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','star_tot_mode','gas_tot_mode','use_X11','log10_output'] ;variable names of expected flags (4)
   expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)

@@ -19,6 +19,7 @@ starfile2       -                                                               
 gasfile         this_is_a_gas_map.fits                                                  # Name of primary gas map
 gasfile2        -                                                                       # Name of secondary gas map (specifically for peak identification - only used if use_gas2=1)
 starfile3       -                                                                       # Name of additional stellar map (only used if use_star3=1)
+peaksdir       /full/path/of/directory/where/peak/files/are/stored/                     # Full path of the directory containing .sav file for the identified gas and stellar peaks
 # MASK FILE NAMES
 maskdir             /full/path/of/directory/where/region/files/are/stored/              # Full path of mask directory
 star_ext_mask       masks_external_pixels_for_SF.reg  # Region file for masking areas in starfile exterior to closed shapes (only used if mask_star=1); should be a ds9 region file using the image coordinate system (other coordinate systems can be used if convert_masks=1, which calls ds9)

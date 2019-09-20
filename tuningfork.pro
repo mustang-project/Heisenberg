@@ -73,7 +73,7 @@ print,' ==> starting KL14 tuning fork analysis, date/time is ',systime(0)
 
 read_kl14_input_file, inputfile, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
-  use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
+  use_star2 ,use_gas2 ,use_star3, peaksdir, $  ;variable names of expected flags (2)
   mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
   set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
   datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
@@ -680,6 +680,8 @@ endif
 ;IDENTIFY PEAKS;
 ;;;;;;;;;;;;;;;;
 
+
+
 if id_peaks then begin
     print,' ==> identifying peaks'
     interactive_peak_find, peak_find_tui, $
@@ -697,8 +699,10 @@ if id_peaks then begin
     save,filename=arrdir+'starpeaks.sav',starpeaks
     save,filename=arrdir+'gaspeaks.sav',gaspeaks
 endif else begin
-    restore,filename=arrdir+'starpeaks.sav'
-    restore,filename=arrdir+'gaspeaks.sav'
+    ; NOTE: HOTFIX
+    if strlen(strcompress(peaksdir, /remove_all)) gt 1 then  peak_arrays_dir = peaksdir else peak_arrays_dir = arrdir
+    restore,filename=peak_arrays_dir+'starpeaks.sav'
+    restore,filename=peak_arrays_dir+'gaspeaks.sav'
 endelse
 
 peaks=[starpeaks,gaspeaks]
@@ -1308,8 +1312,16 @@ if derive_phys then begin
     endif
 
     ; peak id filename for diffuse correction
-    star_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(starfile2short), /remove_all)
-    gas_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(gasfile2short), /remove_all)
+    if strlen(strcompress(peaksdir, /remove_all)) gt 1 then  begin
+      ; NOTE: TEMPORARY FIX
+      ptemp_dir = path_sep() + strjoin([(strsplit(peaksdir, path_sep(), /extract))[0:-2], 'peakid'], path_sep()) + path_sep() ;
+      ; NOTE: only works with the iterative version:
+      star_peakid_file = strcompress((file_search(ptemp_dir + "starfile_iter*_peaks.dat"))[0], /remove_all)
+      gas_peakid_file = strcompress((file_search(ptemp_dir + "gasfile_iter*_peaks.dat"))[0], /remove_all)
+    endif else begin
+      star_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(starfile2short), /remove_all)
+      gas_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(gasfile2short), /remove_all)
+    endelse
     if map_units gt 0 then begin
         ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err]+tiny
 
@@ -1318,13 +1330,13 @@ if derive_phys then begin
                        surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
                        lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units, emfrac_cor_mode, filter_choice,filter_len_conv, $
                        rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $
-                       star_peakid_file, gas_peakid_file)
+                       star_peakid_file, gas_peakid_file, mask_arr)
     endif else der=derivephys(surfsfr,surfsfr_err,surfgas,surfgas_err,totalarea,tgas,tover,lambda,beta_star,beta_gas,fstarover,fgasover,fcl,fgmc, $
                    tstariso,tstariso_rerrmin,tstariso_rerrmax,tstar_incl, $
                    surfglobals[fitap],surfglobalg[fitap],surfcontrasts[fitap],surfcontrastg[fitap],apertures_star[fitap],apertures_gas[fitap], $
                    lighttomass,momratetomass,peak_prof,ntry,nphysmc,galaxy,outputdir,arrdir,figdir,map_units,emfrac_cor_mode, filter_choice,filter_len_conv, $
                    rpeak_cor_mode, rpeaks_cor_val, rpeaks_cor_emin, rpeaks_cor_emax, rpeakg_cor_val, rpeakg_cor_emin, rpeakg_cor_emax, $
-                   star_peakid_file, gas_peakid_file)
+                   star_peakid_file, gas_peakid_file, mask_arr)
     fit[2:3]=der[1:2]
     fit[5:6]=der[4:5]
     der=der[6:n_elements(der)-1]

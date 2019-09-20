@@ -1,17 +1,18 @@
 ;----------------------------------------------------------------------------------------
 function med_peak_relative_nearest_neighbour_dist_calc, cords_filepath, $
-  dist_val = dist_val, fwhm_val = fwhm_val, dist_med_sigma = dist_med_sigma
+  dist_val = dist_val, fwhm_val = fwhm_val, dist_med_sigma = dist_med_sigma, $
+  mask_arr = mask_arr
 ;----------------------------------------------------------------------------------------
 ; cacluate median peak nearest neighbour distance for an image
 ;--(input)-------------------------------------------------------------------------------
 ; *** cords_filepath  =  clumpfind peak output file for the image to be analysed
 ;--(keywords)----------------------------------------------------------------------------
-; *** dist_val        = the median nearest neighbour distance not divided by the
-; ***                   fwhm
+; *** dist_val        = the median nearest neighbour distance not divided by the fwhm
 ; *** fwhm_val        = the mean fwhm as calculated from clumpfind
+; *** mask_arr        = a mask array, used to check for inclusion of peaks within the mask
 ;--(output)------------------------------------------------------------------------------
-; ***  dist_med       = the median nearest neighbour distance for peaks in the
-; ***                   image being analysed
+; ***  dist_med       = the median nearest neighbour distance for peaks in the image
+; ***                   being analysed
 ;-----------------------------------------------------------------------------------------
   compile_opt idl2, strictarrsubs
 
@@ -24,6 +25,12 @@ function med_peak_relative_nearest_neighbour_dist_calc, cords_filepath, $
 
   ; *** read the co-ordinates filepath
   readcol, cords_filepath, ncl, xx, yy, flux, xfwhm_vec, yfwhm_vec, /silent
+
+  if n_elements(mask_arr) gt 0 then begin
+    ; *** deal with mask in case peaks have been restored from a file
+    peak_inclusion_list= where(mask_arr[xx, yy] eq 1, npeaks)
+    if npeaks le 0 then f_error, 'med_peak_relative_nearest_neighbour_dist_calc: no  '
+  endif
 
 
   ; *** calculate the FWHM

@@ -1,6 +1,7 @@
 ;----------------------------------------------------------------------------------------
 function fourier_overlap_correction, kernel, peak_id_file_path, dist_stat_pass = dist_stat_pass, $
-  qover_sigma = qover_sigma, dist_stat_sigma_pass = dist_stat_sigma_pass
+  qover_sigma = qover_sigma, dist_stat_sigma_pass = dist_stat_sigma_pass, $
+  mask_arr = mask_arr
 ;----------------------------------------------------------------------------------------
 ; calculate the corrective factor to apply to the measured compact fraction due
 ; to flux loss as a result of overlapping peaks
@@ -14,6 +15,8 @@ function fourier_overlap_correction, kernel, peak_id_file_path, dist_stat_pass =
 ; *** dist_stat_pass    = allows the value of dist_stat to be passed to routine
 ; ***                     (if not set dist_stat is calculated)
 ; *** qover_sigma       = the 1-sigma error on qover
+; *** mask_arr          = a mask array, used to check for inclusion of peaks within the
+; ***                     mask (for med_peak_relative_nearest_neighbour_dist_calc)
 ;--(output)-----------------------------------------------------------------------------
 ; *** qover             = the compact fraction corrective factor to account for
 ; ***                     overlapping peaks
@@ -29,7 +32,7 @@ function fourier_overlap_correction, kernel, peak_id_file_path, dist_stat_pass =
     d = 0.98407271
 
 
-    if n_elements(dist_stat_pass) eq 1 then dist_stat = dist_stat_pass else dist_stat = med_peak_relative_nearest_neighbour_dist_calc(peak_id_file_path, dist_med_sigma = dist_stat_sigma)
+    if n_elements(dist_stat_pass) eq 1 then dist_stat = dist_stat_pass else dist_stat = med_peak_relative_nearest_neighbour_dist_calc(peak_id_file_path, dist_med_sigma = dist_stat_sigma, mask_arr = mask_arr)
 
     qover = symmetric_sigmoidal(dist_stat,a,b,c,d)
 
