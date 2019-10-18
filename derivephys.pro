@@ -142,18 +142,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
     rpeakgas=f_rpeak(zetagas,lambda)
     vfb=f_vfb(tover,lambda)
     vfbr=f_vfbr(tover,rpeakgas)
-    if complete then begin
-        tdepl=surfgas/surfsfr/1.d9
-        esf=f_esf(tgas,tdepl,fcl,fgmc)
-        mdotsf=f_mdotsf(tgas,lambda,surfgas*surfglobalg_fit,fgmc,esf)
-        mdotfb=f_mdotfb(tover,lambda,surfgas*surfglobalg_fit,fgmc,esf)
-        etainst=f_etainst(tgas,tover,esf)
-        etaavg=f_etaavg(esf)
-        chie=f_chie(tover,esf,vfb,psie)
-        chier=f_chier(tover,esf,vfbr,psie)
-        chip=f_chip(tover,esf,vfb,psip)
-        chipr=f_chipr(tover,esf,vfbr,psip)
-    endif
+
 
     ; calculate eta(star/gas) for error calculation regardless of whether it is needed for the calculation of qzeta - it is always needed for error calculations
     if rpeak_cor_mode eq 0 then begin ; use measured rpeak value
@@ -213,6 +202,19 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
       qzetastar = 1.0d0
       qzetagas = 1.0d0
     endelse
+
+    if complete then begin
+        tdepl=surfgas/surfsfr/1.d9
+        esf=f_esf(tgas,tdepl,fcl,fgmc)
+        mdotsf=f_mdotsf(tgas,lambda,surfgas*surfglobalg_fit,fgmc,esf)
+        mdotfb=f_mdotfb(tover,lambda,surfgas*surfglobalg_fit,fgmc,esf)
+        etainst=f_etainst(tgas,tover,esf)
+        etaavg=f_etaavg(esf)
+        chie=f_chie(tover,esf,vfb,psie)
+        chier=f_chier(tover,esf,vfbr,psie)
+        chip=f_chip(tover,esf,vfb,psip)
+        chipr=f_chipr(tover,esf,vfbr,psip)
+    endif
 
     restore,filename=arrdir+'probnorm.sav'
     restore,filename=arrdir+'probtgastover.sav'
