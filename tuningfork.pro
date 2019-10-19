@@ -318,25 +318,6 @@ if regrid then begin
         starfluxtotal=total(starmap*mask_arr,/nan)*pixtopc^2. ;total SF flux in included area
         gasfluxtotal=total(gasmap*mask_arr,/nan)*pixtopc^2. ;total gas flux in included area
 
-        ;propogate masks
-        nan_list = where(mask_arr eq 0.0, nancount) ;final mask list
-        if nancount gt 0 then starmap[nan_list] = !values.f_nan ;propogate masks
-        if nancount gt 0 then gasmap[nan_list] = !values.f_nan ;propogate masks
-        writefits, starfiletot, starmap, starmaphdr ;write out masked starmap
-        writefits, gasfiletot, gasmap, gasmaphdr ;write out masked gasmap
-        if use_star2 then begin
-            if nancount gt 0 then starmap2[nan_list] = !values.f_nan
-            writefits, starfiletot2, starmap2, starmaphdr2
-        endif
-        if use_gas2 then begin
-            if nancount gt 0 then gasmap2[nan_list] = !values.f_nan
-            writefits, gasfiletot2, gasmap2, gasmaphdr2 ;write out masked gasmap
-        endif
-        if use_star3 then begin
-            if nancount gt 0 then starmap3[nan_list] = !values.f_nan
-            writefits, starfiletot3, starmap3, starmaphdr3 ;write out masked starmap
-        endif
-
         ;write out mask file
         maskfile = 'totalmask.fits' ;filename for the mask
         diffusetempdir=rundir+'hotfixdir'+path_sep() ;temporary hotfix directory
