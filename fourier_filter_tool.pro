@@ -6,7 +6,10 @@ pro fourier_filter_tool, kernel, butterworth_order, pass, cut_length $ ; descrip
                        , negative_image_arr = negative_image_arr, negative_image_hdr = negative_image_hdr $ ; filtered image output variablse
                        , negative_image_path = negative_image_path ; filtered image output paths
 ;----------------------------------------------------------------------------------------
-; Tool for fourier filtering a .fits image
+; Tool for Fourier filtering a .fits image in Fourier space by applying a lowpass or
+; highpass filter with a number of different kernel definitions. This has the effect of
+; attenuating the small-scale structure (lowpass filter) or attenuating the large-scale
+; structure (highpass filter)
 ;--(dependencies)------------------------------------------------------------------------
 ; *** To run, fourier_filter_tool requires:
 ; *** 1) The IDL Astronomy User's Library http://idlastro.gsfc.nasa.gov/

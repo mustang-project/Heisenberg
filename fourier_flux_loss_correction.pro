@@ -1,17 +1,18 @@
 ;----------------------------------------------------------------------------------------
 function fourier_flux_loss_correction, kernel, cut_ratio
 ;----------------------------------------------------------------------------------------
-; apply correction for
+; calculates the corrective factor to apply to the measured compact fraction due
+; to flux loss as a result of the application of a filter to a single isolated gaussian
+; region. The function implements the fit presented as equtation 31 in Hygate (2019)
 ;--(dependencies)------------------------------------------------------------------------
-; *** To run, xxx requires:
-; ***
+; *** unity_symmetric_sigmoidal.pro
 ;--(input)-------------------------------------------------------------------------------
 ; *** kernel            = the kernel with which to filter to filter
 ; ***                     * 'gaussian'
 ; ***                     * 'butterworth'
-
-;--(keywords)-----------------------------------------------------------------------------
-; *** filtered_image_path = filepath to output the filtered image to
+;--(output)-----------------------------------------------------------------------------
+; *** qcon             = the compact fraction corrective factor to account for flux loss
+; ***                    from single peaks
 ;----------------------------------------------------------------------------------------
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
 
@@ -30,26 +31,7 @@ function fourier_flux_loss_correction, kernel, cut_ratio
     qcon = 1.0 ; not yet implemented
   endif
 
-
-
-
-
-
-
   return, qcon
 
 
 end
-
-
-
-; function gwfhm_multiple_flux_frac, gwfhm_multiple, path_prefix   ; , path_prefix
-;   readcol, path_prefix + '/Idldir/F_paper_routines_new/F_paper_git/gauss_fraction_data.dat', skipline =1, mult, frac
-;
-;   msort = mult[ sort(mult)]
-;   fsort = frac[ sort(mult)]
-;
-;
-;   return, interpol(fsort, msort, gwfhm_multiple) ; return fraction of signal that remians
-;
-; end

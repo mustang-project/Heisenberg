@@ -1,17 +1,22 @@
 ;----------------------------------------------------------------------------------------
 function fourier_zeta_correction, kernel, eta
 ;----------------------------------------------------------------------------------------
-; apply correction for
+; calculate the corrective factor to apply to the measured compact fraction due to flux
+; loss as a result of overlapping peaks
+; NOTE: this is the method presented in Hygate (2019) and is depreciated in favour of
+;       fourier_overlap_correction.pro
 ;--(dependencies)------------------------------------------------------------------------
-; *** To run, xxx requires:
-; ***
+; *** none
 ;--(input)-------------------------------------------------------------------------------
 ; *** kernel            = the kernel with which to filter to filter
 ; ***                     * 'gaussian'
 ; ***                     * 'butterworth'
-
-;--(keywords)-----------------------------------------------------------------------------
-; *** filtered_image_path = filepath to output the filtered image to
+; ***                     * 'ideal'
+; *** eta               = the evolutionary phase lifetime adjusted filling factor
+; ***                     equations 33 and 34 (Hygate 2019)
+;--(output)-----------------------------------------------------------------------------
+; *** qeta              = the compact fraction corrective factor to account for
+; ***                     overlapping peaks as caculated based on eta
 ;----------------------------------------------------------------------------------------
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
 
@@ -25,12 +30,6 @@ function fourier_zeta_correction, kernel, eta
   endif else if kernel eq 'ideal' || kernel eq 'i' then begin
     qzeta = 1.0 ; not yet implemented
   endif
-
-
-
-  ; zeta_slope =
-  ; zeta_intercept =
-  ; qzeta = (zeta * zeta_slope) + zeta_intercept
 
   return, qzeta
 end

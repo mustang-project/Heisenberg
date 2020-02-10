@@ -1,15 +1,20 @@
 ;----------------------------------------------------------------------------------------
 function fourier_overlap_sigma_calc, x, a, b, c, d, covariance_matrix, sigma_x
 ;----------------------------------------------------------------------------------------
-; calculates the value 1 sigma unncertainty on correction to the diffuse
-; for the fraction of the overlap correction
+; calculates the value of the 1 sigma unncertainty on the correction fractor, due to
+; overlapping regions, applied to the compact emission fraction of an image
 ;--(input)-------------------------------------------------------------------------------
 ; *** x                  = the datapoint to calculate for
 ; *** a,b,c and d        = fitting parameters of the model (for indices a=0, b=1, c=2
 ; ***                      and d=3)
 ; *** covariance_matrix = the covariance matrix of the fitting parameters
 ; *** sigma_x           = the 1 sigma uncertainty on x
-;-----------------------------------------------------------------------------------------
+;--(output)-----------------------------------------------------------------------------
+; *** sigma_final       = the 1 sigma uncertainty on the the compact fraction corrective
+; ***                     factor to account for overlapping peaks
+;----------------------------------------------------------------------------------------
+
+
   compile_opt idl2, strictarrsubs
 
   if n_params() lt 7 then begin ; check for parameters
