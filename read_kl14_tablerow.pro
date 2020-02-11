@@ -1,8 +1,21 @@
+;----------------------------------------------------------------------------------------
 pro read_kl14_tablerow, filename, name_vec, value_vec, de_log = de_log, compress_names = compress_names
+;----------------------------------------------------------------------------------------
+; extracts the variable names and their values from a Heisenberg output file and places
+; them into vectors
+;--(input)-------------------------------------------------------------------------------
+; *** filename          = the Heisenberg output filename (something_output.dat) to read
+;--(output)-----------------------------------------------------------------------------
+; *** name_vec          = a vector of the variable names contained in the file
+; ***                     "filename"
+; *** value_vec         = a vector of the variable values contained in the file
+; ***                     "filename", with positions corresponding to name_vec
+;--(keywords)-----------------------------------------------------------------------------
+; *** de_log;           = [1] convert the values in value_vec from log values
+; ***                     [0] do nothing
+; *** compress_names    = [1] remove white space from names_vec [0] do nothing
+;----------------------------------------------------------------------------------------
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
-
-  ; de_log; [1] convert from log values [0] do nothing
-  ; compress_names[1] remove white space from names_vec [0] do nothing
 
   split_string = ' '
   comment_string = '#'
@@ -26,8 +39,6 @@ pro read_kl14_tablerow, filename, name_vec, value_vec, de_log = de_log, compress
           line_counter ++
           name_vec[line_counter] = line_split[0]
           value_vec[line_counter] = double(line_split[1])
-          ; name_vec = [name_vec, line_split[0]]   ; store variable name
-          ; value_vec = [value_vec, line_split[1]] ; store variable value
         endif
       endif
     endwhile
