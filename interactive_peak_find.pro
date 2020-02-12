@@ -1,3 +1,4 @@
+;----------------------------------------------------------------------------------------
 pro interactive_peak_find, peak_find_tui, $
   nsigma, npixmin, $ ; global variables
   loglevels, flux_weight, use_gas2, use_star2, $ ; control switches
@@ -9,6 +10,23 @@ pro interactive_peak_find, peak_find_tui, $
   ; ########################################################################
   starpeaks, gaspeaks ; output variables with peaks
   ; ########################################################################
+;----------------------------------------------------------------------------------------
+; A user iterface for peak finding. Peakid is done with a set of input variables. The
+; the user is then shown the resulting peakid in a ds9 window and may adjust the peakid
+; parameters
+;--(input)-------------------------------------------------------------------------------
+; *** peak_find_tui          = [0] peaks are identified with the specified parameters
+; ***                          consulting the user [1] a text user interface is initiated
+; ***                          in which the user may adjust the peakid parameters until
+; ***                          they are satisfied
+; *** the remaning parameters are peak id parameters or paramters relating to directory
+; *** structure
+;--(output)-------------------------------------------------------------------------------
+; *** starpeaks, gaspeaks    = the identified star and gas peaks in arrays suitible for
+; ***                          use in tuningfork.pro
+;----------------------------------------------------------------------------------------
+
+
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
 
 
@@ -191,21 +209,24 @@ pro interactive_peak_find, peak_find_tui, $
   ds9_display_peaks, peakdir, gasfile2short, gas_window_title, gaspeaks[*,0], gaspeaks[*,1], /no_disp
 
 
-  ; write out final parameters
-  peak_report_file = outputdir+galaxy+ '_interactive_peak_ID_report.dat'
-  openw, peak_lun, peak_report_file, width = 150, /get_lun
-  printf, peak_lun, '# Interactive Peak Identification report. Final selected parameters'
-  printf, peak_lun, 'npixmin          ', npixmin
-  printf, peak_lun, 'nsigma           ', nsigma
-  printf, peak_lun, 'logrange_s       ', logrange_s
-  printf, peak_lun, 'logspacing_s     ', logspacing_s
-  printf, peak_lun, 'logrange_g       ', logrange_g
-  printf, peak_lun, 'logspacing_g     ', logspacing_g
-  printf, peak_lun, 'nlinlevel_s      ', nlinlevel_s
-  printf, peak_lun, 'nlinlevel_g      ', nlinlevel_g
-  if n_elements(finalised) eq 0 then finalised = 0 ; if not already set then = 0
-  printf, peak_lun, 'finalised        ', finalised
-  free_lun, peak_lun
+  ; write out final parameters to output and peakiddir (peakiddir is to allow the peakid folder to be used with id_peaks=2)
+
+  foreach out_directory, [outputdir,peakdir] do begin
+    peak_report_file = out_directory+galaxy+ '_interactive_peak_ID_report.dat'
+    openw, peak_lun, peak_report_file, width = 150, /get_lun
+    printf, peak_lun, '# Interactive Peak Identification report. Final selected parameters'
+    printf, peak_lun, 'npixmin          ', npixmin
+    printf, peak_lun, 'nsigma           ', nsigma
+    printf, peak_lun, 'logrange_s       ', logrange_s
+    printf, peak_lun, 'logspacing_s     ', logspacing_s
+    printf, peak_lun, 'logrange_g       ', logrange_g
+    printf, peak_lun, 'logspacing_g     ', logspacing_g
+    printf, peak_lun, 'nlinlevel_s      ', nlinlevel_s
+    printf, peak_lun, 'nlinlevel_g      ', nlinlevel_g
+    if n_elements(finalised) eq 0 then finalised = 0 ; if not already set then = 0
+    printf, peak_lun, 'finalised        ', finalised
+    free_lun, peak_lun
+  endforeach
 
 
 

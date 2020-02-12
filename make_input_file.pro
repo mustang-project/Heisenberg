@@ -5,7 +5,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , lapmin, lapmax, naperture, peak_res, max_res $  ; # INPUT PARAMETERS 2 (apertures)
                   ; ################################################################################################################################################################################################################################################################
 
-                   , starfile2 = starfile2, gasfile2 = gasfile2, starfile3 = starfile3, peaksdir = peaksdir $  ; File names keywords
+                   , starfile2 = starfile2, gasfile2 = gasfile2, starfile3 = starfile3 $  ; File names keywords
+                   , peaksdir = peaksdir, peakiddir = peakiddir, starpeakidfile = starpeakidfile, gaspeakidfile = gaspeakidfile, intpeakidfile = intpeakidfile $ ;peakid filenames
                    , maskdir = maskdir, star_ext_mask1 = star_ext_mask, star_int_mask1 = star_int_mask, gas_ext_mask1 = gas_ext_mask, gas_int_mask1 = gas_int_mask, star_ext_mask2 = star_ext_mask2, star_int_mask2 = star_int_mask2, gas_ext_mask2 = gas_ext_mask2, gas_int_mask2 = gas_int_mask2, star_ext_mask3 = star_ext_mask3, star_int_mask3 = star_int_mask3  $  ; Mask file names keywords ; note star_ext_mask1 = star_ext_mask etc. prevents ambigious keyword error
                    , unfiltdir = unfiltdir, star_unfilt_file = star_unfilt_file, gas_unfilt_file = gas_unfilt_file $ ; unfiltered image keywords
 
@@ -39,7 +40,6 @@ pro make_input_file, input_file_filepath   $ ; general variables
   if n_elements(starfile2) ne 1 then starfile2 = '-'
   if n_elements(gasfile2) ne 1 then gasfile2 = '-'
   if n_elements(starfile3) ne 1 then starfile3 = '-'
-  if n_elements(peaksdir) ne 1 then peaksdir = '-'
 
   datadir_str = string(datadir)
   galaxy_str = string(galaxy)
@@ -48,10 +48,8 @@ pro make_input_file, input_file_filepath   $ ; general variables
   gasfile_str = string(gasfile)
   gasfile2_str = string(gasfile2)
   starfile3_str = string(starfile3)
-  peaksdir_str = string(peaksdir)
 
-
-  max_string_len = max([strlen(datadir_str), strlen(galaxy_str), strlen(starfile_str), strlen(gasfile_str), strlen(starfile2_str), strlen(gasfile2_str), strlen(starfile3_str), strlen(peaksdir_str)]) + comment_sep_length
+  max_string_len = max([strlen(datadir_str), strlen(galaxy_str), strlen(starfile_str), strlen(gasfile_str), strlen(starfile2_str), strlen(gasfile2_str), strlen(starfile3_str)]) + comment_sep_length
   max_string_len = max([max_string_len,22])
 
   while(strlen(datadir_str) lt max_string_len) do datadir_str = datadir_str + pad_string
@@ -61,10 +59,31 @@ pro make_input_file, input_file_filepath   $ ; general variables
   while(strlen(gasfile_str) lt max_string_len) do gasfile_str = gasfile_str + pad_string
   while(strlen(gasfile2_str) lt max_string_len) do gasfile2_str = gasfile2_str + pad_string
   while(strlen(starfile3_str) lt max_string_len) do starfile3_str = starfile3_str + pad_string
-  while(strlen(peaksdir_str) lt peaksdir_str) do peaksdir_str = peaksdir_str + pad_string
+
+  ; #############################################
+  ; # PEAKID FILE NAMES
+  ; #############################################
+  if n_elements(peaksdir) ne 1 then starfile2 = '-'
+  if n_elements(peakiddir) ne 1 then starfile2 = '-'
+  if n_elements(starpeakidfile) ne 1 then starfile2 = '-'
+  if n_elements(gaspeakidfile) ne 1 then starfile2 = '-'
+  if n_elements(intpeakidfile) ne 1 then starfile2 = '-'
+
+  peaksdir_str = string(peaksdir)
+  peakiddir_str = string(peakiddir)
+  starpeakidfile_str = string(starpeakidfile)
+  gaspeakidfile_str = string(gaspeakidfile)
+  intpeakidfile_str = string(intpeakidfile)
+
+  max_string_len = max([strlen(peaksdir_str), strlen(peakiddir_str), strlen(starpeakidfile_str), strlen(gaspeakidfile), strlen(intpeakidfile)]) + comment_sep_length
+  max_string_len = max([max_string_len,22])
 
 
-
+  while(strlen(peaksdir_str) lt max_string_len) do peaksdir_str = peaksdir_str + pad_string
+  while(strlen(peakiddir_str) lt max_string_len) do peakiddir_str = peakiddir_str + pad_string
+  while(strlen(starpeakidfile_str) lt max_string_len) do starpeakidfile_str = starpeakidfile_str + pad_string
+  while(strlen(gaspeakidfile_str) lt max_string_len) do gaspeakidfile_str = gaspeakidfile_str + pad_string
+  while(strlen(intpeakidfile_str) lt max_string_len) do intpeakidfile_str = intpeakidfile_str + pad_string
 
   ; #############################################
   ; # FLAGS 1 (keywords)'
@@ -693,14 +712,22 @@ pro make_input_file, input_file_filepath   $ ; general variables
   printf, inp_lun, ''
 
   printf, inp_lun, '# FILE NAMES'
-  printf, inp_lun, 'datadir         ', datadir_str                                                                , '# Full path of data directory'
-  printf, inp_lun, 'galaxy          ', galaxy_str                                                             , '# Name of data set'
-  printf, inp_lun, 'starfile        ', starfile_str                                                                , '# Name of primary stellar map'
-  printf, inp_lun, 'starfile2       ', starfile2_str                                                               , '# Name of secondary stellar map (specifically for peak identification - only used if use_star2=1)'
-  printf, inp_lun, 'gasfile         ', gasfile_str                                                                 , '# Name of primary gas map'
-  printf, inp_lun, 'gasfile2        ', gasfile2_str                                                                       , '# Name of secondary gas map (specifically for peak identification - only used if use_gas2=1)'
-  printf, inp_lun, 'starfile3       ', starfile3_str                                                                       , '# Name of additional stellar map (only used if use_star3=1)'
-  printf, inp_lun, 'peaksdir        ', peaksdir_str                                                                       , ' # Full path of the directory containing .sav file for the identified gas and stellar peaks'
+  printf, inp_lun, 'datadir         ', datadir_str               , '# Full path of data directory'
+  printf, inp_lun, 'galaxy          ', galaxy_str                , '# Name of data set'
+  printf, inp_lun, 'starfile        ', starfile_str              , '# Name of primary stellar map'
+  printf, inp_lun, 'starfile2       ', starfile2_str             , '# Name of secondary stellar map (specifically for peak identification - only used if use_star2=1)'
+  printf, inp_lun, 'gasfile         ', gasfile_str               , '# Name of primary gas map'
+  printf, inp_lun, 'gasfile2        ', gasfile2_str              , '# Name of secondary gas map (specifically for peak identification - only used if use_gas2=1)'
+  printf, inp_lun, 'starfile3       ', starfile3_str             , '# Name of additional stellar map (only used if use_star3=1)'
+
+
+
+  printf, inp_lun, '# PEAKID FILE NAMES'
+  printf, inp_lun, 'peaksdir        ', peaksdir_str,             '# Full path of the directory containing .sav file for the identified gas and stellar peaks (only used if id_peaks = 2)'
+  printf, inp_lun, 'peakiddir       ', peakiddir_str,            '# Full path of the directory containing output files from clumpfind (files of the form star/gasfile_peaks.dat star/gasfile.fits.clf) (only used if id_peaks = 2)'
+  printf, inp_lun, 'starpeakidfile  ', starpeakidfile_str,       '# Name of the peak_id .dat file for starfile (e.g. starfile_iter0_peaks.dat) (only used if id_peaks = 2)'
+  printf, inp_lun, 'gaspeakidfile   ', gaspeakidfile_str,        '# Name of the peak_id .dat file for starfile (e.g. gasfile_iter0_peaks.dat) (only used if id_peaks = 2)'
+  printf, inp_lun, 'intpeakidfile   ', intpeakidfile_str,        '# Name of the interactive peakid report (e.g. galaxy_interactive_peak_ID_report.dat) (only used if id_peaks = 2)'
 
   printf, inp_lun, '# MASK FILE NAMES'
   printf, inp_lun, 'maskdir            ', maskdir_str,           '# Full path of mask directory'

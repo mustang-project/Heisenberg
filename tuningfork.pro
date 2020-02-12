@@ -73,10 +73,11 @@ print,' ==> starting KL14 tuning fork analysis, date/time is ',systime(0)
 
 read_kl14_input_file, inputfile, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
-  use_star2 ,use_gas2 ,use_star3, peaksdir, $  ;variable names of expected flags (2)
+  use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
   mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
   set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
   datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
+  peaksdir, peakiddir, starpeakidfile, gaspeakidfile, intpeakidfile, $ ;variable names of expected peakid filenames
   maskdir, star_ext_mask, star_int_mask, gas_ext_mask,gas_int_mask, star_ext_mask2 ,star_int_mask2, gas_ext_mask2, gas_int_mask2, star_ext_mask3, star_int_mask3, $ ;variable names of expected mask filenames
   unfiltdir, star_unfilt_file, gas_unfilt_file, $
   distance, inclination, posangle, centrex,centrey, minradius ,maxradius, Fs1_Fs2_min, max_sample, astr_tolerance, nbins, $ ;variable names of expected input parameters (1)
@@ -663,7 +664,7 @@ endif
 
 
 
-if id_peaks then begin
+if id_peaks eq 1 then begin
     print,' ==> identifying peaks'
     interactive_peak_find, peak_find_tui, $
       nsigma, npixmin, $ ; global variables
@@ -680,8 +681,8 @@ if id_peaks then begin
     save,filename=arrdir+'starpeaks.sav',starpeaks
     save,filename=arrdir+'gaspeaks.sav',gaspeaks
 endif else begin
-    ; NOTE: HOTFIX
-    if strlen(strcompress(peaksdir, /remove_all)) gt 1 then  peak_arrays_dir = peaksdir else peak_arrays_dir = arrdir
+    ; reuse peaks files in specificed location (id_peaks = 2) or resuse peaks already in arrdir (id_peaks = 2)
+    if id_peaks eq 2 then  peak_arrays_dir = peaksdir else peak_arrays_dir = arrdir
     restore,filename=peak_arrays_dir+'starpeaks.sav'
     restore,filename=peak_arrays_dir+'gaspeaks.sav'
 endelse
@@ -1293,16 +1294,14 @@ if derive_phys then begin
     endif
 
     ; peak id filename for diffuse correction
-    if strlen(strcompress(peaksdir, /remove_all)) gt 1 then  begin
-      ; NOTE: TEMPORARY FIX
-      ptemp_dir = path_sep() + strjoin([(strsplit(peaksdir, path_sep(), /extract))[0:-2], 'peakid'], path_sep()) + path_sep() ;
-      ; NOTE: only works with the iterative version:
-      star_peakid_file = strcompress((file_search(ptemp_dir + "starfile_iter*_peaks.dat"))[0], /remove_all)
-      gas_peakid_file = strcompress((file_search(ptemp_dir + "gasfile_iter*_peaks.dat"))[0], /remove_all)
-    endif else begin
+    if id_peaks eq 2 then begin ; peakid files are located in peakiddir
+      star_peakid_file = strcompress(peakiddir + starpeakidfile, /remove_all)
+      gas_peakid_file = strcompress(peakiddir + gaspeakidfile, /remove_all)
+    endif else begin ; id_peaks = 0 or 1 +> peak id files in peakdir
       star_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(starfile2short), /remove_all)
       gas_peakid_file = strcompress(peakdir + get_clfind_peaks_filename(gasfile2short), /remove_all)
     endelse
+
     if map_units gt 0 then begin
         ext=[surfsfr*totalarea,surfsfr_err*totalarea,surfsfr_err*totalarea,surfgas*totalarea,surfgas_err*totalarea,surfgas_err*totalarea,surfsfr,surfsfr_err,surfsfr_err,surfgas,surfgas_err,surfgas_err]+tiny
 

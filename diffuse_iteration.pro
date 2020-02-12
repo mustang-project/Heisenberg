@@ -13,10 +13,11 @@ pro diffuse_iteration, master_inputfile
 
   read_kl14_input_file, master_inputfile, $ ; input_file_filepath
     mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
-    use_star2 ,use_gas2 ,use_star3, peaksdir, $  ;variable names of expected flags (2)
+    use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
     mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
     set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
     datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
+    peaksdir, peakiddir, starpeakidfile, gaspeakidfile, intpeakidfile, $ ;variable names of expected peakid filenames
     maskdir, star_ext_mask, star_int_mask, gas_ext_mask,gas_int_mask, star_ext_mask2 ,star_int_mask2, gas_ext_mask2, gas_int_mask2, star_ext_mask3, star_int_mask3, $ ;variable names of expected mask filenames
     unfiltdir, star_unfilt_file, gas_unfilt_file, $
     distance, inclination, posangle, centrex,centrey, minradius ,maxradius, Fs1_Fs2_min, max_sample, astr_tolerance, nbins, $ ;variable names of expected input parameters (1)
@@ -294,7 +295,8 @@ pro diffuse_iteration, master_inputfile
      , datadir, galaxy, starfile, gasfile   $  ; File names compulsory variables
      , distance, inclination, posangle, centrex, centrey, minradius, maxradius, Fs1_Fs2_min, max_sample, astr_tolerance, nbins $ ; # INPUT PARAMETERS 1 (basic map analysis)
      , lapmin, lapmax, naperture, peak_res, max_res $  ; # INPUT PARAMETERS 2 (apertures)
-     , starfile2 = starfile2, gasfile2 = gasfile2, starfile3 = starfile3, peaksdir = peaksdir $  ; File names keywords
+     , starfile2 = starfile2, gasfile2 = gasfile2, starfile3 = starfile3 $  ; File names keywords
+     , peaksdir = peaksdir, peakiddir = peakiddir, starpeakidfile = starpeakidfile, gaspeakidfile = gaspeakidfile, intpeakidfile = intpeakidfile $ ;peakid filenames
      , maskdir = maskdir, star_ext_mask1 = star_ext_mask, star_int_mask1 = star_int_mask, gas_ext_mask1 = gas_ext_mask, gas_int_mask1 = gas_int_mask, star_ext_mask2 = star_ext_mask2, star_int_mask2 = star_int_mask2, gas_ext_mask2 = gas_ext_mask2, gas_int_mask2 = gas_int_mask2, star_ext_mask3 = star_ext_mask3, star_int_mask3 = star_int_mask3  $  ; Mask file names keywords
      , mask_images = mask_images, regrid = regrid, smoothen = smoothen, sensitivity = sensitivity, id_peaks = id_peaks, calc_ap_flux = calc_ap_flux, generate_plot = generate_plot, get_distances = get_distances, calc_obs = calc_obs, calc_fit = calc_fit, diffuse_frac = diffuse_frac, derive_phys = derive_phys, write_output = write_output, cleanup = cleanup, autoexit = autoexit $ ; FLAGS 1 (keywords)'
      , unfiltdir = unfiltdir, star_unfilt_file = star_unfilt_file, gas_unfilt_file = gas_unfilt_file $ ; unfiltered image keywords
@@ -392,11 +394,11 @@ pro diffuse_iteration, master_inputfile
     ; ********************************************
     ; * handle interactive peak ID
     ; ********************************************
-    ; NOTE: TEMPORARY FIX
-    if strlen(strcompress(peaksdir, /remove_all)) gt 1 then  begin
-      ptemp_dir = path_sep() + strjoin([(strsplit(peaksdir, path_sep(), /extract))[0:-2], 'output'], path_sep()) + path_sep() ;
-      peak_id_params_file = strcompress((file_search(ptemp_dir + "*_interactive_peak_ID_report.dat"))[0], /remove_all)
-    endif else peak_id_params_file = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_interactive_peak_ID_report.dat', /remove_all)
+    if id_peaks eq 2 then begin ; peakid files are located in peakiddir
+      peak_id_params_file = strcompress(peakiddir + intpeakidfile, /remove_all) ; looks like "something_interactive_peak_ID_report.dat")
+    endif else begin ; id_peaks = 0 or 1 +> peak id files in peakdir
+      peak_id_params_file = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_interactive_peak_ID_report.dat', /remove_all)
+    endelse
 
     read_kl14_tablerow, peak_id_params_file, peak_name_vec, peak_value_vec, /compress_names
 

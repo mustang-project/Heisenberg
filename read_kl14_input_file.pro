@@ -1,9 +1,10 @@
 pro read_kl14_input_file, input_file, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
-  use_star2 ,use_gas2 ,use_star3, peaksdir, $  ;variable names of expected flags (2)
+  use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
   mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
   set_centre, tophat, loglevels, peak_find_tui,flux_weight, calc_ap_area ,tstar_incl, peak_prof, map_units, star_tot_mode, gas_tot_mode, use_X11, log10_output, $;variable names of expected flags (4)
   datadir, galaxy, starfile, starfile2,gasfile, gasfile2 ,starfile3, $ ;variable names of expected filenames
+  peaksdir, peakiddir, starpeakidfile, gaspeakidfile, intpeakidfile,  $ ;variable names of expected peakid filenames
   maskdir, star_ext_mask, star_int_mask, gas_ext_mask,gas_int_mask, star_ext_mask2 ,star_int_mask2, gas_ext_mask2, gas_int_mask2, star_ext_mask3, star_int_mask3, $ ;variable names of expected mask filenames
   unfiltdir, star_unfilt_file, gas_unfilt_file, $
   ; parameters:
@@ -42,14 +43,15 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   free_lun,lun ;make the logical unit available again
 
   expected_flags1=['mask_images','regrid','smoothen','sensitivity','id_peaks','calc_ap_flux','generate_plot','get_distances','calc_obs','calc_fit','diffuse_frac','derive_phys','write_output','cleanup','autoexit'] ;variable names of expected flags (1)
-  expected_flags2=['use_star2','use_gas2','use_star3','peaksdir'] ;variable names of expected flags (2)
+  expected_flags2=['use_star2','use_gas2','use_star3'] ;variable names of expected flags (2)
   expected_flags3=['mstar_ext','mstar_int','mgas_ext','mgas_int','mstar_ext2','mstar_int2','mgas_ext2','mgas_int2','mstar_ext3','mstar_int3','convert_masks','cut_radius'] ;variable names of expected flags (3)
   expected_flags4=['set_centre','tophat','loglevels','peak_find_tui','flux_weight','calc_ap_area','tstar_incl','peak_prof','map_units','star_tot_mode','gas_tot_mode','use_X11','log10_output'] ;variable names of expected flags (4)
   expected_flags=[expected_flags1,expected_flags2,expected_flags3,expected_flags4] ;variable names of expected flags (all)
 
   expected_filenames=['datadir','galaxy','starfile','starfile2','gasfile','gasfile2','starfile3'] ;variable names of expected filenames
+  expected_peakidnames =['peaksdir','peakiddir','starpeakidfile','gaspeakidfile','intpeakidfile'] ;variable names of expected peakid filenames
   expected_masknames=['maskdir','star_ext_mask','star_int_mask','gas_ext_mask','gas_int_mask','star_ext_mask2','star_int_mask2','gas_ext_mask2','gas_int_mask2','star_ext_mask3','star_int_mask3'] ;variable names of expected mask filenames
-  expected_unfiltered=['unfiltdir','star_unfilt_file','gas_unfilt_file'] ;variable names of unfiltered filenames
+  expected_unfiltered=['unfiltdir','star_unfilt_file','gas_unfilt_file'] ;variable names of expected unfiltered filenames
 
   expected_params1=['distance','inclination','posangle','centrex','centrey','minradius','maxradius','Fs1_Fs2_min','max_sample','astr_tolerance','nbins'] ;variable names of expected input parameters (1)
   expected_params2=['lapmin','lapmax','naperture','peak_res','max_res'] ;variable names of expected input parameters (2)
@@ -62,7 +64,7 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   expected_params9=['use_noisecut','noisethresh_s','noisethresh_g'] ;variable names of expected input parameters (9)
   expected_params=[expected_params1,expected_params2,expected_params3,expected_params4,expected_params5,expected_params6,expected_params7,expected_params8,expected_params9] ;variable names of expected input parameters (all)
 
-  n_min_vars = n_elements([expected_flags,expected_filenames,expected_masknames,expected_unfiltered,expected_params]) + 1 ; plus 1 for input file
+  n_min_vars = n_elements([expected_flags,expected_filenames,expected_peakidnames,expected_masknames,expected_unfiltered,expected_params]) + 1 ; plus 1 for input file
   ; check for optional input parameters:
   expected_params10=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_rpeak_mode','iter_tot_mode_s','iter_tot_mode_g','iter_autoexit', 'use_nice', 'nice_value'] ;variable names of expected input parameters (9)
   if n_params() eq (n_min_vars + n_elements(expected_params10)) then begin
@@ -71,16 +73,6 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
     f_error,['Incorrect number of parameters supplied to read_kl14_input_file']
   endif
 
-
-
-
-  ;
-  ; if n_params eq 117 then begin; check if user has requested iteration parameters
-  ;   expected_params9=['use_guess','initial_guess','iter_criterion','iter_crit_len','iter_nmax','iter_filter','iter_bwo','iter_len_conv','iter_autoexit'] ;variable names of expected input parameters (9)
-  ;   expected_params = [expected_params,expected_params9]
-  ; endif else if n_params lt 117 && gt 108 then begin ; lt gt
-  ;   sdljf
-  ; endif
 
 
   expected_vars=[expected_flags,expected_filenames,expected_masknames,expected_unfiltered,expected_params] ;names of all expected variables
