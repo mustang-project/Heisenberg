@@ -1120,14 +1120,10 @@ if diffuse_frac eq 1 then begin
           if f_filter_type eq 2 then filter_choice = 'ideal'
 
   if (diffuse_quant eq 0) then begin ; diffuse_quant =0 -> flux
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;1) method using derivephys and arrays ;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ; if rpeak_cor_mode eq 0 then begin ; use measured rpeaks
-      ;   rpeaks_cor_val = rpeaks
-      ;   rpeakg_cor_val = rpeakg
-      ; endif  ; else rpeaks supplied in input file
-      ;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ; calculate flux fractions and arrays to pass to derivephys.pro for error calculation
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
       if n_elements(use_noisecut) eq 1 && use_noisecut eq 1 then begin
@@ -1142,7 +1138,6 @@ if diffuse_frac eq 1 then begin
        , arrdir $
        , filter_len_conv $  ; fourier length conversion factor
        , lambda $
-       ; , emfrac_cor_mode $ ; apply flux loss and/or zeta correction
        , gas_flux_frac, star_flux_frac $
        , /save_arrays $
        , gas_noise_threshold = gas_noise_threshold $
@@ -1150,37 +1145,8 @@ if diffuse_frac eq 1 then begin
        ; , mask_file = maskfiletot
        , mask_file = temp_maskfiletot
 
-
-
-     ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     ; ; 2) direct method using lambda errors ;
-     ; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     ; fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-     ;   , gasdiffusefiletot $ ; input image
-     ;   , distance, inclination, astr_tolerance $ ;
-     ;   , filter_len_conv $  ; fourier length conversion factor
-     ;   , lambda $ ; lambda
-     ;   , gas_flux_frac $ ; output flux and diffuse fraction
-     ;   , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
-     ;   , flux_frac_errmax = gas_flux_frac_errmax, flux_frac_errmin = gas_flux_frac_errmin ; output flux fraction errors
-     ;
-     ; fourier_diffuse_fraction, filter_choice, bw_order, 'high' $ ; description of the filter   $
-     ;   , stardiffusefiletot $ ; input image
-     ;   , distance, inclination, astr_tolerance $ ;
-     ;   , filter_len_conv $  ; fourier length conversion factor
-     ;   , lambda $ ; lambda
-     ;   , star_flux_frac $ ; output flux and diffuse fraction
-     ;   , lambda_errmin = lambda_errmin, lambda_errmax = lambda_errmax $ ; lambda errors
-     ;   , flux_frac_errmax = star_flux_frac_errmax, flux_frac_errmin = star_flux_frac_errmin ; output flux fraction errors
-
      fcl=star_flux_frac
-     ; fcl_errmin=star_flux_frac_errmin
-     ; fcl_errmax=star_flux_frac_errmax
-
      fgmc=gas_flux_frac
-     ; fgmc_errmin=gas_flux_frac_errmin
-     ; fgmc_errmax=gas_flux_frac_errmax
-     ;
 
    endif else if (diffuse_quant eq 1) then begin ; diffuse_quant =1 -> power
       power_fraction_calc, gasdiffusefiletot, stardiffusefiletot $ ; input image (use masked image, but not regridded/smoothened)
@@ -1193,20 +1159,6 @@ if diffuse_frac eq 1 then begin
 
           fcl=star_flux_frac
           fgmc=gas_flux_frac
-
-
-  ;     power_fraction_calc, masked_path_gas $ ; input image (use masked image, but not regridded/smoothened)
-  ;         , distance, inclination, astr_tolerance $
-  ;         , arrdir $ ; directory to restore lambda array from
-  ;         , fourier_length_conv $  ; fourier length conversion factor
-  ;         , lambda $
-  ;         , fit_power_frac $
-  ;         , power_frac_arr $
-  ;         , save_array = save_array
-   ;
-  ;  print, fit_power_frac
-  ;  print, power_frac_arr
-  ;  stop
 
    endif else begin
       f_error, 'The current value of diffuse_quant (', diffuse_quant, ') is not valued select 0 (flux) or 1 (power)'
@@ -1390,10 +1342,6 @@ if write_output then begin
                 'etagas','etagas_errmin','etagas_errmax', $
                 'qzetastar','qzetastar_errmin','qzetastar_errmax', $
                 'qzetagas','qzetagas_errmin','qzetagas_errmax', $
-                ; 'fdiffstar','fdiffstar_errmin','fdiffstar_errmax', $
-                ; 'fdiffgas','fdiffgas_errmin','fdiffgas_errmax', $
-                ;add: fdiffstar
-                ;add: fdiffgas
                 'zetastar','zetastar_errmin','zetastar_errmax', $
                 'zetagas','zetagas_errmin','zetagas_errmax', $
                 'rpeakstar','rpeakstar_errmin','rpeakstar_errmax', $
@@ -1463,9 +1411,6 @@ if write_output then begin
                 'etagas','etagas_errmin','etagas_errmax', $
                 'qzetastar','qzetastar_errmin','qzetastar_errmax', $
                 'qzetagas','qzetagas_errmin','qzetagas_errmax', $
-                ;add: fdiffstar
-                ;add: fdiffgas
-
 
                 'zetastar','zetastar_errmin','zetastar_errmax', $
                 'zetagas','zetagas_errmin','zetagas_errmax', $
