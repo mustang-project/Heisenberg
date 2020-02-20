@@ -54,6 +54,12 @@ function f_etaavg,esf ;Time-integrated mass loading factor
     return,etaavg
 end
 
+function f_pzero, vfbr, etaavg ; specific terminal momentum
+  COMMON astrconst
+  pzero = vfbr * etaavg ; specific momentum in km/s
+  return, pzero
+end
+
 function f_chie,tover,esf,vfb,psie ;Feedback energy efficiency
     COMMON numbers
     COMMON astrconst

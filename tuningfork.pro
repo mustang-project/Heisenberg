@@ -1354,11 +1354,12 @@ if write_output then begin
                 'mdotfb','mdotfb_errmin','mdotfb_errmax', $
                 'etainst','etainst_errmin','etainst_errmax', $
                 'etaavg','etaavg_errmin','etaavg_errmax', $
+                'pzero','pzero_errmin','pzero_errmax', $
                 'chie','chie_errmin','chie_errmax', $
                 'chier','chier_errmin','chier_errmax', $
                 'chip','chip_errmin','chip_errmax', $
                 'chipr','chipr_errmin','chipr_errmax']
-        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','','','','']
+        derunit=['Myr','Myr','','','','','','','','','','','','','','','','','pc','pc','km s^-1','km s^-1','Gyr','','Msun yr^-1','Msun yr^-1','','','km s^-1','','','','']
         derad='Derived'
         derstrings=[derad+' '+derqty(0)+', '+derqty(1)+', '+derqty(2)+' ['+derunit(0)+']', $
                     derad+' '+derqty(3)+', '+derqty(4)+', '+derqty(5)+' ['+derunit(1)+']', $
@@ -1391,7 +1392,9 @@ if write_output then begin
                     derad+' '+derqty(84)+', '+derqty(85)+', '+derqty(86)+' ['+derunit(28)+']', $
                     derad+' '+derqty(87)+', '+derqty(88)+', '+derqty(89)+' ['+derunit(29)+']', $
                     derad+' '+derqty(90)+', '+derqty(91)+', '+derqty(92)+' ['+derunit(30)+']', $
-                    derad+' '+derqty(93)+', '+derqty(94)+', '+derqty(95)+' ['+derunit(31)+']']
+                    derad+' '+derqty(93)+', '+derqty(94)+', '+derqty(95)+' ['+derunit(31)+']', $
+                    derad+' '+derqty(96)+', '+derqty(97)+', '+derqty(98)+' ['+derunit(32)+']']
+
 
     endif else begin
         derqty=['tstar','tstar_errmin','tstar_errmax', $
