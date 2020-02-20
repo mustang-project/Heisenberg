@@ -339,6 +339,7 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         problambdatemp=problambdatemp1+frac12*(problambdatemp2-problambdatemp1)
         problambdacumtemp=total(problambdatemp*dlambda,/cumulative)
         problambdacumtemp=problambdacumtemp/max(problambdacumtemp)
+        if pdf_form_check(problambdacumtemp) ne 1 || pdf_form_check(probtovercumtemp) ne 1 then redo = 1 ; check for problematic pdfs that lead to spurious results
         irnd+=1
         lambdamc(i)=10.^interpol(alog10(lambdaarr),problambdacumtemp,randomarr(irnd))
         irnd+=1

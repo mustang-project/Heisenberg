@@ -45,6 +45,7 @@
 .com symmetric_sigmoidal
 .com lin_unity_intercept
 .com derivephys
+.com pdf_form_check
 .com plotfits
 .com plotfits_files
 .com strsplit
@@ -60,6 +61,7 @@
 .com mask_ds9_file_mask
 .com mask_tool.pro
 .com is_an_integer
+
 
 
 .com fourier_flux_loss_correction
