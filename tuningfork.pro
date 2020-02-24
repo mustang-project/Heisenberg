@@ -254,10 +254,7 @@ lap_min=apertures(peak_res) ;size of smallest aperture
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;TEMPORARY HOTFIX
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;SYNCHRONISE MASKS FOR ALL IMAGES AND CALCULATE TOTAL GAS MASSES AND/OR STAR FORMATION RATES;
+;PREPARE THE MASK ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 if regrid then begin
@@ -300,8 +297,6 @@ if regrid then begin
         pixtopc=distance*tan(!dtor*cdelt)/sqrt(cos(inclination)) ;pixel size in pc -- assumes small angles, i.e. tan(x)~x
         ; get temporary values that will be overwritten
 
-
-
         ;make radial cut
         pixx=dblarr(nx,ny) ;array containing map x pixel indices
         pixy=dblarr(nx,ny) ;array containing map y pixel indices
@@ -321,7 +316,7 @@ if regrid then begin
 
         ;write out mask file
         maskfile = 'totalmask.fits' ;filename for the mask
-        diffusetempdir=rundir+'hotfixdir'+path_sep() ;temporary hotfix directory
+        diffusetempdir=rundir+'maskprepdir'+path_sep() ;temporary directory for the mask to be prepared
         dummy=file_search(diffusetempdir,count=ct) ;check if maskeddir exists
         if ct eq 0 then spawn,'mkdir '+diffusetempdir ;if not, create it
         temp_maskfiletot = diffusetempdir + maskfile
@@ -330,9 +325,6 @@ if regrid then begin
 
     endif else f_error,['for masks to be propogated between images, all images must share the same astrometry','set regrid=1 in the parameter file to regrid images']
 endif
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;TEMPORARY HOTFIX
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
