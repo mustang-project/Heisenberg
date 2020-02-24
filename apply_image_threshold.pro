@@ -1,13 +1,13 @@
 ;----------------------------------------------------------------------------------------
 pro apply_image_threshold, raw_arr, noise_threshold, zero_negatives = zero_negatives
 ;----------------------------------------------------------------------------------------
-;
+; apply a treshold to an image
 ;--(input)-------------------------------------------------------------------------------
-; ***   =
+; ***  raw_arr           = the array to apply the threshold to. Raw arr is outputted with
+; ***                      the threshold applied
+; ***  noise_threshold   = the noise threshold to apply in the same units as raw_arr
 ;--(keywords)----------------------------------------------------------------------------
-; ***     =
-;--(output)------------------------------------------------------------------------------
-; ***            =
+; ***  zero_negatives    = mask all negative values regardless of noise_threshold
 ;-----------------------------------------------------------------------------------------
   compile_opt idl2, strictarrsubs
 

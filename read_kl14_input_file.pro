@@ -1,3 +1,4 @@
+;----------------------------------------------------------------------------------------
 pro read_kl14_input_file, input_file, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
   use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
@@ -18,6 +19,12 @@ pro read_kl14_input_file, input_file, $ ; input_file_filepath
   use_stds, std_star, std_star3, std_gas, $ ;variable names of expected input parameters (8)
   use_noisecut, noisethresh_s, noisethresh_g, $ ;variable names of expected input parameters (9)
   use_guess, initial_guess, iter_criterion, iter_crit_len,iter_nmax, iter_filter ,iter_bwo, iter_len_conv, iter_rpeak_mode, iter_tot_mode_s, iter_tot_mode_g, iter_autoexit, use_nice, nice_value ;variable names of expected input parameters (10)
+;----------------------------------------------------------------------------------------
+; reads the parameters from a Heisenberg input file. See input_file for details of the
+; parameters 
+;----------------------------------------------------------------------------------------
+
+
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;READ INPUT FILE AND VERIFY;

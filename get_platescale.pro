@@ -2,7 +2,7 @@
 function get_platescale, hdr_or_astr, astr_tolerance, $
   xplatescale = xplatescale, yplatescale = yplatescale
 ;----------------------------------------------------------------------------------------
-;
+; get the platescale (angular size of pixels) from a .fits header
 ;--(input)-------------------------------------------------------------------------------
 ; *** hdr_astr       = a fits header or astrometry structure (extracted from a hdr with
 ; ***                  extast)

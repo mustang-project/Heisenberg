@@ -1,7 +1,8 @@
 ;----------------------------------------------------------------------------------------
 pro iteration_plot, plot_filename, ytitle, iter_vec, errmin, errmax, zero_ymin = zero_ymin
 ;----------------------------------------------------------------------------------------
-;
+; plots a quantity against iteration number. Used to visualise the change of Heisenberg
+; output parameters during the iterative diffuse filtering process
 ;--(dependencies)------------------------------------------------------------------------
 ; *** To run, fourier_diffuse_fraction requires:
 ; *** 1) The coyote graphics library: http://www.idlcoyote.com/documents/programs.php

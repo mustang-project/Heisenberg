@@ -1,3 +1,4 @@
+;----------------------------------------------------------------------------------------
 pro make_input_file, input_file_filepath   $ ; general variables
                    , datadir, galaxy, starfile, gasfile   $  ; File names compulsory variables
 
@@ -23,6 +24,11 @@ pro make_input_file, input_file_filepath   $ ; general variables
                    , use_noisecut = use_noisecut, noisethresh_s = noisethresh_s, noisethresh_g = noisethresh_g $ ; # INPUT PARAMETERS 9 (noise threshold)
                    ; ################################################################################################################################################################################################################################################################
                    , use_guess = use_guess, initial_guess = initial_guess, iter_criterion = iter_criterion, iter_crit_len = iter_crit_len, iter_nmax = iter_nmax, iter_filter = iter_filter, iter_bwo = iter_bwo, iter_len_conv = iter_len_conv, iter_rpeak_mode = iter_rpeak_mode, iter_tot_mode_s = iter_tot_mode_s, iter_tot_mode_g = iter_tot_mode_g, iter_autoexit = iter_autoexit, use_nice = use_nice, nice_value = nice_value ; # INPUT PARAMETERS 9 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
+;----------------------------------------------------------------------------------------
+; writes out a Heisenberg input file given parameter values. See input_file for details
+; of the parameters 
+;----------------------------------------------------------------------------------------
+
 
 
 
