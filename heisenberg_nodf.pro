@@ -1,6 +1,6 @@
-;	start-up file for KL14 analysis
+;	start-up file for HEISENBERG analysis
 
- !PROMPT = 'KL14> '
+ !PROMPT = 'HEISENBERG> '
 
  PRINT,' '
  PRINT,'Loading all necessary procedures and functions....'

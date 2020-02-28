@@ -314,7 +314,7 @@ pro diffuse_iteration, master_inputfile
     ; **********************
     ; * call KL14
     ; **********************
-    spawn_string = 'idl kl14.pro -arg ' + input_file_filepath
+    spawn_string = 'idl heisenberg_nodf.pro -arg ' + input_file_filepath
 
 
     if n_elements(use_nice) eq 1 && use_nice eq 1 then spawn_string = 'nice -n ' + string(fix(nice_value)) + ' '+ spawn_string
