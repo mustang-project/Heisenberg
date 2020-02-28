@@ -79,7 +79,7 @@ function f_writecorr,matrix,complete,galaxy,outputdir
     printf,lun,'# IMPORTANT: see Paper II (Kruijssen et al. 2018) for details on how this matrix was calculated'
     printf,lun,'# This symmetric array lists the correlation coefficients for quantities that are, from left to right AND from top to bottom, in the order:'
     if complete then begin
-        printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr, surfsfr, surfgas, tdepl, esf, pzero, mdotsf, mdotfb, etainst, pzero, chie, chier, chip, chipr, fcl, fgmc'
+      printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr, surfsfr, surfgas, tdepl, esf, mdotsf, mdotfb, etainst, etaavg, pzero, chie, chier, chip, chipr, fcl, fgmc'
     endif else begin
         printf,lun,'# tgas, tover, lambda, tstar, ttotal, betastar, betagas, surfglobalstar, surfglobalgas, surfconstar, surfcongas, rpeakstar, rpeakgas, zetastar, zetagas, vfb, vfbr, fcl, fgmc'
     endelse
@@ -791,13 +791,13 @@ function derivephys,surfsfr,surfsfr_err,surfgas,surfgas_err,area,tgas,tover,lamb
         etaavgarr=dummy(*,0)
         detaavg=dummy(*,1)
         probetaavg=dummy(*,2)
-        report=f_plotdistr(etaavgarr,detaavg,probetaavg,etaavg,etaavg_errmin,etaavg_errmax,galaxy,figdir,'etaavg','!6<!7g!6!Dfb!N>','!6km s!U-1!N',0)
+        report=f_plotdistr(etaavgarr,detaavg,probetaavg,etaavg,etaavg_errmin,etaavg_errmax,galaxy,figdir,'etaavg','!6<!7g!6!Dfb!N>','',0)
         report=f_writepdf(alog10(etaavgarr),alog10(detaavg),alog10(probetaavg),galaxy,outputdir,'etaavg','# log10(etaavg), log10(detaavg), log10(PDF)')
         dummy=f_createpdf(pzeromc,dpzeromc,cumdistr,ntry)
         pzeroarr=dummy(*,0)
         dpzero=dummy(*,1)
         probpzero=dummy(*,2)
-        report=f_plotdistr(pzeroarr,dpzero,probpzero,pzero,pzero_errmin,pzero_errmax,galaxy,figdir,'pzero','!8p!6!D0!N','',0)
+        report=f_plotdistr(pzeroarr,dpzero,probpzero,pzero,pzero_errmin,pzero_errmax,galaxy,figdir,'pzero','!8p!6!D0!N','!6km s!U-1!N',0)
         report=f_writepdf(alog10(pzeroarr),alog10(dpzero),alog10(probpzero),galaxy,outputdir,'pzero','# log10(p0[km s^-1]), log10(dp0[km s^-1]), log10(PDF[km^-1 s])')
         dummy=f_createpdf(chiemc,dchiemc,cumdistr,ntry)
         chiearr=dummy(*,0)
