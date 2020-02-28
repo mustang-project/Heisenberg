@@ -12,9 +12,11 @@ function pdf_form_check, cumulative_pdf
 
 
   ; make a series of checks in order of computational effort:
-  if cumulative_pdf[-1] ne 1.0d0 then return, 0 ; the final value in the pdf should be 1
+  n_els = n_elements(cumulative_pdf)
+
+  if cumulative_pdf[n_els - 1] ne 1.0d0 then return, 0 ; the final value in the pdf should be 1
   if total(long(cumulative_pdf lt 0.0d0)) ge 1 then return, 0 ; there should be no negative values in the cumulative pdf
-  if total(long((cumulative_pdf[1:-1] - cumulative_pdf[0:-2]) lt 0.0d0)) ge 1 then return, 0 ; the pdf should be monotonically increasing
+  if total(long((cumulative_pdf[1:n_els - 1] - cumulative_pdf[0: n_els - 2]) lt 0.0d0)) ge 1 then return, 0 ; the pdf should be monotonically increasing
 
   ; if the pdf passes all checks then return 1
   return,1
