@@ -478,60 +478,6 @@ if regrid then begin
 
     endif else f_error,['for masks to be propogated between images, all images must share the same astrometry','set regrid=1 in the parameter file to regrid images']
 endif
-if map_units eq 1 then begin
-    if star_tot_mode eq 1 then begin
-        sfr_galaxy=star_tot_val
-        sfr_galaxy_err=star_tot_err
-    endif else begin
-        sfr_galaxy=total(starmap,/nan)*convstar ;total star formation rate in SF map
-        sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
-    endelse
-
-    if gas_tot_mode eq 1 then begin
-        mgas_galaxy=gas_tot_val
-        mgas_galaxy_err=gas_tot_err
-    endif else begin
-        mgas_galaxy=total(gasmap,/nan)*convgas ;total gas mass in gas map
-        mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
-    endelse
-
-    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.))/1.d9 ;gas depletion time + 1sigma
-    if tgasmaxi gt tdeplmax*1.d3 then tgasmaxi=tdeplmax*1.d3 ;tgas cannot exceed the gas depletion time
-endif
-if map_units eq 2 then begin
-    if star_tot_mode eq 1 then begin
-        mgas_galaxy1=star_tot_val
-        mgas_galaxy1_err=star_tot_err
-    endif else begin
-        mgas_galaxy1=total(starmap,/nan)*convstar ;total gas mass in "SF" map
-        mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
-    endelse
-
-    if gas_tot_mode eq 1 then begin
-        mgas_galaxy2=gas_tot_val
-        mgas_galaxy2_err=gas_tot_err
-    endif else begin
-      mgas_galaxy2=total(gasmap,/nan)*convgas ;total gas mass in gas map
-      mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
-    endelse
-endif
-if map_units eq 3 then begin
-    if star_tot_mode eq 1 then begin
-        sfr_galaxy1=star_tot_val
-        sfr_galaxy1_err=star_tot_err
-    endif else begin
-        sfr_galaxy1=total(starmap,/nan)*convstar ;total star formation rate in SF map
-        sfr_galaxy1_err=convstar_rerr*sfr_galaxy1 ;standard error on SFR 1
-    endelse
-
-    if gas_tot_mode eq 1 then begin
-        sfr_galaxy2=gas_tot_val
-        sfr_galaxy2_err=gas_tot_err
-    endif else begin
-      sfr_galaxy2=total(gasmap,/nan)*convgas ;total star formation rate in "gas" map
-      sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
-    endelse
-endif
 
 
 ;;;;;;;;;;;;;;;
@@ -1155,49 +1101,124 @@ if diffuse_frac eq 1 then begin
    endif else begin
       f_error, 'The current value of diffuse_quant (', diffuse_quant, ') is not valued select 0 (flux) or 1 (power)'
    endelse
-endif else begin ; calcuate fgmc and fcl not using fourier filtering
-    if map_units eq 0 then begin
-        fcl=1. ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fcl_errmin=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
-        fcl_errmax=tiny ; no error calculated as 1.0 is assumed
+endif else begin ; Assume 100% of emission is compact (i.e. no diffuse emission)
+      fcl=1. ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
+      fcl_errmin=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
+      fcl_errmax=tiny ; no error calculated as 1.0 is assumed
 
-        fgmc=1. ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fgmc_errmin=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
-        fgmc_errmax=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
-    endif
-    if map_units eq 1 then begin
-        fcl=total(starmap,/nan)*convstar/sfr_galaxy ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-        fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-
-        fgmc=total(gasmap,/nan)*convgas/mgas_galaxy ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-        fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-    endif
-    if map_units eq 2 then begin
-        fcl=total(starmap,/nan)*convstar/mgas_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-        fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-
-        fgmc=total(gasmap,/nan)*convgas/mgas_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-        fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-    endif
-    if map_units eq 3 then begin
-        fcl=total(starmap,/nan)*convstar/sfr_galaxy1 ;SF flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fcl_errmin=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-        fcl_errmax=fcl*convstar_err/convstar        ; pre-fourier-filtering error calculations
-
-        fgmc=total(gasmap,/nan)*convgas/sfr_galaxy2 ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
-        fgmc_errmin=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-        fgmc_errmax=fgmc*convgas_err/convgas        ; pre-fourier-filtering error calculations
-      endif
+      fgmc=1. ;gas flux tracer emission from peaks -- will become functional after including Fourier filtering
+      fgmc_errmin=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
+      fgmc_errmax=tiny ; no error calculated as 1.0 is assumed so use tiny as dummy error
 
       fsingle_array_make, arrdir, fcl, fgmc ; save out arrays of fcl and fgmc with same number of elements of lambdaarr
-
-
 endelse
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;CALCULATE total SFR and gas mass taking account of diffuse fractions;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; if (star/gas)_tot_mode = 1, then trust that do not alter the user input
+; if (star/gas)_tot_mode = 0, then we ensure that the gas mass is only the non-diffuse gas and that the SFR is the total SFR (including diffuse)
+
+if map_units eq 1 then begin
+    if star_tot_mode eq 1 then begin
+        sfr_galaxy=star_tot_val
+        sfr_galaxy_err=star_tot_err
+    endif else begin
+        if n_elements(use_unfilt_ims) eq 1 && use_unfilt_ims eq 1 then begin
+            temp_stardiffuse_map = readfits(stardiffusefiletot, temp_stardiffuse_hdr)
+            ; as starmap has same astrometry as the other maps just check with starmap
+            if ~astrometry_equal(starmap, starmaphdr, temp_stardiffuse_map, temp_stardiffuse_hdr, astr_tolerance) then f_error,['unfiltered images must share the same astrometry as starmap and gasmap','regrid the unfiltered images']
+            temp_stardiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
+            sfr_galaxy=total(temp_stardiffuse_map,/nan)*convstar ;total star formation rate in SF map
+            sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
+        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provide','provide an unfiltered star map and set use_unfilt_ims=1 ']
+
+    endelse
+
+    if gas_tot_mode eq 1 then begin
+        mgas_galaxy=gas_tot_val
+        mgas_galaxy_err=gas_tot_err
+    endif else begin
+        if n_elements(use_unfilt_ims) eq 1 && use_unfilt_ims eq 1 then begin
+            temp_gasdiffuse_map = readfits(gasdiffusefiletot, temp_gasdiffuse_hdr)
+            ; as starmap has same astrometry as the other maps just check with starmap
+            if ~astrometry_equal(starmap, starmaphdr, temp_gasdiffuse_map, temp_gasdiffuse_hdr, astr_tolerance) then f_error,['unfiltered images must share the same astrometry as starmap and gasmap','regrid the unfiltered images']
+            temp_gasdiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
+            mgas_galaxy=total(temp_gasdiffuse_map,/nan)*convgas ;total gas mass in gas map
+            mgas_galaxy*=min([fgmc,1.0d0]) ; to ensure gas mass isn't increased
+            mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
+        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provide','provide an unfiltered gas map and set use_unfilt_ims=1 ']
+
+    endelse
+
+    tdeplmax=mgas_galaxy/sfr_galaxy*(1.+sqrt((mgas_galaxy_err/mgas_galaxy)^2.+(sfr_galaxy_err/sfr_galaxy)^2.))/1.d9 ;gas depletion time + 1sigma
+    if tgasmaxi gt tdeplmax*1.d3 then tgasmaxi=tdeplmax*1.d3 ;tgas cannot exceed the gas depletion time
+endif
+if map_units eq 2 then begin
+    if star_tot_mode eq 1 then begin
+        mgas_galaxy1=star_tot_val
+        mgas_galaxy1_err=star_tot_err
+    endif else begin
+        if n_elements(use_unfilt_ims) eq 1 && use_unfilt_ims eq 1 then begin
+            temp_stardiffuse_map = readfits(stardiffusefiletot, temp_stardiffuse_hdr)
+            ; as starmap has same astrometry as the other maps just check with starmap
+            if ~astrometry_equal(starmap, starmaphdr, temp_stardiffuse_map, temp_stardiffuse_hdr, astr_tolerance) then f_error,['unfiltered images must share the same astrometry as starmap and gasmap','regrid the unfiltered images']
+            temp_stardiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
+            mgas_galaxy1=total(temp_stardiffuse_map,/nan)*convstar ;total gas mass in "SF" map
+            mgas_galaxy1*=min([fgmc,1.0d0]) ; to ensure gas mass isn't increased
+            mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
+        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provide','provide an unfiltered star map and set use_unfilt_ims=1 ']
+
+    endelse
+
+    if gas_tot_mode eq 1 then begin
+        mgas_galaxy2=gas_tot_val
+        mgas_galaxy2_err=gas_tot_err
+    endif else begin
+        if n_elements(use_unfilt_ims) eq 1 && use_unfilt_ims eq 1 then begin
+            temp_gasdiffuse_map = readfits(gasdiffusefiletot, temp_gasdiffuse_hdr)
+            ; as starmap has same astrometry as the other maps just check with starmap
+            if ~astrometry_equal(starmap, starmaphdr, temp_gasdiffuse_map, temp_gasdiffuse_hdr, astr_tolerance) then f_error,['unfiltered images must share the same astrometry as starmap and gasmap','regrid the unfiltered images']
+            temp_gasdiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
+            mgas_galaxy2=total(temp_gasdiffuse_map,/nan)*convgas ;total gas mass in gas map
+            mgas_galaxy2*=min([fgmc,1.0d0]) ; to ensure gas mass isn't increased
+            mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
+        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provide','provide an unfiltered gas map and set use_unfilt_ims=1 ']
+
+    endelse
+endif
+if map_units eq 3 then begin
+    if star_tot_mode eq 1 then begin
+        sfr_galaxy1=star_tot_val
+        sfr_galaxy1_err=star_tot_err
+    endif else begin
+        if n_elements(use_unfilt_ims) eq 1 && use_unfilt_ims eq 1 then begin
+            temp_stardiffuse_map = readfits(stardiffusefiletot, temp_stardiffuse_hdr)
+            ; as starmap has same astrometry as the other maps just check with starmap
+            if ~astrometry_equal(starmap, starmaphdr, temp_stardiffuse_map, temp_stardiffuse_hdr, astr_tolerance) then f_error,['unfiltered images must share the same astrometry as starmap and gasmap','regrid the unfiltered images']
+            temp_stardiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
+            sfr_galaxy1=total(temp_stardiffuse_map,/nan)*convstar ;total star formation rate in SF map
+            sfr_galaxy1_err=convstar_rerr*sfr_galaxy1  ;standard error on SFR 1
+        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provide','provide an unfiltered star map and set use_unfilt_ims=1 ']
+
+    endelse
+
+    if gas_tot_mode eq 1 then begin
+        sfr_galaxy2=gas_tot_val
+        sfr_galaxy2_err=gas_tot_err
+    endif else begin
+        if n_elements(use_unfilt_ims) eq 1 && use_unfilt_ims eq 1 then begin
+            temp_gasdiffuse_map = readfits(gasdiffusefiletot, temp_gasdiffuse_hdr)
+            ; as starmap has same astrometry as the other maps just check with starmap
+            if ~astrometry_equal(starmap, starmaphdr, temp_gasdiffuse_map, temp_gasdiffuse_hdr, astr_tolerance) then f_error,['unfiltered images must share the same astrometry as starmap and gasmap','regrid the unfiltered images']
+            temp_gasdiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
+            sfr_galaxy2=total(temp_gasdiffuse_map,/nan)*convgas  ;total star formation rate in "gas" map
+            sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
+        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provide','provide an unfiltered gas map and set use_unfilt_ims=1 ']
+
+    endelse
+endif
 
 
 

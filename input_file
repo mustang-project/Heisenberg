@@ -152,10 +152,10 @@ convstar3       0.        # Log of multiplication factor to convert the pixel va
 convstar3_rerr  0.        # Relative error (sigma_x/x) of convstar3
 lighttomass     0.002     # Light-to-mass ratio of a desired feedback mechanism in m^2 s^-3 (default 0.002 is SNe)
 momratetomass   5.e-10    # Momentum output rate per unit mass of a desired feedback mechanism in m s^-2 (default 5.e-10 is SNe+winds)
-star_tot_val    1.0       # Input value of the total sfr/gas mass of the star map (only used if star_tot_mode = 1)
+star_tot_val    1.0       # Input value of the total sfr/gas mass of the star map (only used if star_tot_mode = 1). Note that this should be the total SFR (including diffuse emission) in oder to calculate the correct depletion time and derived quantities.
 star_tot_err    0.1       # Error on the input value of the total sfr/gas mass of the star map (only used if star_tot_mode = 1)
-gas_tot_val     1.0e9     # input value of the total sfr/gas mass of the gas map (only used if gas_tot_mode = 1)
-gas_tot_err     1.0e8       # Error on the input value of the total sfr/gas mass of the gas map (only used if star_tot_mode = 1)
+gas_tot_val     1.0e9     # input value of the total sfr/gas mass of the gas map (only used if gas_tot_mode = 1). Note that this should be the total gas mass of the galaxy minus the removed diffuse emission in order to calculate the correct depletion time and derived quantities.
+gas_tot_err     1.0e8     # Error on the input value of the total sfr/gas mass of the gas map (only used if star_tot_mode = 1)
 # INPUT PARAMETERS 8 (sensitivity)
 use_stds        0         # [0] calculate standard deviations of images [1] Use supplied standard deviation measurements
 std_star        0.1       # The measured standard deviation of starfile
