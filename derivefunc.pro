@@ -15,7 +15,7 @@ function f_rpeak,zeta,lambda ;Tracer peak radius
 end
 
 function f_esf,tgas,tdepl,fcl,fgmc ;Star formation efficiency per star formation event
-    esf=min([fcl*tgas/(fgmc*tdepl*1.d3),1.]) ;cannot exceed unity
+    esf=min([tgas/(tdepl*1.d3),1.]) ;cannot exceed unity
     return,esf
 end
 
@@ -52,6 +52,12 @@ function f_etaavg,esf ;Time-integrated mass loading factor
     COMMON numbers
     etaavg=max([(1.-esf)/esf,tiny])
     return,etaavg
+end
+
+function f_pzero, vfbr, etaavg ; specific terminal momentum
+  COMMON astrconst
+  pzero = vfbr * etaavg ; specific momentum in km/s
+  return, pzero
 end
 
 function f_chie,tover,esf,vfb,psie ;Feedback energy efficiency
