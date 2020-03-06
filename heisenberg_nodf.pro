@@ -1,6 +1,6 @@
-;	start-up file for KL14 analysis
+;	start-up file for HEISENBERG analysis
 
- !PROMPT = 'KL14> '
+ !PROMPT = 'HEISENBERG> '
 
  PRINT,' '
  PRINT,'Loading all necessary procedures and functions....'
@@ -32,7 +32,7 @@
  yr = 86400.*365.25           ; sidereal year		[s]
  myr = 1.d6*yr
  kms = 1.d3
-                                ; compile programs                               
+                                ; compile programs
 .com derivefunc
 .com clfind2d
 .com clplot2d
@@ -41,20 +41,64 @@
 .com peaks2d
 .com derivefunc
 .com fitKL14
+.com unity_symmetric_sigmoidal
+.com symmetric_sigmoidal
+.com lin_unity_intercept
 .com derivephys
+.com pdf_form_check
 .com plotfits
 .com plotfits_files
 .com strsplit
 .com strnumber
+
 .com astrometry_equal
+.com get_platescale
+
 .com mask_inside_circle
 .com mask_inside_ellipse
 .com mask_ds9_box_vertices
 .com mask_ds9_file_convert
 .com mask_ds9_file_mask
 .com mask_tool.pro
+.com is_an_integer
+
+
+
+.com fourier_flux_loss_correction
+.com fourier_lowpass_ideal
+.com fourier_highpass_ideal
+.com fourier_lowpass_gaussian
+.com fourier_highpass_gaussian
+.com fourier_lowpass_butterworth
+.com fourier_highpass_butterworth
+.com fourier_filter_tool
+.com fourier_diffuse_fraction
+.com fourier_zeta_correction
+.com fourier_power_fraction_vec
+.com fourier_power_fraction
+.com fourier_overlap_correction
+.com fourier_overlap_sigma_calc
+.com flux_fraction_calc
+.com fsingle_array_make
+.com power_fraction_calc
+.com med_peak_relative_nearest_neighbour_dist_calc
+
+.com make_input_file
+.com read_kl14_input_file
+.com read_kl14_tablerow
+
+.com calc_levels
+.com ds9_display_peaks
+.com peak_var_read
+.com peak_find
+.com interactive_peak_find
+.com get_clfind_peaks_filename
+.com min_int_print_digits
+
 .com f_error.pro
 .com f_string.pro
+
+.com histoplot_update.pro
 
 
 if keyword_set(COMMAND_LINE_ARGS()) then inputfile=COMMAND_LINE_ARGS() $

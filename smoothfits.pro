@@ -1,4 +1,4 @@
-function smoothfits,distance,incl,res_pc,filename,origdir,newdir,max_sample,tophat=tophat,regrid=regrid
+function smoothfits,distance,incl,res_pc,filename,origdir,newdir,max_sample,astr_tolerance,tophat=tophat,regrid=regrid
 
 if keyword_set(regrid) eq 0 then regrid=0
 ; motivate clfind levels
@@ -9,15 +9,15 @@ if keyword_set(regrid) eq 0 then regrid=0
 if regrid then begin
 ;    NYQUIST RESOLUTION
      nyquist=res_as/max_sample
-   
+
 ;    for resolutions of 0 - 5 round to 0.5 values
      ind = where(nyquist lt 5, ct)
      if ct ne 0 then nyquist = round(2*nyquist)/2.
-   
+
 ;    for resolutions of 5 - 10 round to 1 values
      ind = where(nyquist ge 5 and nyquist lt 10, ct)
      if ct ne 0 then nyquist = round(nyquist)
-   
+
 ;    for resolutions of 10 - 20 round to 2 values
      ind = where(nyquist ge 10 and nyquist lt 20, ct)
      if ct ne 0 then nyquist = 2*round(nyquist/2)
@@ -54,16 +54,14 @@ endif
 ;       Construct Convolution Kernel
         sz = size(data)
         if doconvolve then begin
-            cdelt = abs(sxpar(hdr,'CDELT1',count=ct))
-            if ct eq 0 then cdelt = abs(sxpar(hdr,'CD1_1',count=ct))
-            if ct eq 0 then stop
+            cdelt = get_platescale(hdr, astr_tolerance)
             if ~tophat then begin
                 psf_fwhm  = sqrt(res_as^2-(beam*3600.)^2) / 3600. / cdelt ; pixel units
                 psf_width = floor(5.*psf_fwhm) < sxpar(hdr,'NAXIS1') < sxpar(hdr,'NAXIS2') ; NAXIS(psf)<=NAXIS(map)
                 psf_width = 2.*ceil(psf_width/2.)-1. > 0. ;ensure odd number of pixels
                 psf = psf_gaussian(npixel=psf_width, fwhm=[psf_fwhm,psf_fwhm], /normal) ;Gaussian kernel
             endif else psf = psf_tophat(res_as/3600./cdelt) ;tophat kernel
-    
+
 ;           Check if map is 2D or 3D
             nans = where(finite(data, /nan), n_nans)
             if n_nans ne 0 then data(nans)=0.
@@ -77,12 +75,12 @@ endif
                   conv[*,*,k] = convolve(data[*,*,k], psf, /no_ft) ;convolve in 3D
                endfor
             endelse
-            
+
             data = conv ;replace data by convolved data
-    
+
 ;           Set back Blanked Pixel
             if n_nans ne 0 then data[nans] = !values.f_nan
-        
+
 ;           Update Header
             sxaddpar, hdr, 'BMAJ', res_as/3600. ;new beam major axis
             sxaddpar, hdr, 'BMIN', res_as/3600. ;new beam minor axis
@@ -90,18 +88,13 @@ endif
 
 if regrid then begin
 ;       NYQUIST SAMPLE MAP
-        cdelt = 3600.*abs(sxpar(hdr,'CDELT1',count=ct))
-        if ct eq 0 then cdelt = 3600.*abs(sxpar(hdr,'CD1_1',count=ct))
-        if ct eq 0 then stop
+        cdelt = 3600.*get_platescale(hdr, astr_tolerance)
         if nyquist ge 1.2*cdelt then begin
            naxis1 = sxpar(hdr, 'NAXIS1')
            naxis2 = sxpar(hdr, 'NAXIS2')
-           cdelt1 = sxpar(hdr,'CDELT1',count=ct)
-           if ct eq 0 then cdelt1 = sxpar(hdr,'CD1_1',count=ct)
-           if ct eq 0 then stop
-           cdelt2 = sxpar(hdr,'CDELT2',count=ct)
-           if ct eq 0 then cdelt2 = sxpar(hdr,'CD2_2',count=ct)
-           if ct eq 0 then stop
+
+           cdelt1 = get_platescale(hdr, astr_tolerance, /xplatescale) ; get x-platescale with sign
+           cdelt2 = get_platescale(hdr, astr_tolerance, /yplatescale) ; get y-platescale with sign
            crpix1 = sxpar(hdr, 'CRPIX1')
            crpix2 = sxpar(hdr, 'CRPIX2')
            crval1 = sxpar(hdr, 'CRVAL1')
@@ -113,10 +106,10 @@ if regrid then begin
            sxaddpar, hdr_new, 'NAXIS2', round(naxis2 / scale)
            sxaddpar, hdr_new, 'CRPIX1', round(crpix1 / scale)
            sxaddpar, hdr_new, 'CRPIX2', round(crpix2 / scale)
-           sxaddpar, hdr_new, 'CDELT1', cdelt1*scale  
-           sxaddpar, hdr_new, 'CDELT2', cdelt2*scale  
-           sxaddpar, hdr_new, 'CD1_1',  cdelt1*scale  
-           sxaddpar, hdr_new, 'CD2_2',  cdelt2*scale  
+           sxaddpar, hdr_new, 'CDELT1', cdelt1*scale
+           sxaddpar, hdr_new, 'CDELT2', cdelt2*scale
+           sxaddpar, hdr_new, 'CD1_1',  cdelt1*scale
+           sxaddpar, hdr_new, 'CD2_2',  cdelt2*scale
 
 ;          Check if map is 2D or 3D
            if sz[0] eq 2 then begin
@@ -150,10 +143,5 @@ endif
         writefits,newdir+filename,data,hdr
 
     return,data
-    
+
 end
-
-
-
-
-
