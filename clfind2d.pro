@@ -25,7 +25,7 @@ if NOT keyword_set(file) then begin
   print,'/log       for screen output copied to clfind2d.log'
   print,'------------------------------------------------------------'
   return
-endif 
+endif
 
 print,"----------------------------------------------------------------"
 print,"CLFIND2d: ",systime()
@@ -71,7 +71,7 @@ levs=[levs,max(data)*10d4]
 
 for nwork=nlev-1L,0,-1 do begin
   defreg,nwork,npix,reg,nreg
-  
+
   print,format='("Contour level ",E7.1,": ",I7," pixels ",I7," regions ",$)'$
        ,levs(nwork),npix,nreg
   if keyword_set(log) then $
@@ -257,7 +257,9 @@ pro mk_hdr,header,header_out
 
 s=size(header)
 nlines=s(1)
-header_out=strarr(99)
+header_out_size = (13 + n_elements(levs) +1) * 2 ; protect in the case that there are many levels: number of hardcoded elements + number of levels + 1 (for end statement) then double for safety, because a small (~100 element) string array makes little difference to memory budget
+
+header_out=strarr(header_out_size)
 header_out(0)="SIMPLE  =                    T /"
 header_out(1)="BITPIX  =                   16 /"
 header_out(2)="NAXIS   =                    2 /"
