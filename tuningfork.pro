@@ -1132,7 +1132,7 @@ if map_units eq 1 then begin
             temp_stardiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
             sfr_galaxy=total(temp_stardiffuse_map,/nan)*convstar ;total star formation rate in SF map
             sfr_galaxy_err=convstar_rerr*sfr_galaxy ;standard error on SFR
-        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provide','provide an unfiltered star map and set use_unfilt_ims=1 ']
+        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provided','provide an unfiltered star map and set use_unfilt_ims=1 ']
 
     endelse
 
@@ -1148,7 +1148,7 @@ if map_units eq 1 then begin
             mgas_galaxy=total(temp_gasdiffuse_map,/nan)*convgas ;total gas mass in gas map
             mgas_galaxy*=min([fgmc,1.0d0]) ; to ensure gas mass isn't increased
             mgas_galaxy_err=convgas_rerr*mgas_galaxy ;standard error on gas mass
-        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provide','provide an unfiltered gas map and set use_unfilt_ims=1 ']
+        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provided','provide an unfiltered gas map and set use_unfilt_ims=1 ']
 
     endelse
 
@@ -1168,7 +1168,7 @@ if map_units eq 2 then begin
             mgas_galaxy1=total(temp_stardiffuse_map,/nan)*convstar ;total gas mass in "SF" map
             mgas_galaxy1*=min([fgmc,1.0d0]) ; to ensure gas mass isn't increased
             mgas_galaxy1_err=convstar_rerr*mgas_galaxy1 ;standard error on gas mass 1
-        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provide','provide an unfiltered star map and set use_unfilt_ims=1 ']
+        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provided','provide an unfiltered star map and set use_unfilt_ims=1 ']
 
     endelse
 
@@ -1184,7 +1184,7 @@ if map_units eq 2 then begin
             mgas_galaxy2=total(temp_gasdiffuse_map,/nan)*convgas ;total gas mass in gas map
             mgas_galaxy2*=min([fgmc,1.0d0]) ; to ensure gas mass isn't increased
             mgas_galaxy2_err=convgas_rerr*mgas_galaxy2 ;standard error on gas mass 2
-        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provide','provide an unfiltered gas map and set use_unfilt_ims=1 ']
+        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provided','provide an unfiltered gas map and set use_unfilt_ims=1 ']
 
     endelse
 endif
@@ -1200,7 +1200,7 @@ if map_units eq 3 then begin
             temp_stardiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
             sfr_galaxy1=total(temp_stardiffuse_map,/nan)*convstar ;total star formation rate in SF map
             sfr_galaxy1_err=convstar_rerr*sfr_galaxy1  ;standard error on SFR 1
-        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provide','provide an unfiltered star map and set use_unfilt_ims=1 ']
+        endif else f_error,['if star_tot_mode=0 then the unfiltered star map needs to be provided','provide an unfiltered star map and set use_unfilt_ims=1 ']
 
     endelse
 
@@ -1215,7 +1215,7 @@ if map_units eq 3 then begin
             temp_gasdiffuse_map[nan_list] = !values.f_nan ;propogate mask to this image
             sfr_galaxy2=total(temp_gasdiffuse_map,/nan)*convgas  ;total star formation rate in "gas" map
             sfr_galaxy2_err=convgas_rerr*sfr_galaxy2 ;standard error on SFR 2
-        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provide','provide an unfiltered gas map and set use_unfilt_ims=1 ']
+        endif else f_error,['if gas_tot_mode=0 then the unfiltered gas map needs to be provided','provide an unfiltered gas map and set use_unfilt_ims=1 ']
 
     endelse
 endif
