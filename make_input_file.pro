@@ -700,20 +700,17 @@ pro make_input_file, input_file_filepath   $ ; general variables
   ; # write input file
   ; #############################################
 
-
-  printf, inp_lun, '################################################################################'
-  printf, inp_lun, '#                                                                              #'
-  printf, inp_lun, '#                  FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                  #'
-  printf, inp_lun, '#  start environment with >> idl kl14 -arg [full/absolute path of input file]  #'
-  printf, inp_lun, '#                                                                              #'
-  if iter_input_switch eq 1 then begin ; print instructions for iterative running
-    printf, inp_lun, '#  for iterative diffuse filtering, start environment with:                    #'
-    printf, inp_lun, '#   >> idl iterate_kl14 -arg [full/absolute path of input file]                #'
-    printf, inp_lun, '#                                                                              #'
-  endif
-  printf, inp_lun, '#                             BEGIN PARAMETER FILE                             #'
-  printf, inp_lun, '#                                                                              #'
-  printf, inp_lun, '################################################################################'
+  printf, inp_lun, '####################################################################################'
+  printf, inp_lun, '#                                                                                  #'
+  printf, inp_lun, '#                    FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                    #'
+  printf, inp_lun, '# start environment with >> idl heisenberg -arg [full/absolute path of input file] #'
+  printf, inp_lun, '#                                                                                  #'
+  printf, inp_lun, '#           to skip iterative diffuse filtering, start environment with:           #'
+  printf, inp_lun, '#          >> idl heisenberg_nodf -arg [full/absolute path of input file]          #'
+  printf, inp_lun, '#                                                                                  #'
+  printf, inp_lun, '#                               BEGIN PARAMETER FILE                               #'
+  printf, inp_lun, '#                                                                                  #'
+  printf, inp_lun, '####################################################################################'
   printf, inp_lun, ''
   printf, inp_lun, ''
 

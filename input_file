@@ -1,14 +1,14 @@
-################################################################################
-#                                                                              #
-#                  FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                  #
-#  start environment with >> idl kl14 -arg [full/absolute path of input file]  #
-#                                                                              #
-#  for iterative diffuse filtering, start environment with:                    #
-#   >> idl iterate_kl14 -arg [full/absolute path of input file]                #
-#                                                                              #
-#                             BEGIN PARAMETER FILE                             #
-#                                                                              #
-################################################################################
+####################################################################################
+#                                                                                  #
+#                    FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                    #
+# start environment with >> idl heisenberg -arg [full/absolute path of input file] #
+#                                                                                  #
+#           to skip iterative diffuse filtering, start environment with:           #
+#          >> idl heisenberg_nodf -arg [full/absolute path of input file]          #
+#                                                                                  #
+#                               BEGIN PARAMETER FILE                               #
+#                                                                                  #
+####################################################################################
 
 
 # FILE NAMES
