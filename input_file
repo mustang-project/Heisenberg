@@ -165,12 +165,12 @@ std_gas         0.1       # The measured standard deviation of gasfile
 use_noisecut   1         # [0, DEFAULT] only mask negative values remaining in image after filtering [1] mask values below the noise threshold remaining in image after filtering
 noisethresh_s     20.0      # Level to cut the noise in the star map after filtering
 noisethresh_g     20.0      # Level to cut the noise in the gas map after filtering
-# INPUT PARAMETERS 10 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl kl14 -arg [full/absolute path of input file] is used. They are only used if the call sequence idl iterate_kl14 -arg [full/absolute path of input file] is used.
-use_guess       0         # [0] Do not Filter images before first KL14 run and ignore parameter: "initial_guess" [1] Filter images with initial guess of lambda before first KL14 run
+# INPUT PARAMETERS 10 (Fourier diffuse removal iteration) # note that these parameters are ignored if the call sequence idl heisenberg_nodf -arg [full/absolute path of input file] is used. They are only used if the call sequence idl heisenberg -arg [full/absolute path of input file] is used.
+use_guess       0         # [0] Do not Filter images before the first Heisenberg run and ignore parameter: "initial_guess" [1] Filter images with initial guess of lambda before the first Heisenberg run
 initial_guess   200       # Length in pc of the initial estimate of lambda with which to filter the images
 iter_criterion  0.05      # Fractional difference between lambda and previous lambda value(s) that triggers an end to the iteration process.
-iter_crit_len   2         # Number of previous runs of KL14 over which iter_criterion must be true, i.e. if iter_crit_len = 1 then the current value of lambda is compared to the previous value of lambda, if iter_crit_len = 2 then then the current value of lambda is compared to the previous value of lambda and the value of lambda prior to the previous value
-iter_nmax       10        # Maximum number of KL14 runs allowed in the iteration process. If iter_criterion is not reached before this number of runs the programme will exit anyway.
+iter_crit_len   2         # Number of previous runs of Heisenberg over which iter_criterion must be true, i.e. if iter_crit_len = 1 then the current value of lambda is compared to the previous value of lambda, if iter_crit_len = 2 then then the current value of lambda is compared to the previous value of lambda and the value of lambda prior to the previous value
+iter_nmax       10        # Maximum number of Heisenberg runs allowed in the iteration process. If iter_criterion is not reached before this number of runs the programme will exit anyway.
 iter_filter     2         # Filter type choice for iterative Fourier filtering: [0] butterworth filter [1] gaussian filter [2] ideal filter
 iter_bwo        2         # The order of the butterworth filter for iterative Fourier filtering (Must be an integer. Only relevant if iter_filter = 0 [butterworth], but a dummy value should be supplied anyway)
 iter_len_conv   2.0       # conversion factor for iterative Fourier filtering cut_length (cut_length = lambda * filter_len_conv)
@@ -178,7 +178,7 @@ iter_rpeak_mode 0         # [0] use mode specified by rpeak_cor_mode [1] use rpe
 iter_tot_mode_s 0         # [0, DEFAULT] Use the sfr/gas mass total for the stellar map calculated on the input map of each iteration [1] Use the sfr/gas mass total for the stellar map calculated on the initial iteration for all subsequent iterations [2] Use the sfr/gas mass total for the stellar map specified by the parameter star_tot_val for all iterations
 iter_tot_mode_g 0         # [0, DEFAULT] Use the sfr/gas mass total for the gas map calculated on the input map of each iteration [1] Use the sfr/gas mass total for the gas map calculated on the initial iteration for all subsequent iterations [2] Use the sfr/gas mass total for the gas map specified by the parameter star_tot_val for all iterations
 iter_autoexit   0         # Exit IDL automatically upon successful iteration run completion (on/off)
-use_nice        0         # (on/off) Use the "nice" command when spawning KL14 runs to the terminal to adjust the process priority. Note that this may not work depending on the system configuration
+use_nice        0         # (on/off) Use the "nice" command when spawning Heisenberg runs to the terminal to adjust the process priority. Note that this may not work depending on the system configuration
 nice_value      0         # Value of the priority adjustment must be an integer between -20 (the highest) to 19 (the lowest). (Note this varies according to the implementation of nice)
 
 

@@ -11,7 +11,7 @@ pro diffuse_iteration, master_inputfile
   ; Read input file
   ; ******************************************************
 
-  read_kl14_input_file, master_inputfile, $ ; input_file_filepath
+  read_heisenberg_input_file, master_inputfile, $ ; input_file_filepath
     mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
     use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
     mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
@@ -47,12 +47,12 @@ pro diffuse_iteration, master_inputfile
   ; create output directories
   ; ******************************************************
 
-  iteration_plotdir = strcompress(master_rundir + 'Iteration_plotdir' + path_sep(), /remove_all) ; new directory for kl14 output iteration plots
+  iteration_plotdir = strcompress(master_rundir + 'Iteration_plotdir' + path_sep(), /remove_all) ; new directory for Heisenberg output iteration plots
   dummy=file_search(iteration_plotdir,count=ct) ;check if directory exists
   if ct eq 0 then spawn,'mkdir '+iteration_plotdir ;if not, create it
   if ct ne 0 then print,' WARNING: iteration plot directory already exists, some or all files may be overwritten'
 
-  iteration_reportdir = strcompress(master_rundir + 'Iteration_reportdir' + path_sep(), /remove_all) ; new directory for kl14 output iteration .dat files
+  iteration_reportdir = strcompress(master_rundir + 'Iteration_reportdir' + path_sep(), /remove_all) ; new directory for Heisenberg output iteration .dat files
   dummy=file_search(iteration_reportdir,count=ct) ;check if directory exists
   if ct eq 0 then spawn,'mkdir '+iteration_reportdir ;if not, create it
   if ct ne 0 then print,' WARNING: iteration report directory already exists, some or all files may be overwritten'
@@ -194,10 +194,10 @@ pro diffuse_iteration, master_inputfile
     file_copy, master_gasfile2tot, datadir + gasfile2, /overwrite
   endif
   ; ************************************************
-  ; *** structure for KL14 output
+  ; *** structure for Heisenberg output
   ; ************************************************
 
-  output_var_struct = get_kl14_output_var_struct(map_units)
+  output_var_struct = get_heisenberg_output_var_struct(map_units)
 
   one_list = where(output_var_struct.errors eq 1, one_count)
 
@@ -312,7 +312,7 @@ pro diffuse_iteration, master_inputfile
      , use_noisecut = use_noisecut, noisethresh_s = noisethresh_s, noisethresh_g = noisethresh_g ; # INPUT PARAMETERS 9 (noise threshold)
 
     ; **********************
-    ; * call KL14
+    ; * call Heisenberg
     ; **********************
     spawn_string = 'idl heisenberg_nodf.pro -arg ' + input_file_filepath
 
@@ -327,14 +327,14 @@ pro diffuse_iteration, master_inputfile
     output_filename = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_output.dat', /remove_all)
 
     if log10_output eq 1 then de_log = 1 else de_log = 0
-    read_kl14_tablerow, output_filename, output_name_vec, output_value_vec, de_log = de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
+    read_heisenberg_output, output_filename, output_name_vec, output_value_vec, de_log = de_log, /compress_names ; get values, convert from stored log value to the real value and remove whitespace from names
 
 
 
     for vv = 0, n_elements(output_var_names)-1, 1 do begin
      key_name = output_var_names[vv] ; name of the variable to search for
      s_ind = where(strcmp(vals_tag_names,key_name, /fold_case))
-     output_vals_struct.(s_ind)[iter_num] = tablerow_var_search(key_name, output_name_vec, output_value_vec)
+     output_vals_struct.(s_ind)[iter_num] = output_var_search(key_name, output_name_vec, output_value_vec)
 
     endfor
 
@@ -360,13 +360,13 @@ pro diffuse_iteration, master_inputfile
       star_tot_mode = 1
       if map_units eq 1 then begin
         star_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy', /fold_case)))[iter_num]
-        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_heisenberg_output_var_struct creates both errmin and errmax
       endif else if map_units eq 2 then begin
         star_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy1', /fold_case)))[iter_num]
-        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy1_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy1_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_heisenberg_output_var_struct creates both errmin and errmax
       endif else if map_units eq 3 then begin
         star_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy1', /fold_case)))[iter_num]
-        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy1_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+        star_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy1_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_heisenberg_output_var_struct creates both errmin and errmax
       endif
     endif
 
@@ -378,13 +378,13 @@ pro diffuse_iteration, master_inputfile
       gas_tot_mode = 1
       if map_units eq 1 then begin
         gas_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy', /fold_case)))[iter_num]
-        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_heisenberg_output_var_struct creates both errmin and errmax
       endif else if map_units eq 2 then begin
         gas_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy2', /fold_case)))[iter_num]
-        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy2_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'mgas_galaxy2_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_heisenberg_output_var_struct creates both errmin and errmax
       endif else if map_units eq 3 then begin
         gas_tot_val = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy2', /fold_case)))[iter_num]
-        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy2_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_kl14_output_var_names creates both errmin and errmax
+        gas_tot_err = output_vals_struct.(where(strcmp(vals_tag_names,'sfr_galaxy2_errmin', /fold_case)))[iter_num] ; errmin = errmax, but get_heisenberg_output_var_struct creates both errmin and errmax
       endif
     endif
 
@@ -400,17 +400,17 @@ pro diffuse_iteration, master_inputfile
       peak_id_params_file = strcompress(input_file_filepath+ '_run/output/' + galaxy + '_interactive_peak_ID_report.dat', /remove_all)
     endelse
 
-    read_kl14_tablerow, peak_id_params_file, peak_name_vec, peak_value_vec, /compress_names
+    read_heisenberg_output, peak_id_params_file, peak_name_vec, peak_value_vec, /compress_names
 
 
-    npixmin_vec[iter_num] = tablerow_var_search('npixmin', peak_name_vec, peak_value_vec)  ; store values in vectors for plotting
-    nsigma_vec[iter_num] = tablerow_var_search('nsigma', peak_name_vec, peak_value_vec)
-    logrange_s_vec[iter_num] = tablerow_var_search('logrange_s', peak_name_vec, peak_value_vec)
-    logspacing_s_vec[iter_num] = tablerow_var_search('logspacing_s', peak_name_vec, peak_value_vec)
-    logrange_g_vec[iter_num] = tablerow_var_search('logrange_g', peak_name_vec, peak_value_vec)
-    logspacing_g_vec[iter_num] = tablerow_var_search('logspacing_g', peak_name_vec, peak_value_vec)
-    nlinlevel_s_vec[iter_num] = tablerow_var_search('nlinlevel_s', peak_name_vec, peak_value_vec)
-    nlinlevel_g_vec[iter_num] = tablerow_var_search('nlinlevel_g', peak_name_vec, peak_value_vec)
+    npixmin_vec[iter_num] = output_var_search('npixmin', peak_name_vec, peak_value_vec)  ; store values in vectors for plotting
+    nsigma_vec[iter_num] = output_var_search('nsigma', peak_name_vec, peak_value_vec)
+    logrange_s_vec[iter_num] = output_var_search('logrange_s', peak_name_vec, peak_value_vec)
+    logspacing_s_vec[iter_num] = output_var_search('logspacing_s', peak_name_vec, peak_value_vec)
+    logrange_g_vec[iter_num] = output_var_search('logrange_g', peak_name_vec, peak_value_vec)
+    logspacing_g_vec[iter_num] = output_var_search('logspacing_g', peak_name_vec, peak_value_vec)
+    nlinlevel_s_vec[iter_num] = output_var_search('nlinlevel_s', peak_name_vec, peak_value_vec)
+    nlinlevel_g_vec[iter_num] = output_var_search('nlinlevel_g', peak_name_vec, peak_value_vec)
 
     npixmin = npixmin_vec[iter_num] ; set values for next iteration
     nsigma = nsigma_vec[iter_num]
@@ -423,14 +423,14 @@ pro diffuse_iteration, master_inputfile
 
 
     ; check if peak_ID values have been finalised by the user
-    peak_id_final_check = tablerow_var_search('finalised', peak_name_vec, peak_value_vec)
+    peak_id_final_check = output_var_search('finalised', peak_name_vec, peak_value_vec)
     if peak_id_final_check eq 1 then peak_find_tui = 0 ; disable peak_ID if user has finalised
 
 
 
 
     ; ************************************************
-    ; *** KL14 output .dat files
+    ; *** Heisenberg output .dat files
     ; ************************************************
     ; printf, iter_lun,  iter_tgas_vec[iter_num], iter_tgas_errmin_vec[iter_num], iter_tgas_errmax_vec[iter_num], iter_tover_vec[iter_num], iter_tover_errmin_vec[iter_num], iter_tover_errmax_vec[iter_num], iter_lambda_vec[iter_num], iter_lambda_errmin_vec[iter_num], iter_lambda_errmax_vec[iter_num]
     printf, iter_lun, output_vals_struct.(where(strcmp(vals_tag_names,'tgas', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tgas_errmin', /fold_case)))[iter_num], output_vals_struct.(where(strcmp(vals_tag_names,'tgas_errmax', /fold_case)))[iter_num]  $
@@ -481,7 +481,7 @@ pro diffuse_iteration, master_inputfile
     endfor
 
     ; ************************************************
-    ; *** KL14 iteration plots
+    ; *** Heisenberg output iteration plots
     ; ************************************************
 
     for ii = 0, n_elements(output_var_struct)-1, 1 do begin
