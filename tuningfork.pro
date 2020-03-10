@@ -1,11 +1,16 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;                                                                            ;
-;              FIT KL14 PRINCIPLE (v0.2) TO OBSERVED GALAXY MAPS             ;
-; start environment with >> idl kl14 -arg [full/absolute path of input file] ;
-;                                                                            ;
-;                      BEGIN MAIN ROUTINE tuningfork.pro                     ;
-;                                                                            ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                                  ;
+;                    FIT KL14 PRINCIPLE TO OBSERVED GALAXY MAPS                    ;
+; start environment with >> idl heisenberg -arg [full/absolute path of input file] ;
+;                                                                                  ;
+;           to skip iterative diffuse filtering, start environment with:           ;
+;          >> idl heisenberg_nodf -arg [full/absolute path of input file]          ;
+;                                                                                  ;
+;                         BEGIN MAIN ROUTINE tuningfork.pro                        ;
+;                                                                                  ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -64,14 +69,14 @@ if ct eq 0 then spawn,'mkdir '+maskeddir ;if not, create it
 starttime=systime(1)
 logfile='logfile.txt'
 journal,outputdir+logfile ;start keeping journal of output -- note that galaxy name is only specified at input file read-in, so journal file is renamed at end of run to include galaxy name
-print,' ==> starting KL14 tuning fork analysis, date/time is ',systime(0)
+print,' ==> starting Heisenberg tuning fork analysis, date/time is ',systime(0)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;READ INPUT FILE AND VERIFY;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-read_kl14_input_file, inputfile, $ ; input_file_filepath
+read_heisenberg_input_file, inputfile, $ ; input_file_filepath
   mask_images, regrid, smoothen, sensitivity,id_peaks, calc_ap_flux ,generate_plot, get_distances, calc_obs, calc_fit, diffuse_frac, derive_phys, write_output, cleanup , autoexit, $ ;variable names of expected flags (1)
   use_star2 ,use_gas2 ,use_star3, $  ;variable names of expected flags (2)
   mstar_ext, mstar_int, mgas_ext, mgas_int,mstar_ext2, mstar_int2 ,mgas_ext2, mgas_int2, mstar_ext3, mstar_int3, convert_masks, cut_radius, $ ;variable names of expected flags (3)
@@ -1639,7 +1644,7 @@ duration=endtime-starttime
 hours=fix(duration/3600.)
 minutes=fix((duration/3600.-hours)*60.)
 seconds=duration-3600.*hours-60.*minutes
-print,' ==> finished KL14 tuning fork analysis, date/time is ',systime(0)
+print,' ==> finished Heisenberg tuning fork analysis, date/time is ',systime(0)
 print,' ==> total analysis time for galaxy '+galaxy+' was '+f_string(hours,0)+'h'+f_string(minutes,0)+'m'+f_string(seconds,1)+'s'
 
 if autoexit then print,' ==> IDL will now exit automatically'
