@@ -1,13 +1,13 @@
 ;----------------------------------------------------------------------------------------
-function get_kl14_output_var_struct, map_units
+function get_heisenberg_output_var_struct, map_units
 ;----------------------------------------------------------------------------------------
 ; a function that returns a structure containing the expected output variables from
 ; running Heisenberg, along with whether the variable has associated errors, the units
 ; and the name of the variable for plotting given the units of the input maps
 ;--(input)-------------------------------------------------------------------------------
-; ***  map_units               = a number from 0-3 specifying the units of the input maps
+; ***  map_units  = a number from 0-3 specifying the units of the input maps
 ;--(output)------------------------------------------------------------------------------
-; *** kl14_output_var_struct   = a structure of the expected output variables from
+; *** heisenberg_output_var_struct = a structure of the expected output variables from
 ;                                running Heisenberg
 ;-----------------------------------------------------------------------------------------
   compile_opt idl2, strictarrsubs ; enforce strict array indexing, i.e. only use of [] and not () to index and use 32bit integers rather than 16bit as defaults ; give error when subscripting one array using another array as the source of array indices that has out-of-range indices, rather than clipping into range
@@ -15,7 +15,7 @@ function get_kl14_output_var_struct, map_units
 
   ; ********************************************
   ; fit quantities (always present in output)
-  kl14_output_var_struct =[ $
+  heisenberg_output_var_struct =[ $
     {name:'redchi2', errors:0, plot_title_name:'redchi2',units:''}, $
     {name:'tgas', errors:1, plot_title_name:'!8t!6!Dgas!N !6',units:'Myr'}, $
     {name:'tover', errors:1, plot_title_name:'!8t!6!Dover!N !6',units:'Myr'}, $
@@ -24,21 +24,21 @@ function get_kl14_output_var_struct, map_units
   ; ********************************************
   ; external quantities (differ based on map_units)
   if map_units eq 1 then begin
-    kl14_output_var_struct =[ kl14_output_var_struct, $
+    heisenberg_output_var_struct =[ heisenberg_output_var_struct, $
       {name:'sfr_galaxy', errors:1, plot_title_name:'sfr_galaxy',units:''}, $
       {name:'mgas_galaxy', errors:1, plot_title_name:'mgas_galaxy',units:''}, $
       {name:'surfsfr', errors:1, plot_title_name:'surfsfr',units:''}, $
       {name:'surfgas', errors:1, plot_title_name:'surfgas',units:''}]
 
   endif else if map_units eq 2 then begin
-    kl14_output_var_struct =[ kl14_output_var_struct, $
+    heisenberg_output_var_struct =[ heisenberg_output_var_struct, $
       {name:'mgas_galaxy1', errors:1, plot_title_name:'mgas_galaxy1',units:''}, $
       {name:'mgas_galaxy2', errors:1, plot_title_name:'mgas_galaxy2',units:''}, $
       {name:'surfgas1', errors:1, plot_title_name:'surfgas1',units:''}, $
       {name:'surfgas2', errors:1, plot_title_name:'surfgas2',units:''}]
 
   endif else if map_units eq 3 then begin
-     kl14_output_var_struct =[ kl14_output_var_struct, $
+     heisenberg_output_var_struct =[ heisenberg_output_var_struct, $
      {name:'sfr_galaxy1', errors:1, plot_title_name:'sfr_galaxy1',units:''}, $
      {name:'sfr_galaxy2', errors:1, plot_title_name:'sfr_galaxy2',units:''}, $
      {name:'surfsfr1', errors:1, plot_title_name:'surfsfr1',units:''}, $
@@ -50,7 +50,7 @@ function get_kl14_output_var_struct, map_units
 
   ; ********************************************
   ;  derived quantities (part 1: variables always present in output)
-  kl14_output_var_struct =[kl14_output_var_struct, $
+  heisenberg_output_var_struct =[heisenberg_output_var_struct, $
     {name:'tstar', errors:1, plot_title_name:'tstar',units:''}, $
     {name:'ttotal', errors:1, plot_title_name:'ttotal',units:''}, $
     {name:'betastar', errors:1, plot_title_name:'betastar',units:''}, $
@@ -77,7 +77,7 @@ function get_kl14_output_var_struct, map_units
   ; ********************************************
   ; get derived quantities (part 2: variables only present in output if map_units gt 0)
   if map_units gt 0 then begin
-    kl14_output_var_struct =[ kl14_output_var_struct, $
+    heisenberg_output_var_struct =[ heisenberg_output_var_struct, $
       {name:'tdepl', errors:1, plot_title_name:'tdepl',units:''}, $
       {name:'esf', errors:1, plot_title_name:'esf',units:''}, $
       {name:'mdotsf', errors:1, plot_title_name:'mdotsf',units:''}, $
@@ -94,11 +94,11 @@ function get_kl14_output_var_struct, map_units
 
   ; ********************************************
   ; get auxilliary quantities (always present in output)
-  kl14_output_var_struct =[ kl14_output_var_struct, $
+  heisenberg_output_var_struct =[ heisenberg_output_var_struct, $
     {name:'npeak_star', errors:0, plot_title_name: 'npeak_star',units:''}, $
     {name:'npeak_gas', errors:0, plot_title_name: 'npeak_gas',units:''}, $
     {name:'lap_min', errors:0, plot_title_name: 'lap_min',units:''}]
 
-  return, kl14_output_var_struct
+  return, heisenberg_output_var_struct
 
 end

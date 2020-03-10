@@ -99,8 +99,8 @@ pro flux_fraction_calc, kernel, butterworth_order, pass  $ ; description of the 
     , mask_file = mask_file
 
     if save_arrays eq 1 then begin
-      save, filename = array_dir + 'fgmcarr.sav', gas_flux_frac_arr ; fgmc is kl14 naming convention
-      save, filename = array_dir + 'fclarr.sav', star_flux_frac_arr ; fcl is kl14 naming convention
+      save, filename = array_dir + 'fgmcarr.sav', gas_flux_frac_arr ; fgmc is Heisenberg naming convention
+      save, filename = array_dir + 'fclarr.sav', star_flux_frac_arr ; fcl is Heisenberg naming convention
     endif
 
 end

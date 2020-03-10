@@ -84,8 +84,8 @@
 .com med_peak_relative_nearest_neighbour_dist_calc
 
 .com make_input_file
-.com read_kl14_input_file
-.com read_kl14_tablerow
+.com read_heisenberg_input_file
+.com read_heisenberg_output
 
 .com calc_levels
 .com ds9_display_peaks

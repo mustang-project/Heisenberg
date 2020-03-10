@@ -18,7 +18,7 @@ pro fsingle_array_make, array_dir, fcl, fgmc
   star_flux_frac_arr = fltarr(n_elements(lambdaarr)) + fcl
   gas_flux_frac_arr = fltarr(n_elements(lambdaarr)) + fgmc
 
-  save, filename = array_dir + 'fclarr.sav', star_flux_frac_arr ; fcl is kl14 naming convention
-  save, filename = array_dir + 'fgmcarr.sav', gas_flux_frac_arr ; fgmc is kl14 naming convention
+  save, filename = array_dir + 'fclarr.sav', star_flux_frac_arr ; fcl is Heisenberg naming convention
+  save, filename = array_dir + 'fgmcarr.sav', gas_flux_frac_arr ; fgmc is Heisenberg naming convention
 
 end

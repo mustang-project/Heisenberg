@@ -1,5 +1,5 @@
 ;----------------------------------------------------------------------------------------
-pro read_kl14_tablerow, filename, name_vec, value_vec, de_log = de_log, compress_names = compress_names
+pro read_heisenberg_output, filename, name_vec, value_vec, de_log = de_log, compress_names = compress_names
 ;----------------------------------------------------------------------------------------
 ; extracts the variable names and their values from a Heisenberg output file and places
 ; them into vectors
