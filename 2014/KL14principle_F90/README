@@ -1,0 +1,76 @@
+=========================================================================
+    IDL AND FORTRAN ROUTINES FOR APPLYING THE UNCERTAINTY PRINCIPLE OF 
+               KRUIJSSEN & LONGMORE (2014), MNRAS 439, 3239
+=========================================================================
+
+
+Contents
+========
+
+KL14principle_F90: 
+    The folder contains three files.
+    - f_principle.f90: module containing functions for applying the uncertainty
+      principle of Kruijssen & Longmore (2014).
+    - test_principle.f90: example test program to apply the uncertainty
+      principle for a single parameter set and aperture size.
+    - This README.
+    See the header of f_principle.f90 for a more detailed explanation.
+
+KL14principle_IDL: 
+    The folder contains two files.
+    - f_principle.pro: contains functions for applying the uncertainty principle 
+      of Kruijssen & Longmore (2014).
+    - This README.
+    See the header of f_principle.pro for a more detailed explanation.
+
+
+Installation
+============
+
+Fortran:
+    The functions are provided in a module and therefore cannot be used as
+    stand-alone tools. In order to function properly, the module and its
+    functions need to be called from the program they are used in. Example
+    programs are provided in test_principle.f90. Part of these examples are also
+    shown in the header of f_principle.f90.
+
+IDL: 
+    The function files need to be located in the working directory, or in some
+    other location specified in your IDL_PATH. They can then be called as
+    detailed in the headers of f_principle.pro.
+
+
+Terms of Use
+============
+
+These routines are free software and come without any warranty. If you use these 
+routines while preparing a paper or talk, the authors would appreciate it if you
+cite the paper in which the uncertainty principle was presented:
+Kruijssen J. M. D., Longmore S. N. 2014, MNRAS 439, 3239
+
+If it is the first time you apply the uncertainty principle, the authors would
+appreciate being involved in the project to provide assistance where necessary.
+However, this is not required and you are free to use these routines as you see
+fit.
+         
+
+Availability
+============
+
+These routines and their possible future updates are available at:
+    https://github.com/mustang-project/Heisenberg/2014
+
+
+Contact
+=======
+
+The routines have been thoroughly tested, but the possibility of bugs always
+exists. If you have a question, comment, or suggestion, please feel free to
+contact me at:
+    kruijssen[[at]]uni-heidelberg.de
+
+
+Diederik Kruijssen
+Garching, January 2014
+(last updated September 2021)
+
